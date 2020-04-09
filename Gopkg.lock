@@ -178,6 +178,7 @@
   digest = "1:23dfc71821f9f76ecbe6cf27bd9682a9f259a1c0973483414face1100a96cfd5"
   name = "github.com/docker/docker"
   packages = [
+    "api/types",
     "api/types/blkiodev",
     "api/types/container",
     "api/types/filters",
@@ -1229,6 +1230,8 @@
     "github.com/hyperledger/fabric-protos-go/peer",
     "github.com/hyperledger/fabric-protos-go/peer/lifecycle",
     "github.com/hyperledger/fabric-protos-go/transientstore",
+    "github.com/jinzhu/gorm",
+    "github.com/jinzhu/gorm/dialects/sqlite",
     "github.com/kr/pretty",
     "github.com/miekg/pkcs11",
     "github.com/mitchellh/mapstructure",
