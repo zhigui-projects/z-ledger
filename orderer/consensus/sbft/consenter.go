@@ -21,6 +21,8 @@ import (
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
+	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/comm"
 	"github.com/hyperledger/fabric/orderer/common/localconfig"
 	"github.com/hyperledger/fabric/orderer/consensus"
@@ -28,9 +30,7 @@ import (
 	"github.com/hyperledger/fabric/orderer/consensus/sbft/connection"
 	"github.com/hyperledger/fabric/orderer/consensus/sbft/persist"
 	"github.com/hyperledger/fabric/orderer/consensus/sbft/simplebft"
-	cb "github.com/hyperledger/fabric/protos/common"
 	sb "github.com/hyperledger/fabric/protos/orderer/sbft"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 )
 
@@ -39,7 +39,7 @@ type consensusStack struct {
 	backend *backend.Backend
 }
 
-var logger = logging.MustGetLogger("orderer/consensus/sbft")
+var logger = flogging.MustGetLogger("orderer/consensus/sbft")
 var once sync.Once
 
 // Consenter interface implementation for new main application
@@ -72,7 +72,7 @@ func New(conf *localconfig.TopLevel, srvConf comm.ServerConfig) consensus.Consen
 }
 
 func (sbft *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb.Metadata) (consensus.Chain, error) {
-	logger.Infof("Starting a chain: %d", support.ChainID())
+	logger.Infof("Starting a chain: %d", support.ChannelID())
 
 	m := &sb.ConfigMetadata{}
 	if err := proto.Unmarshal(support.SharedConfig().SbftMetadata(), m); err != nil {
@@ -99,10 +99,10 @@ func (sbft *consenter) HandleChain(support consensus.ConsenterSupport, metadata 
 		sbft.consensusStack = createConsensusStack(sbft)
 		sbft.sbftPeers = make(map[string]*simplebft.SBFT)
 	}
-	sbft.sbftPeers[support.ChainID()] = initSbftPeer(sbft, support)
+	sbft.sbftPeers[support.ChannelID()] = initSbftPeer(sbft, support)
 
 	return &chain{
-		chainID:        support.ChainID(),
+		chainID:        support.ChannelID(),
 		exitChan:       make(chan struct{}),
 		consensusStack: sbft.consensusStack,
 	}, nil
@@ -128,7 +128,7 @@ func createConsensusStack(sbft *consenter) *consensusStack {
 }
 
 func initSbftPeer(sbft *consenter, support consensus.ConsenterSupport) *simplebft.SBFT {
-	sbftPeer, err := sbft.consensusStack.backend.AddSbftPeer(support.ChainID(), support, sbft.config.Consensus)
+	sbftPeer, err := sbft.consensusStack.backend.AddSbftPeer(support.ChannelID(), support, sbft.config.Consensus)
 	if err != nil {
 		logger.Errorf("SBFT peer instantiation error.")
 		panic(err)

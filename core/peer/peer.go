@@ -295,6 +295,8 @@ func (p *Peer) createChannel(
 
 	ordererSourceCallback := func(bundle *channelconfig.Bundle) {
 		globalAddresses := bundle.ChannelConfig().OrdererAddresses()
+		// Impl by zig
+		logger.Infof("[channel %s] get orderer addresses from ChannelConfig: %v", cid, globalAddresses)
 		orgAddresses := map[string]orderers.OrdererOrg{}
 		if ordererConfig, ok := bundle.OrdererConfig(); ok {
 			for orgName, org := range ordererConfig.Organizations() {

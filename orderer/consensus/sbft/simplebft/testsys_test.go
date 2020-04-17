@@ -30,11 +30,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric/common/flogging"
 	sb "github.com/hyperledger/fabric/protos/orderer/sbft"
-	"github.com/op/go-logging"
 )
 
-var testLog = logging.MustGetLogger("test")
+var testLog = flogging.MustGetLogger("test")
 
 const defaultMaxReqCount = uint64(5)
 
