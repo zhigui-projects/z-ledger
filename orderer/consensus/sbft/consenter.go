@@ -39,7 +39,7 @@ type consensusStack struct {
 	backend *backend.Backend
 }
 
-var logger = flogging.MustGetLogger("orderer/consensus/sbft")
+var logger = flogging.MustGetLogger("orderer.consensus.sbft")
 var once sync.Once
 
 // Consenter interface implementation for new main application
