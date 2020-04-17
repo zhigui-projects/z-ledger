@@ -48,6 +48,7 @@ import (
 	"github.com/hyperledger/fabric/orderer/consensus"
 	"github.com/hyperledger/fabric/orderer/consensus/etcdraft"
 	"github.com/hyperledger/fabric/orderer/consensus/kafka"
+	"github.com/hyperledger/fabric/orderer/consensus/sbft"
 	"github.com/hyperledger/fabric/orderer/consensus/solo"
 	"github.com/hyperledger/fabric/protoutil"
 	"go.uber.org/zap/zapcore"
@@ -701,7 +702,7 @@ func initializeMultichannelRegistrar(
 	bccsp bccsp.BCCSP,
 	callbacks ...channelconfig.BundleActor,
 ) *multichannel.Registrar {
-	registrar := multichannel.NewRegistrar(*conf, lf, signer, metricsProvider, bccsp, callbacks...)
+	registrar := multichannel.NewRegistrar(*conf, lf, signer, metricsProvider, bccsp, srvConf.SecOpts.Certificate, callbacks...)
 
 	consenters := map[string]consensus.Consenter{}
 	consenters["solo"] = solo.New()
@@ -715,6 +716,8 @@ func initializeMultichannelRegistrar(
 			initializeEtcdraftConsenter(consenters, conf, lf, clusterDialer, bootstrapBlock, ri, srvConf, srv, registrar, metricsProvider, bccsp)
 		}
 	}
+	// Impl by zig
+	consenters["sbft"] = sbft.New(conf, srvConf)
 	registrar.Initialize(consenters)
 	return registrar
 }

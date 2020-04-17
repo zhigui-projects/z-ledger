@@ -10,12 +10,15 @@ SPDX-License-Identifier: Apache-2.0
 package multichannel
 
 import (
+	"encoding/pem"
 	"fmt"
+	"strings"
 	"sync"
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	ab "github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric/bccsp"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/channelconfig"
 	"github.com/hyperledger/fabric/common/configtx"
 	"github.com/hyperledger/fabric/common/flogging"
@@ -107,6 +110,9 @@ type Registrar struct {
 	templator          msgprocessor.ChannelConfigTemplator
 	callbacks          []channelconfig.BundleActor
 	bccsp              bccsp.BCCSP
+	// Imp by zig
+	// PEM-encoded X509 public key to be used for TLS communication
+	cert []byte
 }
 
 // ConfigBlock retrieves the last configuration block from the given ledger.
@@ -129,6 +135,7 @@ func configTx(reader blockledger.Reader) *cb.Envelope {
 	return protoutil.ExtractEnvelopeOrPanic(ConfigBlock(reader), 0)
 }
 
+// Impl by zig
 // NewRegistrar produces an instance of a *Registrar.
 func NewRegistrar(
 	config localconfig.TopLevel,
@@ -136,6 +143,7 @@ func NewRegistrar(
 	signer identity.SignerSerializer,
 	metricsProvider metrics.Provider,
 	bccsp bccsp.BCCSP,
+	cert []byte,
 	callbacks ...channelconfig.BundleActor,
 ) *Registrar {
 	r := &Registrar{
@@ -146,6 +154,7 @@ func NewRegistrar(
 		blockcutterMetrics: blockcutter.NewMetrics(metricsProvider),
 		callbacks:          callbacks,
 		bccsp:              bccsp,
+		cert:               cert,
 	}
 
 	return r
@@ -165,6 +174,10 @@ func (r *Registrar) Initialize(consenters map[string]consensus.Consenter) {
 			logger.Panic("Programming error, configTx should never be nil here")
 		}
 		ledgerResources := r.newLedgerResources(configTx)
+		// Impl by zig
+		if ledgerResources == nil {
+			continue
+		}
 		channelID := ledgerResources.ConfigtxValidator().ChannelID()
 
 		if _, ok := ledgerResources.ConsortiumsConfig(); ok {
@@ -297,6 +310,26 @@ func (r *Registrar) newLedgerResources(configTx *cb.Envelope) *ledgerResources {
 
 	checkResourcesOrPanic(bundle)
 
+	// Impl by zig
+	selfID, err := r.detectSelfID()
+	if err != nil {
+		logger.Panicf("Error detectSelfID: %s", err)
+	}
+	// skip not contain self consensus initial
+	hasSelf := false
+	logger.Infof("detectSelfID orderer addresses: %v, self: %s, channel: %s", bundle.ChannelConfig().OrdererAddresses(), selfID, chdr.ChannelId)
+	for _, v := range bundle.ChannelConfig().OrdererAddresses() {
+		if strings.HasPrefix(v, selfID) {
+			logger.Infof("Success detectSelfID: %s", selfID)
+			hasSelf = true
+			break
+		}
+	}
+	if !hasSelf {
+		logger.Infof("Not detectSelfID: %s for channel: %s", selfID, chdr.ChannelId)
+		return nil
+	}
+
 	ledger, err := r.ledgerFactory.GetOrCreate(chdr.ChannelId)
 	if err != nil {
 		logger.Panicf("Error getting ledger for %s", chdr.ChannelId)
@@ -331,6 +364,10 @@ func (r *Registrar) newChain(configtx *cb.Envelope) {
 	defer r.lock.Unlock()
 
 	ledgerResources := r.newLedgerResources(configtx)
+	// Impl by zig
+	if ledgerResources == nil {
+		return
+	}
 	// If we have no blocks, we need to create the genesis block ourselves.
 	if ledgerResources.Height() == 0 {
 		ledgerResources.Append(blockledger.CreateNextBlock(ledgerResources, []*cb.Envelope{configtx}))
@@ -369,4 +406,21 @@ func (r *Registrar) NewChannelConfig(envConfigUpdate *cb.Envelope) (channelconfi
 // CreateBundle calls channelconfig.NewBundle
 func (r *Registrar) CreateBundle(channelID string, config *cb.Config) (channelconfig.Resources, error) {
 	return channelconfig.NewBundle(channelID, config, r.bccsp)
+}
+
+// Impl by zig
+func (r *Registrar) detectSelfID() (string, error) {
+	bl, _ := pem.Decode(r.cert)
+	if bl == nil {
+		logger.Errorf("PEM decode failed, offending PEM is: %s", string(r.cert))
+		return "", errors.Errorf("invalid PEM block")
+	}
+
+	cert, err := utils.DERToX509Certificate(bl.Bytes)
+	if err != nil {
+		logger.Errorf("DERToX509Certificate failed, offending PEM is: %s", string(r.cert))
+		return "", err
+	}
+
+	return cert.Subject.CommonName, nil
 }

@@ -362,6 +362,15 @@ func (dt *DefaultTemplator) NewChannelConfig(envConfigUpdate *cb.Envelope) (chan
 		ModPolicy: channelconfig.AdminsPolicyKey,
 	}
 
+	// Impl by zig
+	if value, ok := configUpdate.WriteSet.Values[channelconfig.ConsensusTypeKey]; ok {
+		channelGroup.Values[channelconfig.ConsensusTypeKey] = proto.Clone(value).(*cb.ConfigValue)
+	}
+	// Overrides system channel orderer addresses
+	if value, ok := configUpdate.WriteSet.Values[channelconfig.OrdererAddressesKey]; ok {
+		channelGroup.Values[channelconfig.OrdererAddressesKey] = proto.Clone(value).(*cb.ConfigValue)
+	}
+
 	// Non-backwards compatible bugfix introduced in v1.1
 	// The capability check should be removed once v1.0 is deprecated
 	if oc, ok := dt.support.OrdererConfig(); ok && oc.Capabilities().PredictableChannelTemplate() {
