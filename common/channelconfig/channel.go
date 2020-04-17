@@ -11,6 +11,7 @@ import (
 	"math"
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
+	ab "github.com/hyperledger/fabric-protos-go/orderer"
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/hyperledger/fabric/common/capabilities"
 	"github.com/hyperledger/fabric/common/util"
@@ -61,6 +62,7 @@ type ChannelProtos struct {
 	OrdererAddresses          *cb.OrdererAddresses
 	Consortium                *cb.Consortium
 	Capabilities              *cb.Capabilities
+	ConsensusType             *ab.ConsensusType // Impl by zig
 }
 
 // ChannelConfig stores the channel configuration
@@ -164,6 +166,12 @@ func (cc *ChannelConfig) Capabilities() ChannelCapabilities {
 	_ = cc.protos.Capabilities
 	_ = cc.protos.Capabilities.Capabilities
 	return capabilities.NewChannelProvider(cc.protos.Capabilities.Capabilities)
+}
+
+// Impl by zig
+// ConsensusType returns the type of the consensus this channel was created under
+func (cc *ChannelConfig) ConsensusType() string {
+	return cc.protos.ConsensusType.Type
 }
 
 // Validate inspects the generated configuration protos and ensures that the values are correct

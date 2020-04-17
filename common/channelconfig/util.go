@@ -308,3 +308,16 @@ func MarshalEtcdRaftMetadata(md *etcdraft.ConfigMetadata) ([]byte, error) {
 	}
 	return proto.Marshal(copyMd)
 }
+
+// Impl by zig
+// SbftMetadataValue returns the config definition for the sbft metadata.
+// It is a value for the /Channel/Orderer group.
+func SbftMetadataValue(consensusType string, consensusMetadata []byte) *StandardConfigValue {
+	return &StandardConfigValue{
+		key: SbftConsensusKey,
+		value: &ab.ConsensusType{
+			Type:     consensusType,
+			Metadata: consensusMetadata,
+		},
+	}
+}

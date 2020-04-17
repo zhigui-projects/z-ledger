@@ -67,11 +67,16 @@ type Channel interface {
 	// Merkle tree to compute the BlockData hash
 	BlockDataHashingStructureWidth() uint32
 
+	// Override Impl by zig
 	// OrdererAddresses returns the list of valid orderer addresses to connect to to invoke Broadcast/Deliver
 	OrdererAddresses() []string
 
 	// Capabilities defines the capabilities for a channel
 	Capabilities() ChannelCapabilities
+
+	// Impl by zig
+	// ConsensusType return the consensus type of a channel
+	ConsensusType() string
 }
 
 // Consortiums represents the set of consortiums serviced by an ordering service
@@ -119,6 +124,10 @@ type Orderer interface {
 
 	// Capabilities defines the capabilities for the orderer portion of a channel
 	Capabilities() OrdererCapabilities
+
+	// Impl by zig
+	// SbftMetadata returns the sbft consensus metadata.
+	SbftMetadata() []byte
 }
 
 // ChannelCapabilities defines the capabilities for a channel

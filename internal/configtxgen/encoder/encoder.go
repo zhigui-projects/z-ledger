@@ -9,6 +9,7 @@ package encoder
 import (
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
+	ab "github.com/hyperledger/fabric-protos-go/orderer"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/cauthdsl"
 	"github.com/hyperledger/fabric/common/channelconfig"
@@ -20,6 +21,7 @@ import (
 	"github.com/hyperledger/fabric/internal/configtxlator/update"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/msp"
+	"github.com/hyperledger/fabric/protos/orderer/sbft"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
@@ -40,6 +42,9 @@ const (
 	ConsensusTypeKafka = "kafka"
 	// ConsensusTypeKafka identifies the Kafka-based consensus implementation.
 	ConsensusTypeEtcdRaft = "etcdraft"
+	// Impl by zig
+	// ConsensusTypeSbft identifies the sbft consensus implementation.
+	ConsensusTypeSbft = "sbft"
 
 	// BlockValidationPolicyKey TODO
 	BlockValidationPolicyKey = "BlockValidation"
@@ -138,6 +143,14 @@ func NewChannelGroup(conf *genesisconfig.Profile) (*cb.ConfigGroup, error) {
 		addValue(channelGroup, channelconfig.CapabilitiesValue(conf.Capabilities), channelconfig.AdminsPolicyKey)
 	}
 
+	// Impl by zig
+	if conf.ConsensusType != "" {
+		addValue(channelGroup, channelconfig.ConsensusTypeValue(conf.ConsensusType, nil), channelconfig.AdminsPolicyKey)
+	}
+	if len(conf.OrdererAddresses) > 0 {
+		addValue(channelGroup, channelconfig.OrdererAddressesValue(conf.OrdererAddresses), channelconfig.AdminsPolicyKey)
+	}
+
 	var err error
 	if conf.Orderer != nil {
 		channelGroup.Groups[channelconfig.OrdererGroupKey], err = NewOrdererGroup(conf.Orderer)
@@ -188,22 +201,47 @@ func NewOrdererGroup(conf *genesisconfig.Orderer) (*cb.ConfigGroup, error) {
 		addValue(ordererGroup, channelconfig.CapabilitiesValue(conf.Capabilities), channelconfig.AdminsPolicyKey)
 	}
 
-	var consensusMetadata []byte
-	var err error
+	//var consensusMetadata []byte
+	//var err error
+	//
+	//switch conf.OrdererType {
+	//case ConsensusTypeSolo:
+	//case ConsensusTypeKafka:
+	//	addValue(ordererGroup, channelconfig.KafkaBrokersValue(conf.Kafka.Brokers), channelconfig.AdminsPolicyKey)
+	//case ConsensusTypeEtcdRaft:
+	//	if consensusMetadata, err = channelconfig.MarshalEtcdRaftMetadata(conf.EtcdRaft); err != nil {
+	//		return nil, errors.Errorf("cannot marshal metadata for orderer type %s: %s", ConsensusTypeEtcdRaft, err)
+	//	}
+	//default:
+	//	return nil, errors.Errorf("unknown orderer type: %s", conf.OrdererType)
+	//}
+	//
+	//addValue(ordererGroup, channelconfig.ConsensusTypeValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
 
-	switch conf.OrdererType {
-	case ConsensusTypeSolo:
-	case ConsensusTypeKafka:
-		addValue(ordererGroup, channelconfig.KafkaBrokersValue(conf.Kafka.Brokers), channelconfig.AdminsPolicyKey)
-	case ConsensusTypeEtcdRaft:
-		if consensusMetadata, err = channelconfig.MarshalEtcdRaftMetadata(conf.EtcdRaft); err != nil {
-			return nil, errors.Errorf("cannot marshal metadata for orderer type %s: %s", ConsensusTypeEtcdRaft, err)
+	// Impl by zig
+	if conf.OrdererType == ConsensusTypeSolo || conf.OrdererType == ConsensusTypeKafka ||
+		conf.OrdererType == ConsensusTypeEtcdRaft || conf.OrdererType == ConsensusTypeSbft {
+		if len(conf.Kafka.Brokers) > 0 {
+			addValue(ordererGroup, channelconfig.KafkaBrokersValue(conf.Kafka.Brokers), channelconfig.AdminsPolicyKey)
 		}
-	default:
+		if conf.EtcdRaft != nil {
+			if consensusMetadata, err := channelconfig.MarshalEtcdRaftMetadata(conf.EtcdRaft); err != nil {
+				return nil, errors.Errorf("cannot marshal metadata for orderer type %s: %s", ConsensusTypeEtcdRaft, err)
+			} else {
+				addValue(ordererGroup, channelconfig.ConsensusTypeValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
+			}
+		}
+		if conf.Sbft != nil {
+			// TODO ZIG
+			if consensusMetadata, err := sbft.Marshal(conf.Sbft); err != nil {
+				return nil, errors.Errorf("cannot marshal metadata for orderer type %s: %v", ConsensusTypeSbft, err)
+			} else {
+				addValue(ordererGroup, channelconfig.SbftMetadataValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
+			}
+		}
+	} else {
 		return nil, errors.Errorf("unknown orderer type: %s", conf.OrdererType)
 	}
-
-	addValue(ordererGroup, channelconfig.ConsensusTypeValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
 
 	for _, org := range conf.Organizations {
 		var err error
@@ -404,6 +442,27 @@ func NewChannelCreateConfigUpdate(channelID string, conf *genesisconfig.Profile,
 		Value: protoutil.MarshalOrPanic(&cb.Consortium{
 			Name: conf.Consortium,
 		}),
+	}
+
+	// Impl by zig
+	if conf.ConsensusType != "" {
+		updt.ReadSet.Values[channelconfig.ConsensusTypeKey] = &cb.ConfigValue{Version: 0}
+		updt.WriteSet.Values[channelconfig.ConsensusTypeKey] = &cb.ConfigValue{
+			Version: 0,
+			Value: protoutil.MarshalOrPanic(&ab.ConsensusType{
+				Type:     conf.ConsensusType,
+				Metadata: nil,
+			}),
+		}
+	}
+	if len(conf.OrdererAddresses) > 0 {
+		updt.ReadSet.Values[channelconfig.OrdererAddressesKey] = &cb.ConfigValue{Version: 0}
+		updt.WriteSet.Values[channelconfig.OrdererAddressesKey] = &cb.ConfigValue{
+			Version: 0,
+			Value: protoutil.MarshalOrPanic(&cb.OrdererAddresses{
+				Addresses: conf.OrdererAddresses,
+			}),
+		}
 	}
 
 	return updt, nil
