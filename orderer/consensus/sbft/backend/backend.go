@@ -37,15 +37,15 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/orderer/consensus"
 	"github.com/hyperledger/fabric/orderer/consensus/sbft/connection"
 	cry "github.com/hyperledger/fabric/orderer/consensus/sbft/crypto"
 	"github.com/hyperledger/fabric/orderer/consensus/sbft/persist"
 	"github.com/hyperledger/fabric/orderer/consensus/sbft/simplebft"
-	cb "github.com/hyperledger/fabric/protos/common"
 	sb "github.com/hyperledger/fabric/protos/orderer/sbft"
-	"github.com/hyperledger/fabric/protos/utils"
-	"github.com/op/go-logging"
+	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 )
@@ -54,7 +54,7 @@ const headerIndex = 0
 const signaturesIndex = 1
 const metadataLen = 2
 
-var logger = logging.MustGetLogger("orderer.consensus.sbft.backend")
+var logger = flogging.MustGetLogger("orderer.consensus.sbft.backend")
 
 type Backend struct {
 	conn        *connection.Manager
@@ -305,7 +305,7 @@ func (b *Backend) propose(chainID string, batches ...[]*cb.Envelope) (blocks []*
 }
 
 func (b *Backend) isConfig(env *cb.Envelope) bool {
-	h, err := utils.ChannelHeader(env)
+	h, err := protoutil.ChannelHeader(env)
 	if err != nil {
 		logger.Panicf("failed to extract channel header from envelope")
 	}
@@ -354,7 +354,7 @@ func (b *Backend) Cut(chainID string) []*sb.Request {
 
 func toRequestBlock(block *cb.Block) []*sb.Request {
 	rqs := make([]*sb.Request, 0, 1)
-	requestBytes, err := utils.Marshal(block)
+	requestBytes, err := protoutil.Marshal(block)
 	if err != nil {
 		logger.Panicf("Cannot marshal envelope: %s", err)
 	}
@@ -433,7 +433,7 @@ func (b *Backend) AddReceiver(chainId string, recv simplebft.Receiver) {
 	b.consensus[chainId] = recv
 	block := b.supports[chainId].Block(b.supports[chainId].Height() - 1)
 	b.bc[chainId] = &blockCreator{
-		hash:   block.Header.Hash(),
+		hash:   protoutil.BlockHeaderHash(block.Header),
 		number: block.Header.Number,
 	}
 	b.lastBatches[chainId] = &sb.Batch{Header: nil, Signatures: nil, Payloads: [][]byte{}}
@@ -457,7 +457,7 @@ func (b *Backend) Timer(d time.Duration, tf func()) simplebft.Canceller {
 
 // Deliver writes a block
 func (b *Backend) Deliver(chainId string, batch *sb.Batch) {
-	block := utils.UnmarshalBlockOrPanic(batch.Payloads[0])
+	block := protoutil.UnmarshalBlockOrPanic(batch.Payloads[0])
 	b.lastBatches[chainId] = batch
 	// TODO SBFT needs to use Rawledger's structures and signatures over the Block.
 	// This a quick and dirty solution to make it work.
@@ -466,8 +466,8 @@ func (b *Backend) Deliver(chainId string, batch *sb.Batch) {
 	metadata[headerIndex] = batch.Header
 	metadata[signaturesIndex] = encodeSignatures(batch.Signatures)
 	blockMetadata.Metadata = metadata
-	m := utils.MarshalOrPanic(blockMetadata)
-	if utils.IsConfigBlock(block) {
+	m := protoutil.MarshalOrPanic(blockMetadata)
+	if protoutil.IsConfigBlock(block) {
 		logger.Infof("Writing config block [%d] for chainId: %s to ledger", block.Header.Number, chainId)
 		b.supports[chainId].WriteConfigBlock(block, m)
 	} else {

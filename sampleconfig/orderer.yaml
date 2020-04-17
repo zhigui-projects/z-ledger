@@ -359,3 +359,22 @@ Consensus:
     # SnapDir specifies the location at which snapshots for etcd/raft are
     # stored. Each channel will have its own subdir named after channel ID.
     SnapDir: /var/hyperledger/production/orderer/etcdraft/snapshot
+
+
+################################################################################
+#
+#   SECTION: SBFT Local
+#
+#   - This section applies to the configuration of the SBFT-based orderer.
+#
+################################################################################
+SbftLocal:
+
+    # Address to use for SBFT internal communication
+    PeerCommAddr: ":6101"
+    CertFile: "sbft/testdata/cert1.pem"
+    KeyFile: "sbft/testdata/key.pem"
+    # Directory for SBFT data (persistence)
+    #    DataDir: "/tmp"
+    WALDir: /var/hyperledger/production/orderer/sbft/wal
+    SnapDir: /var/hyperledger/production/orderer/sbft/snapshot

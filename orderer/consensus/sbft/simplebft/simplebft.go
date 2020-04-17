@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/orderer/consensus"
 	sb "github.com/hyperledger/fabric/protos/orderer/sbft"
-	"github.com/op/go-logging"
 )
 
 const preprepared string = "preprepared"
@@ -102,7 +102,7 @@ type replicaInfo struct {
 	viewchange       *sb.ViewChange
 }
 
-var logger = logging.MustGetLogger("orderer.consensus.sbft.simplebft")
+var logger = flogging.MustGetLogger("orderer.consensus.sbft.simplebft")
 
 type dummyCanceller struct{}
 

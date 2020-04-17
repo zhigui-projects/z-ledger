@@ -8,7 +8,8 @@ package backend
 
 import (
 	"github.com/golang/protobuf/proto"
-	cb "github.com/hyperledger/fabric/protos/common"
+	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric/protoutil"
 )
 
 // blockCreator holds number and hash of latest block
@@ -33,10 +34,10 @@ func (bc *blockCreator) createNextBlock(envs []*cb.Envelope) *cb.Block {
 
 	bc.number++
 
-	block := cb.NewBlock(bc.number, bc.hash)
-	block.Header.DataHash = data.Hash()
+	block := protoutil.NewBlock(bc.number, bc.hash)
+	block.Header.DataHash = protoutil.BlockDataHash(data)
 	block.Data = data
 
-	bc.hash = block.Header.Hash()
+	bc.hash = protoutil.BlockHeaderHash(block.Header)
 	return block
 }

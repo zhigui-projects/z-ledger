@@ -144,7 +144,8 @@ func (chain *chainImpl) Errored() <-chan struct{} {
 // launched, before the call to NewServer(). Launches a goroutine so as not to
 // block the consensus.Manager.
 func (chain *chainImpl) Start() {
-	go startThread(chain)
+	// Impl by zig
+	startThread(chain)
 }
 
 // Halt frees the resources which were allocated for this Chain. Implements the
@@ -336,7 +337,8 @@ func startThread(chain *chainImpl) {
 
 	logger.Infof("[channel: %s] Start phase completed successfully", chain.channel.topic())
 
-	chain.processMessagesToBlocks() // Keep up to date with the channel
+	// Impl by zig
+	go chain.processMessagesToBlocks() // Keep up to date with the channel
 }
 
 // processMessagesToBlocks drains the Kafka consumer for the given channel, and

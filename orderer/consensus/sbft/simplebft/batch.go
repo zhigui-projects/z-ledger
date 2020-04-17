@@ -22,19 +22,19 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	sb "github.com/hyperledger/fabric/protos/orderer/sbft"
-	"github.com/hyperledger/fabric/protos/utils"
+	"github.com/hyperledger/fabric/protoutil"
 )
 
 func (s *SBFT) makeBatch(seq uint64, prevHash []byte, data [][]byte) *sb.Batch {
 	//datahash := merkleHashData(data)
 
-	block := utils.UnmarshalBlockOrPanic(data[0])
+	block := protoutil.UnmarshalBlockOrPanic(data[0])
 	batchhead := &sb.BatchHeader{
 		Seq:      seq,
 		PrevHash: prevHash,
 		DataHash: block.GetHeader().DataHash,
 	}
-	rawHeader := utils.MarshalOrPanic(batchhead)
+	rawHeader := protoutil.MarshalOrPanic(batchhead)
 	return &sb.Batch{
 		Header:   rawHeader,
 		Payloads: data,
@@ -50,7 +50,7 @@ func (s *SBFT) checkBatch(b *sb.Batch, checkData bool, needSigs bool) (*sb.Batch
 
 	if checkData {
 		//datahash := merkleHashData(b.Payloads)
-		block := utils.UnmarshalBlockOrPanic(b.Payloads[0])
+		block := protoutil.UnmarshalBlockOrPanic(b.Payloads[0])
 		datahash := block.GetHeader().DataHash
 		if !reflect.DeepEqual(datahash, batchheader.DataHash) {
 			return nil, fmt.Errorf("malformed blocks: invalid hash")
