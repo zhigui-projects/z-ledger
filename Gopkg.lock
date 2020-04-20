@@ -64,6 +64,22 @@
   version = "v0.8.6"
 
 [[projects]]
+  digest = "1:0a111edd8693fd977f42a0c4f199a0efb13c20aec9da99ad8830c7bb6a87e8d6"
+  name = "github.com/PuerkitoBio/purell"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "44968752391892e1b0d0b821ee79e9a85fa13049"
+  version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8098cd40cd09879efbf12e33bcd51ead4a66006ac802cd563a66c4f3373b9727"
+  name = "github.com/PuerkitoBio/urlesc"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "de5bf2ad457846296e2031421a34e2568e304e35"
+
+[[projects]]
   digest = "1:777f5600fe3087afb3f3742efa38551a9865d4e6e1b584c0e56074ba05944181"
   name = "github.com/Shopify/sarama"
   packages = [
@@ -116,6 +132,19 @@
   pruneopts = "NUT"
   revision = "de209a9ffae3256185a6bb135d1a0ada7b2b5f09"
   version = "v2.1.0"
+
+[[projects]]
+  digest = "1:983a535abde08b390d02f80f0721c4cb6e9e266ff557047d00663b9b6cd64a75"
+  name = "github.com/colinmarc/hdfs"
+  packages = [
+    ".",
+    "protocol/hadoop_common",
+    "protocol/hadoop_hdfs",
+    "rpc",
+  ]
+  pruneopts = "NUT"
+  revision = "e2c734b8518275eeb74661de28966a00b9b6c212"
+  version = "v1.1.3"
 
 [[projects]]
   branch = "master"
@@ -272,12 +301,71 @@
   version = "v0.4.0"
 
 [[projects]]
+  digest = "1:3758c86e787dfe5792a23430f34636106a16da914446724399c9c12f121a225d"
+  name = "github.com/go-openapi/jsonpointer"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ed123515f087412cd7ef02e49b0b0a5e6a79a360"
+  version = "v0.19.3"
+
+[[projects]]
+  digest = "1:98abd61947ff5c7c6fcfec5473d02a4821ed3a2dd99a4fbfdb7925b0dd745546"
+  name = "github.com/go-openapi/jsonreference"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "82f31475a8f7a12bc26962f6e26ceade8ea6f66a"
+  version = "v0.19.3"
+
+[[projects]]
+  digest = "1:da2ad0356c603997317f60dfa8c571df6c60411b4359846b8b9ed735b62e913f"
+  name = "github.com/go-openapi/spec"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "1297e9a4ddf9325269fe013d7c1300aac3985f92"
+  version = "v0.19.7"
+
+[[projects]]
+  digest = "1:b8bae5ae3c3ccc79b8af1cf6658aa8255711b7eb4eabfb3a3ac785129a372b0c"
+  name = "github.com/go-openapi/swag"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ab98f8e6456407f6afd63e441c5304d6ef60cb7f"
+  version = "v0.19.9"
+
+[[projects]]
   digest = "1:91358b3a314c1ddfd4d6445ca9c1fb846842c31c153e626730594b3c95f73f4a"
   name = "github.com/go-stack/stack"
   packages = ["."]
   pruneopts = "NUT"
   revision = "2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a"
   version = "v1.8.0"
+
+[[projects]]
+  digest = "1:416b666cb79f02526f115d16aba8b318b854f3c964107081311e9df6a08b39a9"
+  name = "github.com/gobuffalo/envy"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "3dbe4c98c1c77e4a8fac053251c262a85e048f21"
+  version = "v1.9.0"
+
+[[projects]]
+  digest = "1:aeb8d51f4224133eb54a81ee7963a39fb9154819fa912ef4b1f4f34bc3a1fd66"
+  name = "github.com/gobuffalo/packd"
+  packages = [
+    ".",
+    "internal/takeon/github.com/markbates/errx",
+  ]
+  pruneopts = "NUT"
+  revision = "128b5da43f114d0f9af8b4bba549b02e3496dfa8"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:a8f1488ab6d1e634374e4ae4fafed82f36088a7f0c9178cef64388f70fc4afcd"
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c6a5045204dacffbe11d9f6c68485ae7e7fe3d19"
+  version = "v2.8.0"
 
 [[projects]]
   digest = "1:a3d6554400182effbda952d37d18a8212caccb51363612baee27d4f5a13139d6"
@@ -381,9 +469,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9be51560fb2b402591efb1a7eb2cf0445a7ff50f1e0cb801508b586bbdde649e"
+  digest = "1:bb8e924d3b4de82ab63e24c7ef69edceedad3a7c1a14fbe7805ec31d51c9bf08"
   name = "github.com/hyperledger/fabric-chaincode-go"
   packages = [
+    "pkg/attrmgr",
+    "pkg/cid",
     "pkg/statebased",
     "shim",
     "shim/internal",
@@ -391,6 +481,22 @@
   ]
   pruneopts = "NUT"
   revision = "2d899240a7ed642a381ba9df2f6b0c303cb149dc"
+
+[[projects]]
+  digest = "1:33e7a8d765883a4ec0196509402147c3bddc6821edcc4cb1139f2322ad4bea9f"
+  name = "github.com/hyperledger/fabric-contract-api-go"
+  packages = [
+    "contractapi",
+    "contractapi/utils",
+    "internal",
+    "internal/types",
+    "internal/utils",
+    "metadata",
+    "serializer",
+  ]
+  pruneopts = "NUT"
+  revision = "e044a933e2a278da133980516a037fce3e65d307"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:0f4305e5a43e324844412168385a23ff23dafc55369fcbbc2ea77fb974f828cc"
@@ -438,6 +544,14 @@
   version = "v1.0"
 
 [[projects]]
+  digest = "1:da62aa6632d04e080b8a8b85a59ed9ed1550842a0099a55f3ae3a20d02a3745a"
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:58999a98719fddbac6303cb17e8d85b945f60b72f48e3a2df6b950b97fa926f1"
   name = "github.com/konsorten/go-windows-terminal-sequences"
   packages = ["."]
@@ -476,6 +590,18 @@
   pruneopts = "NUT"
   revision = "de8848e004dd33dc07a2947b3d76f618a7fc7ef1"
   version = "v1.8.1"
+
+[[projects]]
+  digest = "1:7bbccd3dd7998f2a180264ec1d12e362ed8e02f55ea7b82ac0d0f48ffa2d8888"
+  name = "github.com/mailru/easyjson"
+  packages = [
+    "buffer",
+    "jlexer",
+    "jwriter",
+  ]
+  pruneopts = "NUT"
+  revision = "8edcc4e51f39ddbd3505a3386aff3f435a7fd028"
+  version = "v0.7.1"
 
 [[projects]]
   digest = "1:70ef8268170621826f8c111ac1674afe75136f526f449453b4a6631c6dba1946"
@@ -668,6 +794,18 @@
   revision = "3113b8401b8a98917cde58f8bbd42a1b1c03b1fd"
 
 [[projects]]
+  digest = "1:e09ada96a5a41deda4748b1659cc8953961799e798aea557257b56baee4ecaf3"
+  name = "github.com/rogpeppe/go-internal"
+  packages = [
+    "modfile",
+    "module",
+    "semver",
+  ]
+  pruneopts = "NUT"
+  revision = "bc89b17ba21ce5b8a495fa55a94e3fe32ecf4ed8"
+  version = "v1.5.2"
+
+[[projects]]
   digest = "1:f4aaa07a6c33f2b354726d0571acbc8ca118837c75709f6353203ae1a3f8eeab"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -784,6 +922,30 @@
   version = "v1.1.10"
 
 [[projects]]
+  branch = "master"
+  digest = "1:6dadf98a3dd66127f7a6b0314d9dc4301e496aa5e3095b9f630bf3621c50bd13"
+  name = "github.com/xeipuuv/gojsonpointer"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "02993c407bfbf5f6dae44c4f4b1cf6a39b5fc5bb"
+
+[[projects]]
+  branch = "master"
+  digest = "1:131db546a264d76defd7a4ce233796316b2ab856991cb4b7d6ced2a3c7294ad3"
+  name = "github.com/xeipuuv/gojsonreference"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "bd5ef7bd5415a7ac448318e64f11a24cd21e594b"
+
+[[projects]]
+  digest = "1:edc620626ec0133d5d5077fead99ccff6a63f435a55fbf53cbb40df98a0a853d"
+  name = "github.com/xeipuuv/gojsonschema"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "82fcdeb203eb6ab2a67d0a623d9c19e5e5a64927"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:7994f0511ea39eb049909df41301aabf5e6289b97c1084f7cc8c351d765469e1"
   name = "go.etcd.io/etcd"
   packages = [
@@ -883,7 +1045,7 @@
   revision = "04f50cda93cbb67f2afa353c52f342100e80e625"
 
 [[projects]]
-  digest = "1:28deae5fe892797ff37a317b5bcda96d11d1c90dadd89f1337651df3bc4c586e"
+  digest = "1:0b5dc8c3581fc3ea2b80cc2e360dfb9c2d61dd0cba0d2fe247e8edd3e83f7551"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -914,6 +1076,7 @@
     "unicode/cldr",
     "unicode/norm",
     "unicode/rangetable",
+    "width",
   ]
   pruneopts = "NUT"
   revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
@@ -1044,6 +1207,7 @@
     "github.com/Shopify/sarama",
     "github.com/Shopify/sarama/mocks",
     "github.com/VictoriaMetrics/fastcache",
+    "github.com/colinmarc/hdfs",
     "github.com/davecgh/go-spew/spew",
     "github.com/fsouza/go-dockerclient",
     "github.com/go-kit/kit/metrics",
@@ -1065,6 +1229,7 @@
     "github.com/hyperledger/fabric-chaincode-go/pkg/statebased",
     "github.com/hyperledger/fabric-chaincode-go/shim",
     "github.com/hyperledger/fabric-chaincode-go/shimtest",
+    "github.com/hyperledger/fabric-contract-api-go/contractapi",
     "github.com/hyperledger/fabric-lib-go/healthz",
     "github.com/hyperledger/fabric-protos-go/common",
     "github.com/hyperledger/fabric-protos-go/discovery",
