@@ -4,8 +4,9 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEcdsaPrivateKeyVrf(t *testing.T) {
@@ -21,7 +22,7 @@ func TestEcdsaPrivateKeyVrf(t *testing.T) {
 	pk, err := k.PublicKey()
 	assert.NoError(t, err)
 
-	// Sign
+	// Compute Vrf
 	msg := []byte("Hello World")
 	rand, proof, err := vrfer.Vrf(k, msg)
 	assert.NoError(t, err)

@@ -37,6 +37,8 @@ type PeerDeliverClient interface {
 type Signer interface {
 	Sign(msg []byte) ([]byte, error)
 	Serialize() ([]byte, error)
+	// Impl by zig
+	Vrf(message []byte) (rand, proof []byte, err error)
 }
 
 // Writer defines the interface needed for writing a file

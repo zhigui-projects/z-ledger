@@ -1276,6 +1276,7 @@
     "github.com/onsi/gomega/gstruct",
     "github.com/onsi/gomega/matchers",
     "github.com/onsi/gomega/types",
+    "github.com/ontio/ontology-crypto/ec",
     "github.com/ontio/ontology-crypto/keypair",
     "github.com/ontio/ontology-crypto/vrf",
     "github.com/pkg/errors",
