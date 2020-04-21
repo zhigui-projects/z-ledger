@@ -70,6 +70,10 @@ type ConsenterSupport struct {
 	BlockVerificationErr error
 }
 
+func (mcs *ConsenterSupport) Vrf(message []byte) (rand, proof []byte, err error) {
+	panic("implement me")
+}
+
 // Block returns the block with the given number or nil if not found
 func (mcs *ConsenterSupport) Block(number uint64) *cb.Block {
 	return mcs.BlockByIndex[number]

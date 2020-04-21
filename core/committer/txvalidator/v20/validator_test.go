@@ -379,6 +379,15 @@ func (msi *mockSI) GetPublicVersion() msp.Identity {
 	return msi
 }
 
+// Impl by zig
+func (msi *mockSI) Vrf(msg []byte) (rand, proof []byte, err error) {
+	panic("implement me")
+}
+
+func (msi *mockSI) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
+}
+
 // MSP mock for the parallel validation test
 type mockMSP struct {
 	ID           msp.Identity
@@ -431,6 +440,15 @@ func (fake *mockMSP) Validate(id msp.Identity) error {
 
 func (fake *mockMSP) SatisfiesPrincipal(id msp.Identity, principal *protosmsp.MSPPrincipal) error {
 	return fake.SatPrinError
+}
+
+// Impl by zig
+func (msi *mockMSP) Vrf(msg []byte) (rand, proof []byte, err error) {
+	panic("implement me")
+}
+
+func (msi *mockMSP) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
 }
 
 // parallel validation on a block with a high number of transactions and sbe dependencies among those
