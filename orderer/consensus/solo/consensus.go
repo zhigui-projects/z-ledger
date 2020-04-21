@@ -123,6 +123,7 @@ func (ch *chain) main() {
 				for _, batch := range batches {
 					block := ch.support.CreateNextBlock(batch)
 					ch.support.WriteBlock(block, nil)
+					logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, ch.support.ChannelID())
 				}
 
 				switch {
@@ -152,10 +153,12 @@ func (ch *chain) main() {
 				if batch != nil {
 					block := ch.support.CreateNextBlock(batch)
 					ch.support.WriteBlock(block, nil)
+					logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, ch.support.ChannelID())
 				}
 
 				block := ch.support.CreateNextBlock([]*cb.Envelope{msg.configMsg})
 				ch.support.WriteConfigBlock(block, nil)
+				logger.Infof("Writing config block [%d] for channelId: %s to ledger", block.Header.Number, ch.support.ChannelID())
 				timer = nil
 			}
 		case <-timer:
@@ -170,6 +173,7 @@ func (ch *chain) main() {
 			logger.Debugf("Batch timer expired, creating block")
 			block := ch.support.CreateNextBlock(batch)
 			ch.support.WriteBlock(block, nil)
+			logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, ch.support.ChannelID())
 		case <-ch.exitChan:
 			logger.Debugf("Exiting")
 			return

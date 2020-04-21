@@ -72,7 +72,7 @@ func New(conf *localconfig.TopLevel, srvConf comm.ServerConfig) consensus.Consen
 }
 
 func (sbft *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb.Metadata) (consensus.Chain, error) {
-	logger.Infof("Starting a chain: %d", support.ChannelID())
+	logger.Infof("Starting a chain: %s", support.ChannelID())
 
 	m := &sb.ConfigMetadata{}
 	if err := proto.Unmarshal(support.SharedConfig().SbftMetadata(), m); err != nil {

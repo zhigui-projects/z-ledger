@@ -52,6 +52,11 @@ type ChannelConfig struct {
 	invocationsMutex sync.RWMutex
 }
 
+// Impl by zig
+func (fake *ChannelConfig) ConsensusType() string {
+	panic("implement me")
+}
+
 func (fake *ChannelConfig) BlockDataHashingStructureWidth() uint32 {
 	fake.blockDataHashingStructureWidthMutex.Lock()
 	ret, specificReturn := fake.blockDataHashingStructureWidthReturnsOnCall[len(fake.blockDataHashingStructureWidthArgsForCall)]
