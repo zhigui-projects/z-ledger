@@ -110,7 +110,7 @@ type Registrar struct {
 	templator          msgprocessor.ChannelConfigTemplator
 	callbacks          []channelconfig.BundleActor
 	bccsp              bccsp.BCCSP
-	// Imp by zig
+	// Impl by zig
 	// PEM-encoded X509 public key to be used for TLS communication
 	cert []byte
 }

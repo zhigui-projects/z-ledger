@@ -28,6 +28,16 @@ type ChannelConfig struct {
 	capabilitiesReturnsOnCall map[int]struct {
 		result1 channelconfig.ChannelCapabilities
 	}
+	ConsensusTypeStub        func() string
+	consensusTypeMutex       sync.RWMutex
+	consensusTypeArgsForCall []struct {
+	}
+	consensusTypeReturns struct {
+		result1 string
+	}
+	consensusTypeReturnsOnCall map[int]struct {
+		result1 string
+	}
 	HashingAlgorithmStub        func() func(input []byte) []byte
 	hashingAlgorithmMutex       sync.RWMutex
 	hashingAlgorithmArgsForCall []struct {
@@ -50,11 +60,6 @@ type ChannelConfig struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-// Impl by zig
-func (fake *ChannelConfig) ConsensusType() string {
-	panic("implement me")
 }
 
 func (fake *ChannelConfig) BlockDataHashingStructureWidth() uint32 {
@@ -158,6 +163,58 @@ func (fake *ChannelConfig) CapabilitiesReturnsOnCall(i int, result1 channelconfi
 	}
 	fake.capabilitiesReturnsOnCall[i] = struct {
 		result1 channelconfig.ChannelCapabilities
+	}{result1}
+}
+
+func (fake *ChannelConfig) ConsensusType() string {
+	fake.consensusTypeMutex.Lock()
+	ret, specificReturn := fake.consensusTypeReturnsOnCall[len(fake.consensusTypeArgsForCall)]
+	fake.consensusTypeArgsForCall = append(fake.consensusTypeArgsForCall, struct {
+	}{})
+	fake.recordInvocation("ConsensusType", []interface{}{})
+	fake.consensusTypeMutex.Unlock()
+	if fake.ConsensusTypeStub != nil {
+		return fake.ConsensusTypeStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.consensusTypeReturns
+	return fakeReturns.result1
+}
+
+func (fake *ChannelConfig) ConsensusTypeCallCount() int {
+	fake.consensusTypeMutex.RLock()
+	defer fake.consensusTypeMutex.RUnlock()
+	return len(fake.consensusTypeArgsForCall)
+}
+
+func (fake *ChannelConfig) ConsensusTypeCalls(stub func() string) {
+	fake.consensusTypeMutex.Lock()
+	defer fake.consensusTypeMutex.Unlock()
+	fake.ConsensusTypeStub = stub
+}
+
+func (fake *ChannelConfig) ConsensusTypeReturns(result1 string) {
+	fake.consensusTypeMutex.Lock()
+	defer fake.consensusTypeMutex.Unlock()
+	fake.ConsensusTypeStub = nil
+	fake.consensusTypeReturns = struct {
+		result1 string
+	}{result1}
+}
+
+func (fake *ChannelConfig) ConsensusTypeReturnsOnCall(i int, result1 string) {
+	fake.consensusTypeMutex.Lock()
+	defer fake.consensusTypeMutex.Unlock()
+	fake.ConsensusTypeStub = nil
+	if fake.consensusTypeReturnsOnCall == nil {
+		fake.consensusTypeReturnsOnCall = make(map[int]struct {
+			result1 string
+		})
+	}
+	fake.consensusTypeReturnsOnCall[i] = struct {
+		result1 string
 	}{result1}
 }
 
@@ -272,6 +329,8 @@ func (fake *ChannelConfig) Invocations() map[string][][]interface{} {
 	defer fake.blockDataHashingStructureWidthMutex.RUnlock()
 	fake.capabilitiesMutex.RLock()
 	defer fake.capabilitiesMutex.RUnlock()
+	fake.consensusTypeMutex.RLock()
+	defer fake.consensusTypeMutex.RUnlock()
 	fake.hashingAlgorithmMutex.RLock()
 	defer fake.hashingAlgorithmMutex.RUnlock()
 	fake.ordererAddressesMutex.RLock()
