@@ -48,7 +48,7 @@ var attrsToIndex = []blkstorage.IndexableAttr{
 }
 
 // NewProvider returns the handle to the provider
-func NewProvider(blockStoreDir string, archiveConf *ArchiveConfig, conf *pvtdatastorage.PrivateDataConfig,
+func NewProvider(blockStoreDir string, archiveConf *ledger.ArchiveConfig, conf *pvtdatastorage.PrivateDataConfig,
 	metricsProvider metrics.Provider) (*Provider, error) {
 	// Initialize the block storage
 	indexConfig := &blkstorage.IndexConfig{AttrsToIndex: attrsToIndex}
@@ -57,8 +57,8 @@ func NewProvider(blockStoreDir string, archiveConf *ArchiveConfig, conf *pvtdata
 
 	if archiveConf.Enabled {
 		logger.Info("Peer ledger archive is enabled")
-		blockStoreProvider = hybridblkstorage.NewProvider(
-			hybridblkstorage.NewConf(ledgerconfig.GetBlockStorePath(), ledgerconfig.GetMaxBlockfileSize()),
+		blockStoreProvider, err = hybridblkstorage.NewProvider(
+			hybridblkstorage.NewConf(blockStoreDir, maxBlockFileSize),
 			indexConfig,
 			metricsProvider)
 	} else {
@@ -70,9 +70,9 @@ func NewProvider(blockStoreDir string, archiveConf *ArchiveConfig, conf *pvtdata
 			indexConfig,
 			metricsProvider,
 		)
-		if err != nil {
-			return nil, err
-		}
+	}
+	if err != nil {
+		return nil, err
 	}
 	pvtStoreProvider, err := pvtdatastorage.NewProvider(conf)
 	if err != nil {
