@@ -131,6 +131,11 @@ type Identity struct {
 	Msg            []byte
 }
 
+// Impl by zig
+func (id *Identity) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
+}
+
 func (id *Identity) Anonymous() bool {
 	panic("implement me")
 }

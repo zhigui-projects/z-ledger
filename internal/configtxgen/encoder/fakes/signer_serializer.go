@@ -31,6 +31,21 @@ type SignerSerializer struct {
 		result1 []byte
 		result2 error
 	}
+	VrfStub        func([]byte) ([]byte, []byte, error)
+	vrfMutex       sync.RWMutex
+	vrfArgsForCall []struct {
+		arg1 []byte
+	}
+	vrfReturns struct {
+		result1 []byte
+		result2 []byte
+		result3 error
+	}
+	vrfReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 []byte
+		result3 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -158,6 +173,77 @@ func (fake *SignerSerializer) SignReturnsOnCall(i int, result1 []byte, result2 e
 	}{result1, result2}
 }
 
+func (fake *SignerSerializer) Vrf(arg1 []byte) ([]byte, []byte, error) {
+	var arg1Copy []byte
+	if arg1 != nil {
+		arg1Copy = make([]byte, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.vrfMutex.Lock()
+	ret, specificReturn := fake.vrfReturnsOnCall[len(fake.vrfArgsForCall)]
+	fake.vrfArgsForCall = append(fake.vrfArgsForCall, struct {
+		arg1 []byte
+	}{arg1Copy})
+	fake.recordInvocation("Vrf", []interface{}{arg1Copy})
+	fake.vrfMutex.Unlock()
+	if fake.VrfStub != nil {
+		return fake.VrfStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	fakeReturns := fake.vrfReturns
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *SignerSerializer) VrfCallCount() int {
+	fake.vrfMutex.RLock()
+	defer fake.vrfMutex.RUnlock()
+	return len(fake.vrfArgsForCall)
+}
+
+func (fake *SignerSerializer) VrfCalls(stub func([]byte) ([]byte, []byte, error)) {
+	fake.vrfMutex.Lock()
+	defer fake.vrfMutex.Unlock()
+	fake.VrfStub = stub
+}
+
+func (fake *SignerSerializer) VrfArgsForCall(i int) []byte {
+	fake.vrfMutex.RLock()
+	defer fake.vrfMutex.RUnlock()
+	argsForCall := fake.vrfArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *SignerSerializer) VrfReturns(result1 []byte, result2 []byte, result3 error) {
+	fake.vrfMutex.Lock()
+	defer fake.vrfMutex.Unlock()
+	fake.VrfStub = nil
+	fake.vrfReturns = struct {
+		result1 []byte
+		result2 []byte
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *SignerSerializer) VrfReturnsOnCall(i int, result1 []byte, result2 []byte, result3 error) {
+	fake.vrfMutex.Lock()
+	defer fake.vrfMutex.Unlock()
+	fake.VrfStub = nil
+	if fake.vrfReturnsOnCall == nil {
+		fake.vrfReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 []byte
+			result3 error
+		})
+	}
+	fake.vrfReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 []byte
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *SignerSerializer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -165,6 +251,8 @@ func (fake *SignerSerializer) Invocations() map[string][][]interface{} {
 	defer fake.serializeMutex.RUnlock()
 	fake.signMutex.RLock()
 	defer fake.signMutex.RUnlock()
+	fake.vrfMutex.RLock()
+	defer fake.vrfMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

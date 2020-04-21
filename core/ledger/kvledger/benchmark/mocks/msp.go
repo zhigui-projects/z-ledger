@@ -88,6 +88,11 @@ func (msp *noopmsp) IsWellFormed(_ *mspprotos.SerializedIdentity) error {
 type noopidentity struct {
 }
 
+// Impl by zig
+func (id *noopidentity) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
+}
+
 func newNoopIdentity() (msp.Identity, error) {
 	return &noopidentity{}, nil
 }
@@ -130,6 +135,11 @@ func (id *noopidentity) Serialize() ([]byte, error) {
 
 type noopsigningidentity struct {
 	noopidentity
+}
+
+// Impl by zig
+func (id *noopsigningidentity) Vrf(msg []byte) (rand, proof []byte, err error) {
+	panic("implement me")
 }
 
 func newNoopSigningIdentity() (msp.SigningIdentity, error) {

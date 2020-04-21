@@ -18,8 +18,8 @@ func computeVrf(t *testing.T, kt keypair.KeyType, curve byte) {
 	if err != nil {
 		t.Fatalf("compute vrf: %v", err)
 	}
-	ret := CalcEndorser(v, 5, 2)
-	t.Logf("CalcEndorser ret: %v", ret)
+	ret, rand := CalcEndorser(v, 5, 2)
+	t.Logf("CalcEndorser ret: %v, rand: %v", ret, rand)
 }
 
 func TestCalcEndorser(t *testing.T) {

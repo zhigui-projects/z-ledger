@@ -280,11 +280,12 @@ func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedPro
 	if err != nil {
 		endorserLogger.Infof("ProcessProposal error: %v", err)
 	}
-	if ret := utils.CalcEndorser(rand, 10, 4); !ret {
-		endorserLogger.Infof("Not selected as endorser with vrf, value: %v, proof: %v", rand, proof)
+	ret, num := utils.CalcEndorser(rand, 10, 4)
+	if !ret {
+		endorserLogger.Infof("Not selected as endorser with vrf, number: %d", num)
 		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: "Not selected as endorser with vrf"}}, nil
 	}
-	endorserLogger.Infof("Selected as endorser with vrf, value: %v, proof: %v", rand, proof)
+	endorserLogger.Infof("Selected as endorser with vrf,  number: %d, value: %v, proof: %v", num, rand, proof)
 
 	// start time for computing elapsed time metric for successfully endorsed proposals
 	startTime := time.Now()

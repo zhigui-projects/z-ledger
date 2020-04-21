@@ -83,6 +83,11 @@ type MockIdentity struct {
 	msg      []byte
 }
 
+// Impl by zig
+func (id *MockIdentity) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
+}
+
 func (id *MockIdentity) Anonymous() bool {
 	panic("implement me")
 }
