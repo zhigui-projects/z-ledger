@@ -7,7 +7,9 @@ package kvledger
 
 import (
 	"github.com/hyperledger/fabric/common/ledger/blkstorage/fsblkstorage"
+	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
+	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
 	"github.com/pkg/errors"
 )
 
@@ -37,6 +39,9 @@ func ResetAllKVLedgers(rootFSPath string) error {
 func LoadPreResetHeight(rootFSPath string, ledgerIDs []string) (map[string]uint64, error) {
 	blockstorePath := BlockStorePath(rootFSPath)
 	logger.Infof("Loading prereset height from path [%s]", blockstorePath)
+	if ledgerconfig.IsArchiveEnabled() {
+		return hybridblkstorage.LoadPreResetHeight(blockstorePath, ledgerIDs)
+	}
 	return fsblkstorage.LoadPreResetHeight(blockstorePath, ledgerIDs)
 }
 
@@ -44,11 +49,17 @@ func LoadPreResetHeight(rootFSPath string, ledgerIDs []string) (map[string]uint6
 func ClearPreResetHeight(rootFSPath string, ledgerIDs []string) error {
 	blockstorePath := BlockStorePath(rootFSPath)
 	logger.Infof("Clearing off prereset height files from path [%s] for ledgerIDs [%#v]", blockstorePath, ledgerIDs)
+	if ledgerconfig.IsArchiveEnabled() {
+		return hybridblkstorage.ClearPreResetHeight(blockstorePath, ledgerIDs)
+	}
 	return fsblkstorage.ClearPreResetHeight(blockstorePath, ledgerIDs)
 }
 
 func resetBlockStorage(rootFSPath string) error {
 	blockstorePath := BlockStorePath(rootFSPath)
 	logger.Infof("Resetting BlockStore to genesis block at location [%s]", blockstorePath)
+	if ledgerconfig.IsArchiveEnabled() {
+		return hybridblkstorage.ResetBlockStore(blockstorePath)
+	}
 	return fsblkstorage.ResetBlockStore(blockstorePath)
 }

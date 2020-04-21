@@ -42,9 +42,17 @@ func ledgerConfig() *ledger.Config {
 		purgeInterval = viper.GetInt("ledger.pvtdataStore.purgeInterval")
 	}
 
+	enableArchive := false
+	if viper.IsSet("ledger.archive.enable") {
+		enableArchive = viper.GetBool("ledger.archive.enable")
+	}
+
 	rootFSPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "ledgersData")
 	conf := &ledger.Config{
 		RootFSPath: rootFSPath,
+		ArchiveConfig: &ledger.ArchiveConfig{
+			Enabled: enableArchive,
+		},
 		StateDBConfig: &ledger.StateDBConfig{
 			StateDatabase: viper.GetString("ledger.state.stateDatabase"),
 			CouchDB:       &couchdb.Config{},

@@ -38,12 +38,19 @@ type Initializer struct {
 type Config struct {
 	// RootFSPath is the top-level directory where ledger files are stored.
 	RootFSPath string
+	// ArchiveConfig holds the configuration parameters for the archive service.
+	ArchiveConfig *ArchiveConfig
 	// StateDBConfig holds the configuration parameters for the state database.
 	StateDBConfig *StateDBConfig
 	// PrivateDataConfig holds the configuration parameters for the private data store.
 	PrivateDataConfig *PrivateDataConfig
 	// HistoryDBConfig holds the configuration parameters for the transaction history database.
 	HistoryDBConfig *HistoryDBConfig
+}
+
+// ArchiveConfig is a structure used to configure the archive service for the ledger.
+type ArchiveConfig struct {
+	Enabled bool
 }
 
 // StateDBConfig is a structure used to configure the state parameters for the ledger.

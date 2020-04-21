@@ -14,8 +14,10 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage/fsblkstorage"
+	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage"
 	"github.com/hyperledger/fabric/common/metrics"
 	"github.com/hyperledger/fabric/core/ledger"
+	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
 	"github.com/hyperledger/fabric/core/ledger/pvtdatapolicy"
 	"github.com/hyperledger/fabric/core/ledger/pvtdatastorage"
 )
@@ -46,19 +48,31 @@ var attrsToIndex = []blkstorage.IndexableAttr{
 }
 
 // NewProvider returns the handle to the provider
-func NewProvider(blockStoreDir string, conf *pvtdatastorage.PrivateDataConfig, metricsProvider metrics.Provider) (*Provider, error) {
+func NewProvider(blockStoreDir string, archiveConf *ArchiveConfig, conf *pvtdatastorage.PrivateDataConfig,
+	metricsProvider metrics.Provider) (*Provider, error) {
 	// Initialize the block storage
 	indexConfig := &blkstorage.IndexConfig{AttrsToIndex: attrsToIndex}
-	blockStoreProvider, err := fsblkstorage.NewProvider(
-		fsblkstorage.NewConf(
-			blockStoreDir,
-			maxBlockFileSize,
-		),
-		indexConfig,
-		metricsProvider,
-	)
-	if err != nil {
-		return nil, err
+	var blockStoreProvider blkstorage.BlockStoreProvider
+	var err error
+
+	if archiveConf.Enabled {
+		logger.Info("Peer ledger archive is enabled")
+		blockStoreProvider = hybridblkstorage.NewProvider(
+			hybridblkstorage.NewConf(ledgerconfig.GetBlockStorePath(), ledgerconfig.GetMaxBlockfileSize()),
+			indexConfig,
+			metricsProvider)
+	} else {
+		blockStoreProvider, err = fsblkstorage.NewProvider(
+			fsblkstorage.NewConf(
+				blockStoreDir,
+				maxBlockFileSize,
+			),
+			indexConfig,
+			metricsProvider,
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 	pvtStoreProvider, err := pvtdatastorage.NewProvider(conf)
 	if err != nil {
@@ -337,22 +351,34 @@ func constructPvtdataMap(pvtdata []*ledger.TxPvtData) ledger.TxPvtDataMap {
 
 // LoadPreResetHeight returns the pre reset height for the specified ledgers.
 func LoadPreResetHeight(blockstorePath string, ledgerIDs []string) (map[string]uint64, error) {
+	if ledgerconfig.IsArchiveEnabled() {
+		return hybridblkstorage.LoadPreResetHeight(blockstorePath, ledgerIDs)
+	}
 	return fsblkstorage.LoadPreResetHeight(blockstorePath, ledgerIDs)
 }
 
 // ResetBlockStore resets all ledgers to the genesis block.
 func ResetBlockStore(blockstorePath string) error {
+	if ledgerconfig.IsArchiveEnabled() {
+		return hybridblkstorage.ResetBlockStore(blockstorePath)
+	}
 	return fsblkstorage.ResetBlockStore(blockstorePath)
 }
 
 // ValidateRollbackParams performs necessary validation on the input given for
 // the rollback operation.
 func ValidateRollbackParams(blockstorePath, ledgerID string, blockNum uint64) error {
+	if ledgerconfig.IsArchiveEnabled() {
+		return hybridblkstorage.ValidateRollbackParams(blockstorePath, ledgerID, blockNum)
+	}
 	return fsblkstorage.ValidateRollbackParams(blockstorePath, ledgerID, blockNum)
 }
 
 // Rollback reverts changes made to the block store beyond a given block number.
 func Rollback(blockstorePath, ledgerID string, blockNum uint64) error {
 	indexConfig := &blkstorage.IndexConfig{AttrsToIndex: attrsToIndex}
+	if ledgerconfig.IsArchiveEnabled() {
+		return hybridblkstorage.Rollback(blockstorePath, ledgerID, blockNum, indexConfig)
+	}
 	return fsblkstorage.Rollback(blockstorePath, ledgerID, blockNum, indexConfig)
 }

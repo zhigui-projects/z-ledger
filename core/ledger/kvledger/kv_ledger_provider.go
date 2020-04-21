@@ -146,6 +146,7 @@ func (p *Provider) initLedgerStorageProvider() error {
 
 	ledgerStoreProvider, err := ledgerstorage.NewProvider(
 		BlockStorePath(p.initializer.Config.RootFSPath),
+		p.initializer.ArchiveConfig,
 		privateData,
 		p.initializer.MetricsProvider,
 	)
