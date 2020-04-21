@@ -44,6 +44,8 @@ type CSP struct {
 	Signers       map[reflect.Type]Signer
 	Verifiers     map[reflect.Type]Verifier
 	Hashers       map[reflect.Type]Hasher
+	Vrfers        map[reflect.Type]Vrfer
+	VrfVerifiers  map[reflect.Type]VrfVerifier
 }
 
 func New(keyStore bccsp.KeyStore) (*CSP, error) {
@@ -59,10 +61,12 @@ func New(keyStore bccsp.KeyStore) (*CSP, error) {
 	keyGenerators := make(map[reflect.Type]KeyGenerator)
 	keyDerivers := make(map[reflect.Type]KeyDeriver)
 	keyImporters := make(map[reflect.Type]KeyImporter)
+	Vrfers := make(map[reflect.Type]Vrfer)
+	VrfVerifiers := make(map[reflect.Type]VrfVerifier)
 
 	csp := &CSP{keyStore,
 		keyGenerators, keyDerivers, keyImporters, encryptors,
-		decryptors, signers, verifiers, hashers}
+		decryptors, signers, verifiers, hashers, Vrfers, VrfVerifiers}
 
 	return csp, nil
 }
@@ -306,6 +310,55 @@ func (csp *CSP) Decrypt(k bccsp.Key, ciphertext []byte, opts bccsp.DecrypterOpts
 	return
 }
 
+func (csp *CSP) Vrf(k bccsp.Key, msg []byte) (rand, proof []byte, err error) {
+	if k == nil {
+		return nil, nil, errors.New("Invalid Key. It must not be nil.")
+	}
+	if len(msg) == 0 {
+		return nil, nil, errors.New("Invalid msg. Cannot be empty.")
+	}
+
+	keyType := reflect.TypeOf(k)
+	vrfer, found := csp.Vrfers[keyType]
+	if !found {
+		return nil, nil, errors.Errorf("Unsupported 'Vrfer' provided [%s]", keyType)
+	}
+
+	rand, proof, err = vrfer.Vrf(k, msg)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "Failed vrf for [%s]", keyType)
+	}
+
+	return
+}
+
+func (csp *CSP) VrfVerify(k bccsp.Key, msg, rand, proof []byte) (bool, error) {
+	if k == nil {
+		return false, errors.New("Invalid Key. It must not be nil.")
+	}
+	if len(msg) == 0 {
+		return false, errors.New("Invalid msg. Cannot be empty.")
+	}
+	if len(rand) == 0 {
+		return false, errors.New("Invalid rand. Cannot be empty.")
+	}
+	if len(proof) == 0 {
+		return false, errors.New("Invalid proof. Cannot be empty.")
+	}
+
+	vrfVerifier, found := csp.VrfVerifiers[reflect.TypeOf(k)]
+	if !found {
+		return false, errors.Errorf("Unsupported 'VrfVerifiers' provided [%v]", k)
+	}
+
+	valid, err := vrfVerifier.VrfVerify(k, msg, rand, proof)
+	if err != nil {
+		return false, errors.Wrapf(err, "Failed vrf verifing for [%v]", k)
+	}
+
+	return valid, nil
+}
+
 // AddWrapper binds the passed type to the passed wrapper.
 // Notice that that wrapper must be an instance of one of the following interfaces:
 // KeyGenerator, KeyDeriver, KeyImporter, Encryptor, Decryptor, Signer, Verifier, Hasher.
@@ -333,6 +386,10 @@ func (csp *CSP) AddWrapper(t reflect.Type, w interface{}) error {
 		csp.Verifiers[t] = dt
 	case Hasher:
 		csp.Hashers[t] = dt
+	case Vrfer:
+		csp.Vrfers[t] = dt
+	case VrfVerifier:
+		csp.VrfVerifiers[t] = dt
 	default:
 		return errors.Errorf("wrapper type not valid, must be on of: KeyGenerator, KeyDeriver, KeyImporter, Encryptor, Decryptor, Signer, Verifier, Hasher")
 	}

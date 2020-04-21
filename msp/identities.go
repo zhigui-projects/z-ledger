@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package msp
 
 import (
-	"crypto"
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/hex"
@@ -19,6 +18,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric/bccsp"
+	"github.com/hyperledger/fabric/bccsp/signer"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
@@ -215,6 +215,19 @@ func (id *identity) Serialize() ([]byte, error) {
 	return idBytes, nil
 }
 
+// VrfVerify returns true if rand and proof is correct using this identity generate
+func (id *identity) VrfVerify(msg, rand, proof []byte) bool {
+	valid, err := id.msp.bccsp.VrfVerify(id.pk, msg, rand, proof)
+	if err != nil {
+		mspIdentityLogger.Errorf("Vrf verify failed: %v", err)
+		return false
+	} else if !valid {
+		mspIdentityLogger.Errorf("Vrf verify is invalid.")
+		return false
+	}
+	return true
+}
+
 func (id *identity) getHashOpt(hashFamily string) (bccsp.HashOpts, error) {
 	switch hashFamily {
 	case bccsp.SHA2:
@@ -230,10 +243,10 @@ type signingidentity struct {
 	identity
 
 	// signer corresponds to the object that can produce signatures from this identity
-	signer crypto.Signer
+	signer signer.BccspSigner
 }
 
-func newSigningIdentity(cert *x509.Certificate, pk bccsp.Key, signer crypto.Signer, msp *bccspmsp) (SigningIdentity, error) {
+func newSigningIdentity(cert *x509.Certificate, pk bccsp.Key, signer signer.BccspSigner, msp *bccspmsp) (SigningIdentity, error) {
 	//mspIdentityLogger.Infof("Creating signing identity instance for ID %s", id)
 	mspId, err := newIdentity(cert, pk, msp)
 	if err != nil {
@@ -280,4 +293,9 @@ func (id *signingidentity) Sign(msg []byte) ([]byte, error) {
 // namely, the one that is only able to verify messages and not sign them
 func (id *signingidentity) GetPublicVersion() Identity {
 	return &id.identity
+}
+
+// Vrf returns the verifiable random function evaluated m and a proof
+func (id *signingidentity) Vrf(msg []byte) (rand, proof []byte, err error) {
+	return id.signer.Vrf(msg)
 }

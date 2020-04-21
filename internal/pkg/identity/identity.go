@@ -22,8 +22,13 @@ type Serializer interface {
 	Serialize() ([]byte, error)
 }
 
+type Vrfer interface {
+	Vrf(message []byte) (rand, proof []byte, err error)
+}
+
 // SignerSerializer groups the Sign and Serialize methods.
 type SignerSerializer interface {
 	Signer
 	Serializer
+	Vrfer
 }

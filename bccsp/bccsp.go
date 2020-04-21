@@ -131,4 +131,10 @@ type BCCSP interface {
 	// Decrypt decrypts ciphertext using key k.
 	// The opts argument should be appropriate for the algorithm used.
 	Decrypt(k Key, ciphertext []byte, opts DecrypterOpts) (plaintext []byte, err error)
+
+	// Vrf returns the verifiable random function evaluated m and a proof
+	Vrf(k Key, msg []byte) (rand, proof []byte, err error)
+
+	// Verify returns true if rand and proof is correct for digest
+	VrfVerify(k Key, msg, rand, proof []byte) (bool, error)
 }

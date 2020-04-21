@@ -16,6 +16,7 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-protos-go/transientstore"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
@@ -274,6 +275,13 @@ func (e *Endorser) preProcess(up *UnpackedProposal, channel *Channel) error {
 
 // ProcessProposal process the Proposal
 func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
+	rand, proof, err := e.Support.Vrf(signedProp.ProposalBytes)
+	if err != nil {
+		endorserLogger.Infof("ProcessProposal error: %v", err)
+	}
+	ret := utils.CalcEndorser(rand, 10, 4)
+	endorserLogger.Infof("ProcessProposal error %t, value: %v, proof: %v", ret, rand, proof)
+
 	// start time for computing elapsed time metric for successfully endorsed proposals
 	startTime := time.Now()
 	e.Metrics.ProposalsReceived.Add(1)

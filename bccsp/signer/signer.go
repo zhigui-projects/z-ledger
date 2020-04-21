@@ -22,9 +22,16 @@ type bccspCryptoSigner struct {
 	pk  interface{}
 }
 
+type BccspSigner interface {
+	crypto.Signer
+
+	// Vrf returns the verifiable random function evaluated m and a proof
+	Vrf(msg []byte) (rand, proof []byte, err error)
+}
+
 // New returns a new BCCSP-based crypto.Signer
 // for the given BCCSP instance and key.
-func New(csp bccsp.BCCSP, key bccsp.Key) (crypto.Signer, error) {
+func New(csp bccsp.BCCSP, key bccsp.Key) (BccspSigner, error) {
 	// Validate arguments
 	if csp == nil {
 		return nil, errors.New("bccsp instance must be different from nil.")
@@ -75,4 +82,9 @@ func (s *bccspCryptoSigner) Public() crypto.PublicKey {
 // the hash (as digest) and the hash function (as opts) to Sign.
 func (s *bccspCryptoSigner) Sign(rand io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
 	return s.csp.Sign(s.key, digest, opts)
+}
+
+// Vrf returns the verifiable random function evaluated m and a proof
+func (s *bccspCryptoSigner) Vrf(msg []byte) (rand, proof []byte, err error) {
+	return s.csp.Vrf(s.key, msg)
 }

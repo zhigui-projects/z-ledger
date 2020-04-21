@@ -92,3 +92,15 @@ type Hasher interface {
 	// If opts is nil, the default hash function will be returned.
 	GetHash(opts bccsp.HashOpts) (h hash.Hash, err error)
 }
+
+type Vrfer interface {
+
+	//Vrf returns the verifiable random function evaluated m and a proof
+	Vrf(k bccsp.Key, msg []byte) (rand, proof []byte, err error)
+}
+
+type VrfVerifier interface {
+
+	//VrfVerify returns true if rand and proof is correct for digest
+	VrfVerify(k bccsp.Key, msg, rand, proof []byte) (bool, error)
+}
