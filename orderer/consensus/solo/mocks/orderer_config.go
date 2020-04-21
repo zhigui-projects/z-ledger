@@ -104,6 +104,11 @@ type OrdererConfig struct {
 	invocationsMutex sync.RWMutex
 }
 
+// Impl by zig
+func (fake *OrdererConfig) SbftMetadata() []byte {
+	panic("implement me")
+}
+
 func (fake *OrdererConfig) BatchSize() *orderer.BatchSize {
 	fake.batchSizeMutex.Lock()
 	ret, specificReturn := fake.batchSizeReturnsOnCall[len(fake.batchSizeArgsForCall)]
