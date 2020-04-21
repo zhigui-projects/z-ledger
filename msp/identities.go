@@ -215,6 +215,7 @@ func (id *identity) Serialize() ([]byte, error) {
 	return idBytes, nil
 }
 
+// Impl by zig
 // VrfVerify returns true if rand and proof is correct using this identity generate
 func (id *identity) VrfVerify(msg, rand, proof []byte) bool {
 	valid, err := id.msp.bccsp.VrfVerify(id.pk, msg, rand, proof)
@@ -295,6 +296,7 @@ func (id *signingidentity) GetPublicVersion() Identity {
 	return &id.identity
 }
 
+// Impl by zig
 // Vrf returns the verifiable random function evaluated m and a proof
 func (id *signingidentity) Vrf(msg []byte) (rand, proof []byte, err error) {
 	return id.signer.Vrf(msg)

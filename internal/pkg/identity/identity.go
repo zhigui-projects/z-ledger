@@ -22,6 +22,7 @@ type Serializer interface {
 	Serialize() ([]byte, error)
 }
 
+// Impl by zig
 type Vrfer interface {
 	Vrf(message []byte) (rand, proof []byte, err error)
 }

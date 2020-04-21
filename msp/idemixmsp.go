@@ -641,6 +641,11 @@ func (id *idemixidentity) Serialize() ([]byte, error) {
 	return idBytes, nil
 }
 
+// Impl by zig
+func (id *idemixidentity) VrfVerify(msg, rand, proof []byte) bool {
+	panic("Not implemented")
+}
+
 type idemixSigningIdentity struct {
 	*idemixidentity
 	Cred         []byte
@@ -668,4 +673,9 @@ func (id *idemixSigningIdentity) Sign(msg []byte) ([]byte, error) {
 
 func (id *idemixSigningIdentity) GetPublicVersion() Identity {
 	return id.idemixidentity
+}
+
+// Impl by zig
+func (id *idemixSigningIdentity) Vrf(msg []byte) (rand, proof []byte, err error) {
+	panic("Not implemented")
 }

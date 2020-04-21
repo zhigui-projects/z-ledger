@@ -22,6 +22,7 @@ type bccspCryptoSigner struct {
 	pk  interface{}
 }
 
+// Impl by zig
 type BccspSigner interface {
 	crypto.Signer
 
@@ -84,6 +85,7 @@ func (s *bccspCryptoSigner) Sign(rand io.Reader, digest []byte, opts crypto.Sign
 	return s.csp.Sign(s.key, digest, opts)
 }
 
+// Impl by zig
 // Vrf returns the verifiable random function evaluated m and a proof
 func (s *bccspCryptoSigner) Vrf(msg []byte) (rand, proof []byte, err error) {
 	return s.csp.Vrf(s.key, msg)

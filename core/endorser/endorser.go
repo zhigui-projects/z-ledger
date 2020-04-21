@@ -275,12 +275,16 @@ func (e *Endorser) preProcess(up *UnpackedProposal, channel *Channel) error {
 
 // ProcessProposal process the Proposal
 func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
+	// Impl by zig
 	rand, proof, err := e.Support.Vrf(signedProp.ProposalBytes)
 	if err != nil {
 		endorserLogger.Infof("ProcessProposal error: %v", err)
 	}
-	ret := utils.CalcEndorser(rand, 10, 4)
-	endorserLogger.Infof("ProcessProposal error %t, value: %v, proof: %v", ret, rand, proof)
+	if ret := utils.CalcEndorser(rand, 10, 4); !ret {
+		endorserLogger.Infof("Not selected as endorser with vrf, value: %v, proof: %v", rand, proof)
+		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: "Not selected as endorser with vrf"}}, nil
+	}
+	endorserLogger.Infof("Selected as endorser with vrf, value: %v, proof: %v", rand, proof)
 
 	// start time for computing elapsed time metric for successfully endorsed proposals
 	startTime := time.Now()

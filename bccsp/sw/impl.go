@@ -310,6 +310,7 @@ func (csp *CSP) Decrypt(k bccsp.Key, ciphertext []byte, opts bccsp.DecrypterOpts
 	return
 }
 
+// Impl by zig
 func (csp *CSP) Vrf(k bccsp.Key, msg []byte) (rand, proof []byte, err error) {
 	if k == nil {
 		return nil, nil, errors.New("Invalid Key. It must not be nil.")
@@ -332,6 +333,7 @@ func (csp *CSP) Vrf(k bccsp.Key, msg []byte) (rand, proof []byte, err error) {
 	return
 }
 
+// Impl by zig
 func (csp *CSP) VrfVerify(k bccsp.Key, msg, rand, proof []byte) (bool, error) {
 	if k == nil {
 		return false, errors.New("Invalid Key. It must not be nil.")

@@ -165,6 +165,7 @@ type Identity interface {
 	// a serialized identity) or may require MSP validation
 	SatisfiesPrincipal(principal *msp.MSPPrincipal) error
 
+	// Impl by zig
 	// VrfVerify returns true if rand and proof is correct using this identity generate
 	VrfVerify(msg, rand, proof []byte) bool
 }
@@ -184,6 +185,7 @@ type SigningIdentity interface {
 	// GetPublicVersion returns the public parts of this identity
 	GetPublicVersion() Identity
 
+	// Impl by zig
 	// Vrf returns the verifiable random function evaluated m and a proof
 	Vrf(msg []byte) (rand, proof []byte, err error)
 }
