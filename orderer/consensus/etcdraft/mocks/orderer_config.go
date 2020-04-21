@@ -100,13 +100,18 @@ type OrdererConfig struct {
 	organizationsReturnsOnCall map[int]struct {
 		result1 map[string]channelconfig.OrdererOrg
 	}
+	SbftMetadataStub        func() []byte
+	sbftMetadataMutex       sync.RWMutex
+	sbftMetadataArgsForCall []struct {
+	}
+	sbftMetadataReturns struct {
+		result1 []byte
+	}
+	sbftMetadataReturnsOnCall map[int]struct {
+		result1 []byte
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-// Impl by zig
-func (fake *OrdererConfig) SbftMetadata() []byte {
-	panic("implement me")
 }
 
 func (fake *OrdererConfig) BatchSize() *orderer.BatchSize {
@@ -577,6 +582,58 @@ func (fake *OrdererConfig) OrganizationsReturnsOnCall(i int, result1 map[string]
 	}{result1}
 }
 
+func (fake *OrdererConfig) SbftMetadata() []byte {
+	fake.sbftMetadataMutex.Lock()
+	ret, specificReturn := fake.sbftMetadataReturnsOnCall[len(fake.sbftMetadataArgsForCall)]
+	fake.sbftMetadataArgsForCall = append(fake.sbftMetadataArgsForCall, struct {
+	}{})
+	fake.recordInvocation("SbftMetadata", []interface{}{})
+	fake.sbftMetadataMutex.Unlock()
+	if fake.SbftMetadataStub != nil {
+		return fake.SbftMetadataStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.sbftMetadataReturns
+	return fakeReturns.result1
+}
+
+func (fake *OrdererConfig) SbftMetadataCallCount() int {
+	fake.sbftMetadataMutex.RLock()
+	defer fake.sbftMetadataMutex.RUnlock()
+	return len(fake.sbftMetadataArgsForCall)
+}
+
+func (fake *OrdererConfig) SbftMetadataCalls(stub func() []byte) {
+	fake.sbftMetadataMutex.Lock()
+	defer fake.sbftMetadataMutex.Unlock()
+	fake.SbftMetadataStub = stub
+}
+
+func (fake *OrdererConfig) SbftMetadataReturns(result1 []byte) {
+	fake.sbftMetadataMutex.Lock()
+	defer fake.sbftMetadataMutex.Unlock()
+	fake.SbftMetadataStub = nil
+	fake.sbftMetadataReturns = struct {
+		result1 []byte
+	}{result1}
+}
+
+func (fake *OrdererConfig) SbftMetadataReturnsOnCall(i int, result1 []byte) {
+	fake.sbftMetadataMutex.Lock()
+	defer fake.sbftMetadataMutex.Unlock()
+	fake.SbftMetadataStub = nil
+	if fake.sbftMetadataReturnsOnCall == nil {
+		fake.sbftMetadataReturnsOnCall = make(map[int]struct {
+			result1 []byte
+		})
+	}
+	fake.sbftMetadataReturnsOnCall[i] = struct {
+		result1 []byte
+	}{result1}
+}
+
 func (fake *OrdererConfig) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -598,6 +655,8 @@ func (fake *OrdererConfig) Invocations() map[string][][]interface{} {
 	defer fake.maxChannelsCountMutex.RUnlock()
 	fake.organizationsMutex.RLock()
 	defer fake.organizationsMutex.RUnlock()
+	fake.sbftMetadataMutex.RLock()
+	defer fake.sbftMetadataMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
