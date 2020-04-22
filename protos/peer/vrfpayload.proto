@@ -9,11 +9,13 @@ option go_package = "github.com/hyperledger/fabric/protos/peer";
 package protos;
 
 message VrfPayload {
-    bytes vrf_result = 1;
+    bytes endorser = 1;
 
-    bytes vrf_proof = 2;
+    bytes vrf_result = 2;
 
-    bytes payload = 3;
+    bytes vrf_proof = 3;
+
+    bytes payload = 4;
 }
 
 message ChaincodeResponsePayload {
