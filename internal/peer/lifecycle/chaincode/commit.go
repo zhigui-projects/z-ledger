@@ -56,6 +56,7 @@ type CommitInput struct {
 	WaitForEvent             bool
 	WaitForEventTimeout      time.Duration
 	TxID                     string
+	VrfEnabled               bool
 }
 
 // Validate the input for a CommitChaincodeDefinition proposal
@@ -143,6 +144,7 @@ func CommitCmd(c *Committer, cryptoProvider bccsp.BCCSP) *cobra.Command {
 		"connectionProfile",
 		"waitForEvent",
 		"waitForEventTimeout",
+		"vrfEnabled",
 	}
 	attachFlags(chaincodeCommitCmd, flagList)
 
@@ -267,6 +269,7 @@ func (c *Committer) createInput() (*CommitInput, error) {
 		PeerAddresses:            peerAddresses,
 		WaitForEvent:             waitForEvent,
 		WaitForEventTimeout:      waitForEventTimeout,
+		VrfEnabled:               vrfEnabled,
 	}
 
 	return input, nil

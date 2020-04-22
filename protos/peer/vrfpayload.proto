@@ -15,3 +15,15 @@ message VrfPayload {
 
     bytes payload = 3;
 }
+
+message ChaincodeResponsePayload {
+    bytes payload = 1;
+
+    repeated VrfEndorsement vrf_endorsements = 2;
+}
+
+message VrfEndorsement {
+    bytes result = 1;
+
+    bytes proof = 2;
+}

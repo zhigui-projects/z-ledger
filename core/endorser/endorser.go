@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/msp"
+	pbVrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -275,17 +276,6 @@ func (e *Endorser) preProcess(up *UnpackedProposal, channel *Channel) error {
 
 // ProcessProposal process the Proposal
 func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-	// Impl by zig
-	rand, proof, err := e.Support.Vrf(signedProp.ProposalBytes)
-	if err != nil {
-		endorserLogger.Infof("ProcessProposal error: %v", err)
-	}
-	ret, num := utils.CalcEndorser(rand, 10, 4)
-	if !ret {
-		endorserLogger.Infof("Not selected as endorser with vrf, number: %d", num)
-		return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: "Not selected as endorser with vrf"}}, nil
-	}
-	endorserLogger.Infof("Selected as endorser with vrf,  number: %d, value: %v, proof: %v", num, rand, proof)
 
 	// start time for computing elapsed time metric for successfully endorsed proposals
 	startTime := time.Now()
@@ -385,6 +375,22 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 	if err != nil {
 		return nil, errors.WithMessagef(err, "make sure the chaincode %s has been successfully defined on channel %s and try again", up.ChaincodeName, up.ChannelID())
 	}
+	// Impl by zig
+	var result, proof []byte
+	if cdLedger.VrfEnabled {
+		chd, _ := proto.Marshal(up.ChannelHeader)
+
+		result, proof, err = e.Support.Vrf(chd)
+		if err != nil {
+			endorserLogger.Infof("Compute vrf error: %v", err)
+		}
+		ret, num := utils.VrfSortition(result, 10, 4)
+		if !ret {
+			endorserLogger.Infof("Not selected as endorser with vrf, number: %d", num)
+			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: "Not selected as endorser with vrf"}}, nil
+		}
+		endorserLogger.Infof("Selected as endorser with vrf,  number: %d", num)
+	}
 
 	// 1 -- simulate
 	res, simulationResult, ccevent, err := e.SimulateProposal(txParams, up.ChaincodeName, up.Input)
@@ -446,10 +452,19 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
+	vrfPayloadBytes := mPrpBytes
+	if cdLedger.VrfEnabled {
+		vrfPayload := &pbVrf.VrfPayload{VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+		vrfPayloadBytes, err = proto.Marshal(vrfPayload)
+		if err != nil {
+			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil
+		}
+	}
+
 	return &pb.ProposalResponse{
 		Version:     1,
 		Endorsement: endorsement,
-		Payload:     mPrpBytes,
+		Payload:     vrfPayloadBytes,
 		Response:    res,
 	}, nil
 }

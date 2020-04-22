@@ -12,7 +12,7 @@ import (
 	"math/big"
 )
 
-func CalcEndorser(value []byte, candidate, threshold int64) (bool, *big.Int) {
+func VrfSortition(value []byte, candidate, threshold int64) (bool, *big.Int) {
 	h := sha256.Sum256(value)
 	i := new(big.Int)
 	i.SetString(hex.EncodeToString(h[:]), 16)

@@ -76,6 +76,7 @@ var (
 	initRequired          bool
 	output                string
 	outputDirectory       string
+	vrfEnabled            bool // Impl by zig
 )
 
 var chaincodeCmd = &cobra.Command{
@@ -127,6 +128,7 @@ func ResetFlags() {
 	flags.BoolVarP(&initRequired, "init-required", "", false, "Whether the chaincode requires invoking 'init'")
 	flags.StringVarP(&output, "output", "O", "", "The output format for query results. Default is human-readable plain-text. json is currently the only supported format.")
 	flags.StringVarP(&outputDirectory, "output-directory", "", "", "The output directory to use when writing a chaincode install package to disk. Default is the current working directory.")
+	flags.BoolVarP(&vrfEnabled, "vrfEnabled", "", false, "Whether enabled the vrf endorsement policy for the chaincode invoke.")
 }
 
 func attachFlags(cmd *cobra.Command, names []string) {

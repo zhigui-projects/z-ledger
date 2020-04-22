@@ -310,6 +310,7 @@ func (r *Registrar) newLedgerResources(configTx *cb.Envelope) *ledgerResources {
 
 	checkResourcesOrPanic(bundle)
 
+	// TODO ZIG
 	// Impl by zig
 	selfID, err := r.detectSelfID()
 	if err != nil {

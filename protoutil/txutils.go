@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	pbVrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 )
 
@@ -189,6 +190,14 @@ func CreateSignedTx(
 	endorsements := make([]*peer.Endorsement, len(resps))
 	for n, r := range resps {
 		endorsements[n] = r.Endorsement
+	}
+
+	// fill vrf data
+	vrfPay := &pbVrf.VrfPayload{}
+	for _, r := range resps {
+		if err := proto.Unmarshal(r.Payload, vrfPay); err == nil {
+
+		}
 	}
 
 	// create ChaincodeEndorsedAction
