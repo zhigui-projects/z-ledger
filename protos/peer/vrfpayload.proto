@@ -23,7 +23,10 @@ message ChaincodeResponsePayload {
 }
 
 message VrfEndorsement {
-    bytes result = 1;
+    bytes endorser = 1;
 
-    bytes proof = 2;
+    bytes result = 2;
+
+    bytes proof = 3;
 }
+
