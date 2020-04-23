@@ -174,7 +174,7 @@ func (vscc *Validator) extractValidationArtifacts(
 	var prp []byte
 	crp := &utils.ChaincodeResponsePayload{}
 	if err := json.Unmarshal(cap.Action.ProposalResponsePayload, crp); err == nil && crp.Payload != nil {
-		logger.Infof("VSCC extractValidationArtifacts unmarshal vrf payload: %d", len(crp.VrfEndorsements))
+		logger.Infof("VSCC extract vrf endorsements num: %d", len(crp.VrfEndorsements))
 		vrf = crp.VrfEndorsements
 		prp = crp.Payload
 	} else {

@@ -7,8 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package policy
 
 import (
-	"fmt"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -170,7 +168,6 @@ func (a *ApplicationPolicyEvaluator) Evaluate(policyBytes []byte, signatureSet [
 		return a.evaluateSignaturePolicy(policy.SignaturePolicy, signatureSet)
 	case *peer.ApplicationPolicy_ChannelConfigPolicyReference:
 		if policy.ChannelConfigPolicyReference == "vrf-policy" {
-			fmt.Println("================================ApplicationPolicyEvaluator Evaluate vrf-policy")
 			return a.evaluateVrfPolicy(signatureSet, vrfSet)
 		}
 		return a.evaluateChannelConfigPolicyReference(policy.ChannelConfigPolicyReference, signatureSet)

@@ -319,9 +319,9 @@ func (pl *PolicyLogger) EvaluateIdentities(identities []mspi.Identity) error {
 func (pl *PolicyLogger) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
 	err := pl.Policy.EvaluateVrfPolicy(signatureSet, vrfSet)
 	if err != nil {
-		logger.Infof("Vrf or Signature did not satisfy policy %s", pl.policyName)
+		logger.Info("VrfData or Signatures did not satisfy vrf-policy")
 	} else {
-		logger.Infof("Vrf or Signature set satisfies policy %s", pl.policyName)
+		logger.Info("VrfData and Signatures satisfies vrf-policy")
 	}
 	return err
 }
