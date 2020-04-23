@@ -607,26 +607,25 @@ func ChaincodeInvokeOrQuery(
 	// all responses will be checked when the signed transaction is created.
 	// for now, just set this so we check the first response's status
 	var proposalResp *pb.ProposalResponse
+	resps := make([]*pb.ProposalResponse, 0)
+	for _, v := range responses {
+		if v == nil {
+			continue
+		}
+		if v.Response.Status >= shim.ERRORTHRESHOLD {
+			logger.Infof(" proposal responses received status: %d, message: %s", v.Response.Status, v.Response.Message)
+			continue
+		}
+		resps = append(resps, v)
+	}
+
+	if len(resps) == 0 {
+		return nil, errors.New("no invalod proposal responses received")
+	}
+
+	proposalResp = resps[0]
 
 	if invoke {
-		resps := make([]*pb.ProposalResponse, 0)
-		for _, v := range responses {
-			if v == nil {
-				continue
-			}
-			if v.Response.Status >= shim.ERRORTHRESHOLD {
-				logger.Infof(" proposal responses received status: %d, message: %s", v.Response.Status, v.Response.Message)
-				continue
-			}
-			resps = append(resps, v)
-		}
-
-		if len(resps) == 0 {
-			return nil, errors.New("no invalod proposal responses received")
-		}
-
-		proposalResp = resps[0]
-
 		// assemble a signed transaction (it's an Envelope message)
 		env, err := protoutil.CreateSignedTx(prop, signer, resps...)
 		if err != nil {
