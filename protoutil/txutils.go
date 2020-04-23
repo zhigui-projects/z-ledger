@@ -173,17 +173,29 @@ func CreateSignedTx(
 
 	// ensure that all actions are bitwise equal and that they are successful
 	var a1 []byte
+	vrfEndorsements := make([]*pb.VrfEndorsement, 0)
 	for n, r := range resps {
 		if r.Response.Status < 200 || r.Response.Status >= 400 {
 			return nil, errors.Errorf("proposal response was not successful, error code %d, msg %s", r.Response.Status, r.Response.Message)
 		}
 
+		b1 := r.Payload
+		vrfPay := &utils.VrfPayload{}
+		if err := json.Unmarshal(r.Payload, vrfPay); err == nil && vrfPay.Payload != nil {
+			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
+				Endorser: r.Endorsement.Endorser,
+				Result:   vrfPay.VrfResult,
+				Proof:    vrfPay.VrfProof,
+			})
+			b1 = vrfPay.Payload
+		}
+
 		if n == 0 {
-			a1 = r.Payload
+			a1 = b1
 			continue
 		}
 
-		if !bytes.Equal(a1, r.Payload) {
+		if !bytes.Equal(a1, b1) {
 			return nil, errors.New("ProposalResponsePayloads do not match")
 		}
 	}
@@ -194,26 +206,12 @@ func CreateSignedTx(
 		endorsements[n] = r.Endorsement
 	}
 
-	// fill vrf data
-	var respsPayload []byte
-	vrfEndorsements := make([]*pb.VrfEndorsement, 0)
-	for _, r := range resps {
-		vrfPay := &utils.VrfPayload{}
-		if err := json.Unmarshal(r.Payload, vrfPay); err == nil && vrfPay.Payload != nil {
-			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
-				Endorser: r.Endorsement.Endorser,
-				Result:   vrfPay.VrfResult,
-				Proof:    vrfPay.VrfProof,
-			})
-			respsPayload = vrfPay.Payload
-		}
-	}
 	var prp []byte
 	if len(vrfEndorsements) == 0 {
 		prp = resps[0].Payload
 	} else {
 		prp, err = json.Marshal(&utils.ChaincodeResponsePayload{
-			Payload:         respsPayload,
+			Payload:         a1,
 			VrfEndorsements: vrfEndorsements,
 		})
 		if err != nil {

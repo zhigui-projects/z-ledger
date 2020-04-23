@@ -535,7 +535,8 @@ func processProposals(endorserClients []pb.EndorserClient, signedProposal *pb.Si
 	close(responsesCh)
 	close(errorCh)
 	for err := range errorCh {
-		return nil, err
+		logger.Errorf("{ProcessProposals response err: %v", err)
+		//return nil, err
 	}
 	var responses []*pb.ProposalResponse
 	for response := range responsesCh {
