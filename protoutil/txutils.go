@@ -209,7 +209,7 @@ func CreateSignedTx(
 		}
 	}
 	var prp []byte
-	if len(vrfEndorsements) > 0 {
+	if len(vrfEndorsements) == 0 {
 		prp = resps[0].Payload
 	} else {
 		prp, err = json.Marshal(&utils.ChaincodeResponsePayload{

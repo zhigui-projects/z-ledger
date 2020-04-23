@@ -378,6 +378,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 	// Impl by zig
 	var result, proof []byte
 	if cdLedger.VrfEnabled {
+		logger.Infof("ProcessProposalSuccessfullyOrError for vrf")
 		chd, _ := proto.Marshal(up.ChannelHeader)
 
 		result, proof, err = e.Support.Vrf(chd)
