@@ -59,6 +59,10 @@ func (m *MockPolicy) EvaluateIdentities(identities []msp.Identity) error {
 	return nil
 }
 
+func (m *MockPolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	return nil
+}
+
 type MockIdentityDeserializer struct {
 	Identity []byte
 	Msg      []byte

@@ -41,3 +41,17 @@ func (_m *Policy) EvaluateSignedData(signatureSet []*protoutil.SignedData) error
 
 	return r0
 }
+
+// EvaluateVrfPolicy provides a mock function with given fields: signatureSet, vrfSet
+func (_m *Policy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	ret := _m.Called(signatureSet, vrfSet)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func([]*protoutil.SignedData, []*protoutil.VrfData) error); ok {
+		r0 = rf(signatureSet, vrfSet)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

@@ -49,7 +49,7 @@ func (vscc *Validator) checkInstantiationPolicy(chainName string, env *common.En
 		Identity:  shdr.Creator,
 		Signature: env.Signature,
 	}}
-	err = vscc.policyEvaluator.Evaluate(instantiationPolicy, sd)
+	err = vscc.policyEvaluator.Evaluate(instantiationPolicy, sd, []*protoutil.VrfData{})
 	if err != nil {
 		return policyErr(fmt.Errorf("chaincode instantiation policy violated, error %s", err))
 	}

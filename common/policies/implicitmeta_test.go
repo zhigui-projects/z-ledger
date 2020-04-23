@@ -29,6 +29,10 @@ func (ap acceptPolicy) EvaluateIdentities(identity []msp.Identity) error {
 	return nil
 }
 
+func (ap acceptPolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	return nil
+}
+
 func TestImplicitMarshalError(t *testing.T) {
 	_, err := NewImplicitMetaPolicy([]byte("GARBAGE"), nil)
 	assert.Error(t, err, "Should have errored unmarshaling garbage")

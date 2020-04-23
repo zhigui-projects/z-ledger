@@ -68,6 +68,10 @@ func (m *Policy) EvaluateIdentities(identities []msp.Identity) error {
 	panic("Implement me")
 }
 
+func (m *Policy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	panic("Implement me")
+}
+
 type DeserializersManager struct {
 	LocalDeserializer    msp.IdentityDeserializer
 	ChannelDeserializers map[string]msp.IdentityDeserializer

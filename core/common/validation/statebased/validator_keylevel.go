@@ -21,8 +21,8 @@ import (
 )
 
 type epEvaluator interface {
-	CheckCCEPIfNotChecked(cc, coll string, blockNum, txNum uint64, sd []*protoutil.SignedData) commonerrors.TxValidationError
-	CheckCCEPIfNoEPChecked(cc string, blockNum, txNum uint64, sd []*protoutil.SignedData) commonerrors.TxValidationError
+	CheckCCEPIfNotChecked(cc, coll string, blockNum, txNum uint64, sd []*protoutil.SignedData, vd []*protoutil.VrfData) commonerrors.TxValidationError
+	CheckCCEPIfNoEPChecked(cc string, blockNum, txNum uint64, sd []*protoutil.SignedData, vd []*protoutil.VrfData) commonerrors.TxValidationError
 	SBEPChecked()
 }
 
@@ -71,7 +71,7 @@ func (p *baseEvaluator) checkSBAndCCEP(cc, coll, key string, blockNum, txNum uin
 
 	// if no key-level validation parameter has been specified, the regular cc endorsement policy needs to hold
 	if len(vp) == 0 {
-		return p.CheckCCEPIfNotChecked(cc, coll, blockNum, txNum, signatureSet)
+		return p.CheckCCEPIfNotChecked(cc, coll, blockNum, txNum, signatureSet, vrSet)
 	}
 
 	// validate against key-level vp
@@ -140,7 +140,7 @@ func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.N
 	}
 
 	// we make sure that we check at least the CCEP to honour FAB-9473
-	return p.CheckCCEPIfNoEPChecked(ns, blockNum, txNum, sd)
+	return p.CheckCCEPIfNoEPChecked(ns, blockNum, txNum, sd, vrfd)
 }
 
 /**********************************************************************************************************/
