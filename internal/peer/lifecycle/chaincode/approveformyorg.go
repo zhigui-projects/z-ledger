@@ -56,7 +56,6 @@ type ApproveForMyOrgInput struct {
 	WaitForEvent             bool
 	WaitForEventTimeout      time.Duration
 	TxID                     string
-	VrfEnabled               bool
 }
 
 // Validate the input for an ApproveChaincodeDefinitionForMyOrg proposal
@@ -272,7 +271,6 @@ func (a *ApproverForMyOrg) createInput() (*ApproveForMyOrgInput, error) {
 		PeerAddresses:            peerAddresses,
 		WaitForEvent:             waitForEvent,
 		WaitForEventTimeout:      waitForEventTimeout,
-		VrfEnabled:               vrfEnabled,
 	}
 
 	return input, nil

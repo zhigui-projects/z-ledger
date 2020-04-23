@@ -137,6 +137,7 @@ func CheckCommitReadinessCmd(c *CommitReadinessChecker, cryptoProvider bccsp.BCC
 		"tlsRootCertFiles",
 		"connectionProfile",
 		"output",
+		"vrfEnabled",
 	}
 	attachFlags(chaincodeCheckCommitReadinessCmd, flagList)
 

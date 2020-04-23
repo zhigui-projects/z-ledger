@@ -56,7 +56,6 @@ type CommitInput struct {
 	WaitForEvent             bool
 	WaitForEventTimeout      time.Duration
 	TxID                     string
-	VrfEnabled               bool
 }
 
 // Validate the input for a CommitChaincodeDefinition proposal
@@ -269,7 +268,6 @@ func (c *Committer) createInput() (*CommitInput, error) {
 		PeerAddresses:            peerAddresses,
 		WaitForEvent:             waitForEvent,
 		WaitForEventTimeout:      waitForEventTimeout,
-		VrfEnabled:               vrfEnabled,
 	}
 
 	return input, nil
