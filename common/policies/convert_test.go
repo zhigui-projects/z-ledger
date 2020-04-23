@@ -865,6 +865,10 @@ func (i *inconvertiblePolicy) EvaluateIdentities(signatureSet []msp.Identity) er
 	return nil
 }
 
+func (i *inconvertiblePolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	return nil
+}
+
 func TestImplicitMetaPolicy_Convert7(t *testing.T) {
 
 	// Scenario: we attempt the conversion of a metapolicy
@@ -888,6 +892,10 @@ func (i *convertFailurePolicy) EvaluateSignedData(signatureSet []*protoutil.Sign
 }
 
 func (i *convertFailurePolicy) EvaluateIdentities(identities []msp.Identity) error {
+	return nil
+}
+
+func (i *convertFailurePolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
 	return nil
 }
 

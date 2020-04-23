@@ -209,7 +209,9 @@ func (vscc *Validator) Validate(
 		va.rwset,
 		va.prp,
 		policyBytes,
+		nil,
 		va.endorsements,
+		nil,
 	)
 	if txverr != nil {
 		logger.Errorf("VSCC error: stateBasedValidator.Validate failed, err %s", txverr)

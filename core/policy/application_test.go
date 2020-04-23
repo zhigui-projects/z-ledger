@@ -46,7 +46,7 @@ func TestComponentIntegrationSignaturePolicyEnv(t *testing.T) {
 		Identity:  []byte("guess who"),
 		Data:      []byte("batti"),
 		Signature: []byte("lei"),
-	}})
+	}}, []*protoutil.VrfData{})
 	assert.NoError(t, err)
 }
 
@@ -66,13 +66,13 @@ func TestEvaluator(t *testing.T) {
 
 	// SCENARIO: bad policy argument
 
-	err := ev.Evaluate([]byte("bad bad"), nil)
+	err := ev.Evaluate([]byte("bad bad"), nil, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to unmarshal ApplicationPolicy bytes")
 
 	// SCENARIO: bad policy type
 
-	err = ev.Evaluate([]byte{}, nil)
+	err = ev.Evaluate([]byte{}, nil, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported policy type")
 
@@ -85,14 +85,14 @@ func TestEvaluator(t *testing.T) {
 		},
 	})
 	spp.On("NewPolicy", spenv).Return(okEval, nil).Once()
-	err = ev.Evaluate(mspenv, nil)
+	err = ev.Evaluate(mspenv, nil, nil)
 	assert.NoError(t, err)
 	spp.On("NewPolicy", spenv).Return(nokEval, nil).Once()
-	err = ev.Evaluate(mspenv, nil)
+	err = ev.Evaluate(mspenv, nil, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "bad bad")
 	spp.On("NewPolicy", spenv).Return(nil, errors.New("bad policy")).Once()
-	err = ev.Evaluate(mspenv, nil)
+	err = ev.Evaluate(mspenv, nil, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "bad policy")
 
@@ -105,14 +105,14 @@ func TestEvaluator(t *testing.T) {
 		},
 	})
 	cpp.On("NewPolicy", chrefstr).Return(okEval, nil).Once()
-	err = ev.Evaluate(chrefstrEnv, nil)
+	err = ev.Evaluate(chrefstrEnv, nil, nil)
 	assert.NoError(t, err)
 	cpp.On("NewPolicy", chrefstr).Return(nokEval, nil).Once()
-	err = ev.Evaluate(chrefstrEnv, nil)
+	err = ev.Evaluate(chrefstrEnv, nil, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "bad bad")
 	cpp.On("NewPolicy", chrefstr).Return(nil, errors.New("bad policy")).Once()
-	err = ev.Evaluate(chrefstrEnv, nil)
+	err = ev.Evaluate(chrefstrEnv, nil, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "bad policy")
 }
