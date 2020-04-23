@@ -17,7 +17,7 @@ type PolicyEvaluator interface {
 
 	// Evaluate takes a set of SignedData and evaluates whether this set of signatures satisfies
 	// the policy with the given bytes
-	Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData) error
+	Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error
 }
 
 // SerializedPolicy defines a serialized policy

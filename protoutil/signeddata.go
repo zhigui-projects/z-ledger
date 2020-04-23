@@ -80,3 +80,10 @@ func EnvelopeAsSignedData(env *common.Envelope) ([]*SignedData, error) {
 		Signature: env.Signature,
 	}}, nil
 }
+
+type VrfData struct {
+	Data     []byte
+	Identity []byte
+	Result   []byte
+	Proof    []byte
+}

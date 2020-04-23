@@ -454,7 +454,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 
 	vrfPayloadBytes := mPrpBytes
 	if cdLedger.VrfEnabled {
-		vrfPayload := &pbVrf.VrfPayload{VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+		vrfPayload := &pbVrf.VrfPayload{Endorser: endorsement.Endorser, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
 		vrfPayloadBytes, err = proto.Marshal(vrfPayload)
 		if err != nil {
 			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil

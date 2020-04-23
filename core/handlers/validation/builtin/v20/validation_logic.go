@@ -19,6 +19,7 @@ import (
 	vi "github.com/hyperledger/fabric/core/handlers/validation/api/identities"
 	vp "github.com/hyperledger/fabric/core/handlers/validation/api/policies"
 	vs "github.com/hyperledger/fabric/core/handlers/validation/api/state"
+	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
@@ -104,6 +105,7 @@ type validationArtifacts struct {
 	env          *common.Envelope
 	payl         *common.Payload
 	cap          *peer.ChaincodeActionPayload
+	vrf          []*pb.VrfEndorsement
 }
 
 func (vscc *Validator) extractValidationArtifacts(
@@ -165,14 +167,27 @@ func (vscc *Validator) extractValidationArtifacts(
 		return nil, err
 	}
 
+	// Impl by zig
+	var vrf []*pb.VrfEndorsement
+	var prp []byte
+	crp := &pb.ChaincodeResponsePayload{}
+	if err := proto.Unmarshal(cap.Action.ProposalResponsePayload, crp); err == nil {
+		logger.Infof("VSCC extractValidationArtifacts unmarshal vrf payload: %d", len(crp.VrfEndorsements))
+		vrf = crp.VrfEndorsements
+		prp = crp.Payload
+	} else {
+		prp = cap.Action.ProposalResponsePayload
+	}
+
 	return &validationArtifacts{
 		rwset:        respPayload.Results,
-		prp:          cap.Action.ProposalResponsePayload,
+		prp:          prp,
 		endorsements: cap.Action.Endorsements,
 		chdr:         chdr,
 		env:          env,
 		payl:         payl,
 		cap:          cap,
+		vrf:          vrf,
 	}, nil
 }
 
@@ -189,6 +204,7 @@ func (vscc *Validator) Validate(
 	actionPosition int,
 	policyBytes []byte,
 ) commonerrors.TxValidationError {
+	logger.Infof("VSCC validate policy: %s", string(policyBytes))
 	vscc.stateBasedValidator.PreValidate(uint64(txPosition), block)
 
 	va, err := vscc.extractValidationArtifacts(block, txPosition, actionPosition)
@@ -204,7 +220,9 @@ func (vscc *Validator) Validate(
 		va.rwset,
 		va.prp,
 		policyBytes,
+		va.payl.Header.ChannelHeader,
 		va.endorsements,
+		va.vrf,
 	)
 	if txverr != nil {
 		logger.Errorf("VSCC error: stateBasedValidator.Validate failed, err %s", txverr)

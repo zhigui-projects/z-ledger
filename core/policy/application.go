@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package policy
 
 import (
+	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -145,7 +147,18 @@ func (a *ApplicationPolicyEvaluator) evaluateChannelConfigPolicyReference(channe
 	return p.EvaluateSignedData(signatureSet)
 }
 
-func (a *ApplicationPolicyEvaluator) Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData) error {
+// Impl by zig
+func (a *ApplicationPolicyEvaluator) evaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	// ChannelApplicationWriters replace vrf-policy
+	p, err := a.channelPolicyReferenceProvider.NewPolicy(policies.ChannelApplicationWriters)
+	if err != nil {
+		return errors.WithMessage(err, "could not create evaluator for channel reference policy")
+	}
+
+	return p.EvaluateVrfPolicy(signatureSet, vrfSet)
+}
+
+func (a *ApplicationPolicyEvaluator) Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
 	p := &peer.ApplicationPolicy{}
 	err := proto.Unmarshal(policyBytes, p)
 	if err != nil {
@@ -156,6 +169,10 @@ func (a *ApplicationPolicyEvaluator) Evaluate(policyBytes []byte, signatureSet [
 	case *peer.ApplicationPolicy_SignaturePolicy:
 		return a.evaluateSignaturePolicy(policy.SignaturePolicy, signatureSet)
 	case *peer.ApplicationPolicy_ChannelConfigPolicyReference:
+		if policy.ChannelConfigPolicyReference == "vrf-policy" {
+			fmt.Println("================================ApplicationPolicyEvaluator Evaluate vrf-policy")
+			return a.evaluateVrfPolicy(signatureSet, vrfSet)
+		}
 		return a.evaluateChannelConfigPolicyReference(policy.ChannelConfigPolicyReference, signatureSet)
 	default:
 		return errors.Errorf("unsupported policy type %T", policy)

@@ -13,6 +13,7 @@ import (
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	pbVrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 )
 
@@ -125,8 +126,17 @@ func UnmarshalChaincodeEvents(eBytes []byte) (*peer.ChaincodeEvent, error) {
 
 // UnmarshalProposalResponsePayload unmarshals bytes to a ProposalResponsePayload
 func UnmarshalProposalResponsePayload(prpBytes []byte) (*peer.ProposalResponsePayload, error) {
+	// Impl by zig
+	var aprp []byte
+	vrfcrp := &pbVrf.ChaincodeResponsePayload{}
+	if err := proto.Unmarshal(prpBytes, vrfcrp); err == nil {
+		aprp = vrfcrp.Payload
+	} else {
+		aprp = prpBytes
+	}
+
 	prp := &peer.ProposalResponsePayload{}
-	err := proto.Unmarshal(prpBytes, prp)
+	err := proto.Unmarshal(aprp, prp)
 	return prp, errors.Wrap(err, "error unmarshaling ProposalResponsePayload")
 }
 

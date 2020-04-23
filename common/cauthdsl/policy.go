@@ -108,6 +108,22 @@ func (p *policy) EvaluateIdentities(identities []msp.Identity) error {
 	return nil
 }
 
+func (p *policy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	if p == nil {
+		return errors.New("no such policy")
+	}
+
+	sigIds := policies.SignatureSetToValidIdentities(signatureSet, p.deserializer)
+
+	vrfIds := policies.VrfSetToValidIdentities(vrfSet, p.deserializer)
+
+	if len(sigIds) != len(vrfIds) {
+		return errors.New(fmt.Sprintf("Vrf indentities [%d] not match sig indentities [%d]", len(vrfIds), len(sigIds)))
+	}
+
+	return nil
+}
+
 func (p *policy) Convert() (*cb.SignaturePolicyEnvelope, error) {
 	if p.signaturePolicyEnvelope == nil {
 		return nil, errors.New("nil policy field")

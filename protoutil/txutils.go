@@ -193,15 +193,34 @@ func CreateSignedTx(
 	}
 
 	// fill vrf data
-	vrfPay := &pbVrf.VrfPayload{}
-	for _, r := range resps {
+	var respsPayload []byte
+	vrfEndorsements := make([]*pbVrf.VrfEndorsement, len(resps))
+	for n, r := range resps {
+		vrfPay := &pbVrf.VrfPayload{}
 		if err := proto.Unmarshal(r.Payload, vrfPay); err == nil {
-
+			vrfEndorsements[n] = &pbVrf.VrfEndorsement{
+				Endorser: vrfPay.Endorser,
+				Result:   vrfPay.VrfResult,
+				Proof:    vrfPay.VrfProof,
+			}
+			respsPayload = vrfPay.Payload
+		}
+	}
+	var prp []byte
+	if respsPayload == nil {
+		prp = resps[0].Payload
+	} else {
+		prp, err = proto.Marshal(&pbVrf.ChaincodeResponsePayload{
+			Payload:         respsPayload,
+			VrfEndorsements: vrfEndorsements,
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	// create ChaincodeEndorsedAction
-	cea := &peer.ChaincodeEndorsedAction{ProposalResponsePayload: resps[0].Payload, Endorsements: endorsements}
+	cea := &peer.ChaincodeEndorsedAction{ProposalResponsePayload: prp, Endorsements: endorsements}
 
 	// obtain the bytes of the proposal payload that will go to the transaction
 	propPayloadBytes, err := GetBytesProposalPayloadForTx(pPayl)
