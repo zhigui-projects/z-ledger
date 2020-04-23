@@ -535,8 +535,7 @@ func processProposals(endorserClients []pb.EndorserClient, signedProposal *pb.Si
 	close(responsesCh)
 	close(errorCh)
 	for err := range errorCh {
-		logger.Errorf("{ProcessProposals response err: %v", err)
-		//return nil, err
+		return nil, err
 	}
 	var responses []*pb.ProposalResponse
 	for response := range responsesCh {
@@ -607,53 +606,67 @@ func ChaincodeInvokeOrQuery(
 	}
 	// all responses will be checked when the signed transaction is created.
 	// for now, just set this so we check the first response's status
-	proposalResp := responses[0]
+	var proposalResp *pb.ProposalResponse
 
 	if invoke {
-		if proposalResp != nil {
-			if proposalResp.Response.Status >= shim.ERRORTHRESHOLD {
-				return proposalResp, nil
+		resps := make([]*pb.ProposalResponse, 0)
+		for _, v := range responses {
+			if v == nil {
+				continue
 			}
-			// assemble a signed transaction (it's an Envelope message)
-			env, err := protoutil.CreateSignedTx(prop, signer, responses...)
+			if v.Response.Status >= shim.ERRORTHRESHOLD {
+				logger.Infof(" proposal responses received status: %d, message: %s", v.Response.Status, v.Response.Message)
+				continue
+			}
+			resps = append(resps, v)
+		}
+
+		if len(resps) == 0 {
+			return nil, errors.New("no invalod proposal responses received")
+		}
+
+		proposalResp = resps[0]
+
+		// assemble a signed transaction (it's an Envelope message)
+		env, err := protoutil.CreateSignedTx(prop, signer, resps...)
+		if err != nil {
+			return proposalResp, errors.WithMessage(err, "could not assemble transaction")
+		}
+		var dg *DeliverGroup
+		var ctx context.Context
+		if waitForEvent {
+			var cancelFunc context.CancelFunc
+			ctx, cancelFunc = context.WithTimeout(context.Background(), waitForEventTimeout)
+			defer cancelFunc()
+
+			dg = NewDeliverGroup(
+				deliverClients,
+				peerAddresses,
+				signer,
+				certificate,
+				channelID,
+				txid,
+			)
+			// connect to deliver service on all peers
+			err := dg.Connect(ctx)
 			if err != nil {
-				return proposalResp, errors.WithMessage(err, "could not assemble transaction")
-			}
-			var dg *DeliverGroup
-			var ctx context.Context
-			if waitForEvent {
-				var cancelFunc context.CancelFunc
-				ctx, cancelFunc = context.WithTimeout(context.Background(), waitForEventTimeout)
-				defer cancelFunc()
-
-				dg = NewDeliverGroup(
-					deliverClients,
-					peerAddresses,
-					signer,
-					certificate,
-					channelID,
-					txid,
-				)
-				// connect to deliver service on all peers
-				err := dg.Connect(ctx)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			// send the envelope for ordering
-			if err = bc.Send(env); err != nil {
-				return proposalResp, errors.WithMessagef(err, "error sending transaction for %s", funcName)
-			}
-
-			if dg != nil && ctx != nil {
-				// wait for event that contains the txid from all peers
-				err = dg.Wait(ctx)
-				if err != nil {
-					return nil, err
-				}
+				return nil, err
 			}
 		}
+
+		// send the envelope for ordering
+		if err = bc.Send(env); err != nil {
+			return proposalResp, errors.WithMessagef(err, "error sending transaction for %s", funcName)
+		}
+
+		if dg != nil && ctx != nil {
+			// wait for event that contains the txid from all peers
+			err = dg.Wait(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 	}
 
 	return proposalResp, nil
