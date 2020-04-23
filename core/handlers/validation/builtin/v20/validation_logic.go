@@ -7,7 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package v20
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/hyperledger/fabric/bccsp/utils"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -170,8 +172,8 @@ func (vscc *Validator) extractValidationArtifacts(
 	// Impl by zig
 	var vrf []*pb.VrfEndorsement
 	var prp []byte
-	crp := &pb.ChaincodeResponsePayload{}
-	if err := proto.Unmarshal(cap.Action.ProposalResponsePayload, crp); err == nil {
+	crp := &utils.ChaincodeResponsePayload{}
+	if err := json.Unmarshal(cap.Action.ProposalResponsePayload, crp); err == nil && crp.Payload != nil {
 		logger.Infof("VSCC extractValidationArtifacts unmarshal vrf payload: %d", len(crp.VrfEndorsements))
 		vrf = crp.VrfEndorsements
 		prp = crp.Payload
@@ -204,7 +206,7 @@ func (vscc *Validator) Validate(
 	actionPosition int,
 	policyBytes []byte,
 ) commonerrors.TxValidationError {
-	logger.Infof("VSCC validate policy: %s", string(policyBytes))
+	logger.Infof("VSCC validate policy: %s", string(policyBytes[:]))
 	vscc.stateBasedValidator.PreValidate(uint64(txPosition), block)
 
 	va, err := vscc.extractValidationArtifacts(block, txPosition, actionPosition)

@@ -8,6 +8,7 @@ package endorser
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -24,7 +25,6 @@ import (
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/msp"
-	pbVrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -454,8 +454,8 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 
 	vrfPayloadBytes := mPrpBytes
 	if cdLedger.VrfEnabled {
-		vrfPayload := &pbVrf.VrfPayload{Endorser: endorsement.Endorser, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
-		vrfPayloadBytes, err = proto.Marshal(vrfPayload)
+		vrfPayload := &utils.VrfPayload{VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+		vrfPayloadBytes, err = json.Marshal(vrfPayload)
 		if err != nil {
 			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil
 		}

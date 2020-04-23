@@ -9,11 +9,13 @@ package protoutil
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/json"
+	pb "github.com/hyperledger/fabric/protos/peer"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
-	pbVrf "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/pkg/errors"
 )
 
@@ -194,23 +196,23 @@ func CreateSignedTx(
 
 	// fill vrf data
 	var respsPayload []byte
-	vrfEndorsements := make([]*pbVrf.VrfEndorsement, len(resps))
-	for n, r := range resps {
-		vrfPay := &pbVrf.VrfPayload{}
-		if err := proto.Unmarshal(r.Payload, vrfPay); err == nil {
-			vrfEndorsements[n] = &pbVrf.VrfEndorsement{
-				Endorser: vrfPay.Endorser,
+	vrfEndorsements := make([]*pb.VrfEndorsement, 0)
+	for _, r := range resps {
+		vrfPay := &utils.VrfPayload{}
+		if err := json.Unmarshal(r.Payload, vrfPay); err == nil && vrfPay.Payload != nil {
+			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
+				Endorser: r.Endorsement.Endorser,
 				Result:   vrfPay.VrfResult,
 				Proof:    vrfPay.VrfProof,
-			}
+			})
 			respsPayload = vrfPay.Payload
 		}
 	}
 	var prp []byte
-	if respsPayload == nil {
+	if len(vrfEndorsements) > 0 {
 		prp = resps[0].Payload
 	} else {
-		prp, err = proto.Marshal(&pbVrf.ChaincodeResponsePayload{
+		prp, err = json.Marshal(&utils.ChaincodeResponsePayload{
 			Payload:         respsPayload,
 			VrfEndorsements: vrfEndorsements,
 		})
