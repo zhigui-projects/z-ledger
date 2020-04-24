@@ -167,26 +167,21 @@ func (vscc *Validator) extractValidationArtifacts(
 	}
 
 	// Impl by zig
-	var vrf []*pb.VrfEndorsement
-	var prp []byte
 	crp := &pb.ChaincodeResponsePayload{}
-	if err := proto.Unmarshal(cap.Action.ProposalResponsePayload, crp); err == nil && crp.Payload != nil {
-		logger.Infof("VSCC extract vrf endorsements num: %d", len(crp.VrfEndorsements))
-		vrf = crp.VrfEndorsements
-		prp = crp.Payload
-	} else {
-		prp = cap.Action.ProposalResponsePayload
+	if err := proto.Unmarshal(cap.Action.ProposalResponsePayload, crp); err != nil {
+		return nil, err
 	}
+	logger.Infof("VSCC extract vrf endorsements num: %d", len(crp.VrfEndorsements))
 
 	return &validationArtifacts{
 		rwset:        respPayload.Results,
-		prp:          prp,
+		prp:          crp.Payload,
 		endorsements: cap.Action.Endorsements,
 		chdr:         chdr,
 		env:          env,
 		payl:         payl,
 		cap:          cap,
-		vrf:          vrf,
+		vrf:          crp.VrfEndorsements,
 	}, nil
 }
 

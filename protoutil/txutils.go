@@ -9,12 +9,11 @@ package protoutil
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
-	pb "github.com/hyperledger/fabric/protos/peer"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 )
 
@@ -172,53 +171,54 @@ func CreateSignedTx(
 
 	// ensure that all actions are bitwise equal and that they are successful
 	var a1 []byte
+	endorsements := make([]*peer.Endorsement, 0)
+	isVrf := false
 	vrfEndorsements := make([]*pb.VrfEndorsement, 0)
 	for n, r := range resps {
 		if r.Response.Status < 200 || r.Response.Status >= 400 {
 			return nil, errors.Errorf("proposal response was not successful, error code %d, msg %s", r.Response.Status, r.Response.Message)
 		}
 
-		b1 := r.Payload
-		vrfPay := &pb.VrfPayload{}
-		if err := proto.Unmarshal(r.Payload, vrfPay); err == nil {
-			fmt.Println("=======================", string(vrfPay.VrfResult), "====", string(vrfPay.VrfProof), "=======", string(vrfPay.Payload))
-			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
-				Endorser: r.Endorsement.Endorser,
-				Result:   vrfPay.VrfResult,
-				Proof:    vrfPay.VrfProof,
-			})
-			b1 = vrfPay.Payload
-		} else {
-			fmt.Println("====================", err)
+		vp := &pb.VrfPayload{}
+		if err := proto.Unmarshal(r.Payload, vp); err != nil {
+			return nil, err
 		}
 
-		if n == 0 {
-			a1 = b1
+		if vp.Endorser != nil && vp.VrfResult != nil && vp.VrfProof != nil {
+			isVrf = true
+			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
+				Endorser: vp.Endorser,
+				Result:   vp.VrfResult,
+				Proof:    vp.VrfProof,
+			})
+		}
+
+		if r.Response.Status == 300 {
 			continue
 		}
 
-		if !bytes.Equal(a1, b1) {
+		endorsements = append(endorsements, r.Endorsement)
+
+		if n == 0 {
+			a1 = vp.Payload
+			continue
+		}
+
+		if !bytes.Equal(a1, vp.Payload) {
 			return nil, errors.New("ProposalResponsePayloads do not match")
 		}
 	}
 
-	// fill endorsements
-	endorsements := make([]*peer.Endorsement, len(resps))
-	for n, r := range resps {
-		endorsements[n] = r.Endorsement
+	if len(endorsements) == 0 {
+		return nil, errors.New("no invalid endorsements proposal responses received")
 	}
 
-	var prp []byte
-	if len(vrfEndorsements) == 0 {
-		prp = resps[0].Payload
-	} else {
-		prp, err = proto.Marshal(&pb.ChaincodeResponsePayload{
-			Payload:         a1,
-			VrfEndorsements: vrfEndorsements,
-		})
-		if err != nil {
-			return nil, err
-		}
+	prp, err := proto.Marshal(&pb.ChaincodeResponsePayload{
+		Payload:         a1,
+		VrfEndorsements: vrfEndorsements,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// create ChaincodeEndorsedAction

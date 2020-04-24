@@ -10,26 +10,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"math/big"
-
-	pb "github.com/hyperledger/fabric/protos/peer"
 )
-
-type VrfPayload struct {
-	VrfResult []byte
-	VrfProof  []byte
-	Payload   []byte
-}
-
-type VrfEndorsement struct {
-	Endorser []byte
-	Result   []byte
-	Proof    []byte
-}
-
-type ChaincodeResponsePayload struct {
-	Payload         []byte
-	VrfEndorsements []*pb.VrfEndorsement
-}
 
 func VrfSortition(value []byte, candidate, threshold int64) (bool, *big.Int) {
 	h := sha256.Sum256(value)

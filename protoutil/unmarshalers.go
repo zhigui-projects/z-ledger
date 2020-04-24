@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package protoutil
 
 import (
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	cb "github.com/hyperledger/fabric-protos-go/common"
@@ -127,19 +126,12 @@ func UnmarshalChaincodeEvents(eBytes []byte) (*peer.ChaincodeEvent, error) {
 
 // UnmarshalProposalResponsePayload unmarshals bytes to a ProposalResponsePayload
 func UnmarshalProposalResponsePayload(prpBytes []byte) (*peer.ProposalResponsePayload, error) {
-	// Impl by zig
-	var aprp []byte
 	vrfcrp := &pbvrf.ChaincodeResponsePayload{}
-	if err := proto.Unmarshal(prpBytes, vrfcrp); err == nil && vrfcrp.Payload != nil {
-		fmt.Println("UnmarshalProposalResponsePayload =========111", string(vrfcrp.Payload[:]))
-		aprp = vrfcrp.Payload
-	} else {
-		fmt.Println("UnmarshalProposalResponsePayload =========222", err, string(vrfcrp.Payload[:]))
-		aprp = prpBytes
+	if err := proto.Unmarshal(prpBytes, vrfcrp); err != nil {
+		return nil, errors.Wrap(err, "error unmarshaling ChaincodeResponsePayload")
 	}
-
 	prp := &peer.ProposalResponsePayload{}
-	err := proto.Unmarshal(aprp, prp)
+	err := proto.Unmarshal(vrfcrp.Payload, prp)
 	return prp, errors.Wrap(err, "error unmarshaling ProposalResponsePayload")
 }
 

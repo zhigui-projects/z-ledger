@@ -433,11 +433,18 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		"chaincode", up.ChaincodeName,
 	}
 
+	var vpBytes []byte
+	vpd := &pbvrf.VrfPayload{Payload: prpBytes}
+	vpBytes, err = proto.Marshal(vpd)
+	if err != nil {
+		return nil, err
+	}
+
 	switch {
 	case res.Status >= shim.ERROR:
 		return &pb.ProposalResponse{
 			Response: res,
-			Payload:  prpBytes,
+			Payload:  vpBytes,
 		}, nil
 	case up.ChannelID() == "":
 		// Chaincode invocations without a channel ID is a broken concept
@@ -467,7 +474,6 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
-	vpBytes := mPrpBytes
 	if cdLedger.VrfEnabled {
 		if !bytes.Equal(peerIdentity, endorsement.Endorser) {
 			logger.Errorf("Peer identity not match")
@@ -476,6 +482,12 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		}
 
 		vp := &pbvrf.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+		vpBytes, err = proto.Marshal(vp)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		vp := &pbvrf.VrfPayload{Payload: mPrpBytes}
 		vpBytes, err = proto.Marshal(vp)
 		if err != nil {
 			return nil, err

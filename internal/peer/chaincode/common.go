@@ -624,7 +624,7 @@ func ChaincodeInvokeOrQuery(
 	}
 
 	if len(resps) == 0 {
-		return nil, errors.New("no invalod proposal responses received")
+		return nil, errors.New("no invalid proposal responses received")
 	}
 
 	if invoke {
