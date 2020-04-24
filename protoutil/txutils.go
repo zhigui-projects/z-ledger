@@ -9,14 +9,12 @@ package protoutil
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	pb "github.com/hyperledger/fabric/protos/peer"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/pkg/errors"
 )
 
@@ -181,8 +179,8 @@ func CreateSignedTx(
 		}
 
 		b1 := r.Payload
-		vrfPay := &utils.VrfPayload{}
-		if err := json.Unmarshal(r.Payload, vrfPay); err == nil {
+		vrfPay := &pb.VrfPayload{}
+		if err := proto.Unmarshal(r.Payload, vrfPay); err == nil {
 			fmt.Println("=======================", string(vrfPay.VrfResult), "====", string(vrfPay.VrfProof), "=======", string(vrfPay.Payload))
 			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
 				Endorser: r.Endorsement.Endorser,
@@ -214,7 +212,7 @@ func CreateSignedTx(
 	if len(vrfEndorsements) == 0 {
 		prp = resps[0].Payload
 	} else {
-		prp, err = json.Marshal(&utils.ChaincodeResponsePayload{
+		prp, err = proto.Marshal(&pb.ChaincodeResponsePayload{
 			Payload:         a1,
 			VrfEndorsements: vrfEndorsements,
 		})

@@ -7,14 +7,14 @@ SPDX-License-Identifier: Apache-2.0
 package protoutil
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
-	"github.com/hyperledger/fabric/bccsp/utils"
+	pbvrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
 )
 
@@ -129,10 +129,12 @@ func UnmarshalChaincodeEvents(eBytes []byte) (*peer.ChaincodeEvent, error) {
 func UnmarshalProposalResponsePayload(prpBytes []byte) (*peer.ProposalResponsePayload, error) {
 	// Impl by zig
 	var aprp []byte
-	vrfcrp := &utils.ChaincodeResponsePayload{}
-	if err := json.Unmarshal(prpBytes, vrfcrp); err == nil && vrfcrp.Payload != nil {
+	vrfcrp := &pbvrf.ChaincodeResponsePayload{}
+	if err := proto.Unmarshal(prpBytes, vrfcrp); err == nil && vrfcrp.Payload != nil {
+		fmt.Println("UnmarshalProposalResponsePayload =========111", string(vrfcrp.Payload[:]))
 		aprp = vrfcrp.Payload
 	} else {
+		fmt.Println("UnmarshalProposalResponsePayload =========222", err, string(vrfcrp.Payload[:]))
 		aprp = prpBytes
 	}
 
