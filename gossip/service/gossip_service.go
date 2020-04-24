@@ -11,6 +11,7 @@ import (
 
 	gproto "github.com/hyperledger/fabric-protos-go/gossip"
 	tspb "github.com/hyperledger/fabric-protos-go/transientstore"
+	archiveservice "github.com/hyperledger/fabric/archive/service"
 	corecomm "github.com/hyperledger/fabric/core/comm"
 	"github.com/hyperledger/fabric/core/committer"
 	"github.com/hyperledger/fabric/core/committer/txvalidator"
@@ -163,6 +164,7 @@ type GossipService struct {
 	privateHandlers map[string]privateHandler
 	chains          map[string]state.GossipStateProvider
 	leaderElection  map[string]election.LeaderElectionService
+	archiveService  map[string]archiveservice.ArchiveService
 	deliveryService map[string]deliverservice.DeliverService
 	deliveryFactory DeliveryServiceFactory
 	lock            sync.RWMutex
@@ -237,6 +239,7 @@ func New(
 		privateHandlers: make(map[string]privateHandler),
 		chains:          make(map[string]state.GossipStateProvider),
 		leaderElection:  make(map[string]election.LeaderElectionService),
+		archiveService:  make(map[string]archiveservice.ArchiveService),
 		deliveryService: make(map[string]deliverservice.DeliverService),
 		deliveryFactory: &deliveryFactoryImpl{
 			signer:               peerIdentity,
@@ -349,6 +352,11 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 		g.deliveryService[channelID] = g.deliveryFactory.Service(g, ordererSource, g.mcs, g.serviceConfig.OrgLeader)
 	}
 
+	if g.archiveService[channelID] == nil {
+		logger.Debugf("Initializing archive service instance for channel: %s", channelID)
+		g.archiveService[channelID] = g.archiveService.New()
+	}
+
 	// Delivery service might be nil only if it was not able to get connected
 	// to the ordering service
 	if g.deliveryService[channelID] != nil {
@@ -372,6 +380,9 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 		} else if isStaticOrgLeader {
 			logger.Debug("This peer is configured to connect to ordering service for blocks delivery, channel", channelID)
 			g.deliveryService[channelID].StartDeliverForChannel(channelID, support.Committer, func() {})
+
+			logger.Debug("This peer is configured to start a ledger watcher for channel", channelID)
+			g.archiveService[channelID].StartWatcherForChannel(channelID)
 		} else {
 			logger.Debug("This peer is not configured to connect to ordering service for blocks delivery, channel", channelID)
 		}
@@ -444,6 +455,11 @@ func (g *GossipService) Stop() {
 		if g.deliveryService[chainID] != nil {
 			g.deliveryService[chainID].Stop()
 		}
+
+		if g.deliveryService[chainID] != nil {
+			logger.Infof("Stopping the archive ledger file watcher for channel: %s", chainID)
+			g.archiveService[chainID].Stop()
+		}
 	}
 	g.gossipSvc.Stop()
 }
@@ -483,10 +499,20 @@ func (g *GossipService) onStatusChangeFactory(channelID string, committer blocks
 			if err := g.deliveryService[channelID].StartDeliverForChannel(channelID, committer, yield); err != nil {
 				logger.Errorf("Delivery service is not able to start blocks delivery for chain, due to %+v", err)
 			}
+
+			logger.Info("Elected as a leader, starting archive service ledger watcher for channel", channelID)
+			if err := g.archiveService[channelID].StartWatcherForChannel(channelID); err != nil {
+				logger.Errorf("Archive service watcher is not able to start for chain, due to %+v", err)
+			}
 		} else {
 			logger.Info("Renounced leadership, stopping delivery service for channel", channelID)
 			if err := g.deliveryService[channelID].StopDeliverForChannel(channelID); err != nil {
 				logger.Errorf("Delivery service is not able to stop blocks delivery for chain, due to %+v", err)
+			}
+
+			logger.Info("Renounced leadership, stopping archive service ledger watcher for channel", channelID)
+			if err := g.archiveService[channelID].StopWatcherForChannel(channelID); err != nil {
+				logger.Errorf("Archive service watcher is not able to stop for chain, due to %+v", err)
 			}
 		}
 	}
