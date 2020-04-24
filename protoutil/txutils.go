@@ -9,6 +9,7 @@ package protoutil
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -214,17 +215,10 @@ func CreateSignedTx(
 
 	fmt.Println(fmt.Sprintf("ProposalResponsePayloads endorsements len: %d, vrfEndorsements: %d", len(endorsements), len(vrfEndorsements)))
 
-	var prp []byte
-	if len(vrfEndorsements) > 0 {
-		prp, err = proto.Marshal(&pb.ChaincodeResponsePayload{
-			Payload:         a1,
-			VrfEndorsements: vrfEndorsements,
-		})
-	} else {
-		prp, err = proto.Marshal(&pb.ChaincodeResponsePayload{
-			Payload: a1,
-		})
-	}
+	prp, err := json.Marshal(&pb.ChaincodeResponsePayload{
+		Payload:         a1,
+		VrfEndorsements: vrfEndorsements,
+	})
 	if err != nil {
 		return nil, err
 	}

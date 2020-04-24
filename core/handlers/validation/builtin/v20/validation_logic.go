@@ -7,7 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package v20
 
 import (
+	"encoding/json"
 	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -168,7 +170,7 @@ func (vscc *Validator) extractValidationArtifacts(
 
 	// Impl by zig
 	crp := &pb.ChaincodeResponsePayload{}
-	if err := proto.Unmarshal(cap.Action.ProposalResponsePayload, crp); err != nil {
+	if err := json.Unmarshal(cap.Action.ProposalResponsePayload, crp); err != nil {
 		return nil, err
 	}
 	logger.Infof("VSCC extract vrf endorsements num: %d", len(crp.VrfEndorsements))
