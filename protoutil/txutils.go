@@ -172,7 +172,6 @@ func CreateSignedTx(
 	// ensure that all actions are bitwise equal and that they are successful
 	var a1 []byte
 	endorsements := make([]*peer.Endorsement, 0)
-	isVrf := false
 	vrfEndorsements := make([]*pb.VrfEndorsement, 0)
 	for n, r := range resps {
 		if r.Response.Status < 200 || r.Response.Status >= 400 {
@@ -185,7 +184,6 @@ func CreateSignedTx(
 		}
 
 		if vp.Endorser != nil && vp.VrfResult != nil && vp.VrfProof != nil {
-			isVrf = true
 			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
 				Endorser: vp.Endorser,
 				Result:   vp.VrfResult,

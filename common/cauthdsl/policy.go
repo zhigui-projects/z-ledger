@@ -113,12 +113,16 @@ func (p *policy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet 
 		return errors.New("no such policy")
 	}
 
-	sigIds := policies.SignatureSetToValidIdentities(signatureSet, p.deserializer)
-
 	vrfIds := policies.VrfSetToValidIdentities(vrfSet, p.deserializer)
 
-	if len(sigIds) != len(vrfIds) {
-		return errors.New(fmt.Sprintf("Vrf indentities [%d] not match sig indentities [%d]", len(vrfIds), len(sigIds)))
+	if err := p.EvaluateIdentities(vrfIds); err != nil {
+		return nil
+	}
+
+	sigIds := policies.SignatureSetToValidIdentities(signatureSet, p.deserializer)
+
+	if len(sigIds) == 0 {
+		return errors.New("no invalid endorsement signature for vrf-policy")
 	}
 
 	return nil
