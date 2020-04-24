@@ -186,8 +186,9 @@ noverify = [
   name = "github.com/hyperledger/fabric-protos-go"
 
 [[constraint]]
-  branch = "master"
+  branch = "ormdb"
   name = "github.com/hyperledger/fabric-chaincode-go"
+  source = "github.com:zhigui-projects/fabric-chaincode-go"
 
 [[constraint]]
   name = "github.com/VictoriaMetrics/fastcache"
