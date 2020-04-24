@@ -396,8 +396,12 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 
 	var result, proof []byte
 	if cdLedger.VrfEnabled && isInvoke {
-		logger.Infof("ProcessProposal start vrf endorser election for identity: %s", string(peerIdentity[:]))
-
+		logger.Infof("ProcessProposal start vrf endorser election for invoke transaction")
+		localIdentity, err := e.LocalMSP.DeserializeIdentity(peerIdentity)
+		if err != nil {
+			return nil, err
+		}
+		logger.Infof("Deserialize local peer identity mspId: %s, id: %s", localIdentity.GetIdentifier().Mspid, localIdentity.GetIdentifier().Id)
 		chd, _ := proto.Marshal(up.ChannelHeader)
 		result, proof, err = e.Support.Vrf(chd)
 		if err != nil {
