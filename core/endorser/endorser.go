@@ -382,8 +382,20 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 	}
 
 	// Impl by zig
+	isInvoke := func() bool {
+		inv, ok := up.Input.Decorations["vrf-policy"]
+		if !ok {
+			return true
+		}
+		invoke, err := strconv.ParseBool(string(inv))
+		if err != nil {
+			return true
+		}
+		return invoke
+	}()
+
 	var result, proof []byte
-	if cdLedger.VrfEnabled {
+	if cdLedger.VrfEnabled && isInvoke {
 		logger.Infof("ProcessProposal start vrf endorser election for identity: %s", string(peerIdentity[:]))
 
 		chd, _ := proto.Marshal(up.ChannelHeader)

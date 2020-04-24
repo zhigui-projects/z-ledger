@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -576,6 +577,11 @@ func ChaincodeInvokeOrQuery(
 	if !invoke {
 		funcName = "query"
 	}
+
+	if invocation.ChaincodeSpec.Input.Decorations == nil {
+		invocation.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
+	}
+	invocation.ChaincodeSpec.Input.Decorations["invoke"] = []byte(strconv.FormatBool(invoke))
 
 	// extract the transient field if it exists
 	var tMap map[string][]byte
