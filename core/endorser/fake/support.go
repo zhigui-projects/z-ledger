@@ -91,6 +91,19 @@ type Support struct {
 		result2 *peer.ChaincodeEvent
 		result3 error
 	}
+	GetCurrentBlockHashStub        func(string) ([]byte, error)
+	getCurrentBlockHashMutex       sync.RWMutex
+	getCurrentBlockHashArgsForCall []struct {
+		arg1 string
+	}
+	getCurrentBlockHashReturns struct {
+		result1 []byte
+		result2 error
+	}
+	getCurrentBlockHashReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 error
+	}
 	GetDeployedCCInfoProviderStub        func() ledger.DeployedChaincodeInfoProvider
 	getDeployedCCInfoProviderMutex       sync.RWMutex
 	getDeployedCCInfoProviderArgsForCall []struct {
@@ -545,6 +558,69 @@ func (fake *Support) ExecuteLegacyInitReturnsOnCall(i int, result1 *peer.Respons
 		result2 *peer.ChaincodeEvent
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *Support) GetCurrentBlockHash(arg1 string) ([]byte, error) {
+	fake.getCurrentBlockHashMutex.Lock()
+	ret, specificReturn := fake.getCurrentBlockHashReturnsOnCall[len(fake.getCurrentBlockHashArgsForCall)]
+	fake.getCurrentBlockHashArgsForCall = append(fake.getCurrentBlockHashArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("GetCurrentBlockHash", []interface{}{arg1})
+	fake.getCurrentBlockHashMutex.Unlock()
+	if fake.GetCurrentBlockHashStub != nil {
+		return fake.GetCurrentBlockHashStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getCurrentBlockHashReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *Support) GetCurrentBlockHashCallCount() int {
+	fake.getCurrentBlockHashMutex.RLock()
+	defer fake.getCurrentBlockHashMutex.RUnlock()
+	return len(fake.getCurrentBlockHashArgsForCall)
+}
+
+func (fake *Support) GetCurrentBlockHashCalls(stub func(string) ([]byte, error)) {
+	fake.getCurrentBlockHashMutex.Lock()
+	defer fake.getCurrentBlockHashMutex.Unlock()
+	fake.GetCurrentBlockHashStub = stub
+}
+
+func (fake *Support) GetCurrentBlockHashArgsForCall(i int) string {
+	fake.getCurrentBlockHashMutex.RLock()
+	defer fake.getCurrentBlockHashMutex.RUnlock()
+	argsForCall := fake.getCurrentBlockHashArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *Support) GetCurrentBlockHashReturns(result1 []byte, result2 error) {
+	fake.getCurrentBlockHashMutex.Lock()
+	defer fake.getCurrentBlockHashMutex.Unlock()
+	fake.GetCurrentBlockHashStub = nil
+	fake.getCurrentBlockHashReturns = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *Support) GetCurrentBlockHashReturnsOnCall(i int, result1 []byte, result2 error) {
+	fake.getCurrentBlockHashMutex.Lock()
+	defer fake.getCurrentBlockHashMutex.Unlock()
+	fake.GetCurrentBlockHashStub = nil
+	if fake.getCurrentBlockHashReturnsOnCall == nil {
+		fake.getCurrentBlockHashReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 error
+		})
+	}
+	fake.getCurrentBlockHashReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *Support) GetDeployedCCInfoProvider() ledger.DeployedChaincodeInfoProvider {
@@ -1120,6 +1196,8 @@ func (fake *Support) Invocations() map[string][][]interface{} {
 	defer fake.executeMutex.RUnlock()
 	fake.executeLegacyInitMutex.RLock()
 	defer fake.executeLegacyInitMutex.RUnlock()
+	fake.getCurrentBlockHashMutex.RLock()
+	defer fake.getCurrentBlockHashMutex.RUnlock()
 	fake.getDeployedCCInfoProviderMutex.RLock()
 	defer fake.getDeployedCCInfoProviderMutex.RUnlock()
 	fake.getHistoryQueryExecutorMutex.RLock()
