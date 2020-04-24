@@ -178,7 +178,6 @@
   digest = "1:23dfc71821f9f76ecbe6cf27bd9682a9f259a1c0973483414face1100a96cfd5"
   name = "github.com/docker/docker"
   packages = [
-    "api/types",
     "api/types/blkiodev",
     "api/types/container",
     "api/types/filters",
@@ -456,19 +455,21 @@
   revision = "5ccba6eab8d6b39aa2cdd88db202bba0e25da5d7"
 
 [[projects]]
-  branch = "master"
-  digest = "1:bb8e924d3b4de82ab63e24c7ef69edceedad3a7c1a14fbe7805ec31d51c9bf08"
+  branch = "ormdb"
+  digest = "1:d6c445e6399f02b770e8e375a773e88c523750526d0c9734ea82d620b5c48bb2"
   name = "github.com/hyperledger/fabric-chaincode-go"
   packages = [
     "pkg/attrmgr",
     "pkg/cid",
     "pkg/statebased",
     "shim",
+    "shim/entitydefinition",
     "shim/internal",
     "shimtest",
   ]
   pruneopts = "NUT"
-  revision = "2d899240a7ed642a381ba9df2f6b0c303cb149dc"
+  revision = "58ee7e801971a568807c282cd9f5453201470b21"
+  source = "github.com/zhigui-projects/fabric-chaincode-go"
 
 [[projects]]
   digest = "1:33e7a8d765883a4ec0196509402147c3bddc6821edcc4cb1139f2322ad4bea9f"
@@ -530,6 +531,25 @@
   pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  digest = "1:c24d4cac0c313bee5aa05f12cacf4f966a47af133cad229ca537090829ef7bd9"
+  name = "github.com/jinzhu/gorm"
+  packages = [
+    ".",
+    "dialects/sqlite",
+  ]
+  pruneopts = "NUT"
+  revision = "79a77d771dee4e4b60e9c543e8663bbc80466670"
+  version = "v1.9.12"
+
+[[projects]]
+  digest = "1:802f75230c29108e787d40679f9bf5da1a5673eaf5c10eb89afd993e18972909"
+  name = "github.com/jinzhu/inflection"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f5c5f50e6090ae76a29240b61ae2a90dd810112e"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:da62aa6632d04e080b8a8b85a59ed9ed1550842a0099a55f3ae3a20d02a3745a"
@@ -598,6 +618,14 @@
   pruneopts = "NUT"
   revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
   version = "v0.0.4"
+
+[[projects]]
+  digest = "1:e870d0adda32d63345bb2991db89a4fe81ad4642f864c90f06ba546e20d67b50"
+  name = "github.com/mattn/go-sqlite3"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9bdaffc12bf8be15afceb51bb60851edd4afdff5"
+  version = "v2.0.3"
 
 [[projects]]
   digest = "1:5985ef4caf91ece5d54817c11ea25f182697534f8ae6521eadcd628c142ac4b6"
