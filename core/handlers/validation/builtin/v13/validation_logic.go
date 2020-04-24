@@ -209,7 +209,6 @@ func (vscc *Validator) Validate(
 		va.rwset,
 		va.prp,
 		policyBytes,
-		nil,
 		va.endorsements,
 		nil,
 	)

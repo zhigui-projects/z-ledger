@@ -28,13 +28,13 @@ func (_m *StateBasedValidator) PreValidate(txNum uint64, block *common.Block) {
 	_m.Called(txNum, block)
 }
 
-// Validate provides a mock function with given fields: cc, blockNum, txNum, rwset, prp, ep, chdr, endorsements, vrfs
-func (_m *StateBasedValidator) Validate(cc string, blockNum uint64, txNum uint64, rwset []byte, prp []byte, ep []byte, chdr []byte, endorsements []*peer.Endorsement, vrfs []*utils.VrfEndorsement) errors.TxValidationError {
-	ret := _m.Called(cc, blockNum, txNum, rwset, prp, ep, chdr, endorsements, vrfs)
+// Validate provides a mock function with given fields: cc, blockNum, txNum, rwset, prp, ep, endorsements, vrfs
+func (_m *StateBasedValidator) Validate(cc string, blockNum uint64, txNum uint64, rwset []byte, prp []byte, ep []byte, endorsements []*peer.Endorsement, vrfs []*utils.VrfEndorsement) errors.TxValidationError {
+	ret := _m.Called(cc, blockNum, txNum, rwset, prp, ep, endorsements, vrfs)
 
 	var r0 errors.TxValidationError
-	if rf, ok := ret.Get(0).(func(string, uint64, uint64, []byte, []byte, []byte, []byte, []*peer.Endorsement, []*utils.VrfEndorsement) errors.TxValidationError); ok {
-		r0 = rf(cc, blockNum, txNum, rwset, prp, ep, chdr, endorsements, vrfs)
+	if rf, ok := ret.Get(0).(func(string, uint64, uint64, []byte, []byte, []byte, []*peer.Endorsement, []*utils.VrfEndorsement) errors.TxValidationError); ok {
+		r0 = rf(cc, blockNum, txNum, rwset, prp, ep, endorsements, vrfs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(errors.TxValidationError)
