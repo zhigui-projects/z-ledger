@@ -9,6 +9,7 @@ package protoutil
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -173,7 +174,7 @@ func CreateSignedTx(
 	var a1 []byte
 	endorsements := make([]*peer.Endorsement, 0)
 	vrfEndorsements := make([]*pb.VrfEndorsement, 0)
-	for n, r := range resps {
+	for _, r := range resps {
 		if r.Response.Status < 200 || r.Response.Status >= 400 {
 			return nil, errors.Errorf("proposal response was not successful, error code %d, msg %s", r.Response.Status, r.Response.Message)
 		}
@@ -211,10 +212,19 @@ func CreateSignedTx(
 		return nil, errors.New("no invalid endorsements proposal responses received")
 	}
 
-	prp, err := proto.Marshal(&pb.ChaincodeResponsePayload{
-		Payload:         a1,
-		VrfEndorsements: vrfEndorsements,
-	})
+	fmt.Println(fmt.Sprintf("ProposalResponsePayloads endorsements len: %d, vrfEndorsements: %d", len(endorsements), len(vrfEndorsements)))
+
+	var prp []byte
+	if len(vrfEndorsements) > 0 {
+		prp, err = proto.Marshal(&pb.ChaincodeResponsePayload{
+			Payload:         a1,
+			VrfEndorsements: vrfEndorsements,
+		})
+	} else {
+		prp, err = proto.Marshal(&pb.ChaincodeResponsePayload{
+			Payload: a1,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
