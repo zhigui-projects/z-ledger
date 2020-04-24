@@ -7,8 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package endorser
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/msp"
+	pbvrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -375,22 +376,35 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 	if err != nil {
 		return nil, errors.WithMessagef(err, "make sure the chaincode %s has been successfully defined on channel %s and try again", up.ChaincodeName, up.ChannelID())
 	}
+
+	peerIdentity, err := e.Support.Serialize()
+	if err != nil {
+		return nil, err
+	}
+
 	// Impl by zig
 	var result, proof []byte
 	if cdLedger.VrfEnabled {
-		logger.Infof("ProcessProposalSuccessfullyOrError for vrf")
-		chd, _ := proto.Marshal(up.ChannelHeader)
+		logger.Infof("ProcessProposal start vrf endorser election for identity: %s", string(peerIdentity[:]))
 
+		chd, _ := proto.Marshal(up.ChannelHeader)
 		result, proof, err = e.Support.Vrf(chd)
 		if err != nil {
-			endorserLogger.Infof("Compute vrf error: %v", err)
+			logger.Infof("Compute vrf error: %v", err)
+			return nil, err
 		}
 		ret, num := utils.VrfSortition(result, 10, 4)
 		if !ret {
-			endorserLogger.Infof("Not selected as endorser with vrf, number: %d", num)
-			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: "Not selected as endorser with vrf"}}, nil
+			logger.Infof("ProcessProposal vrf endorser election not selected, number: %d", num)
+
+			vp := &pbvrf.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof}
+			vpBytes, err := proto.Marshal(vp)
+			if err != nil {
+				return nil, err
+			}
+			return &pb.ProposalResponse{Version: 1, Payload: vpBytes, Response: &pb.Response{Status: 300, Message: "Not selected as endorser for vrf"}}, nil
 		}
-		endorserLogger.Infof("Selected as endorser with vrf,  number: %d", num)
+		logger.Infof("ProcessProposal vrf endorser election selected, number: %d", num)
 	}
 
 	// 1 -- simulate
@@ -453,19 +467,25 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
-	vrfPayloadBytes := mPrpBytes
+	vpBytes := mPrpBytes
 	if cdLedger.VrfEnabled {
-		vrfPayload := &utils.VrfPayload{VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
-		vrfPayloadBytes, err = json.Marshal(vrfPayload)
+		if !bytes.Equal(peerIdentity, endorsement.Endorser) {
+			logger.Errorf("Peer identity not match")
+		} else {
+			logger.Infof("Peer identity match")
+		}
+
+		vp := &pbvrf.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+		vpBytes, err = proto.Marshal(vp)
 		if err != nil {
-			return &pb.ProposalResponse{Response: &pb.Response{Status: 500, Message: err.Error()}}, nil
+			return nil, err
 		}
 	}
 
 	return &pb.ProposalResponse{
 		Version:     1,
 		Endorsement: endorsement,
-		Payload:     vrfPayloadBytes,
+		Payload:     vpBytes,
 		Response:    res,
 	}, nil
 }

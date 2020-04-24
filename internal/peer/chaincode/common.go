@@ -617,13 +617,15 @@ func ChaincodeInvokeOrQuery(
 			continue
 		}
 		resps = append(resps, v)
+
+		if proposalResp == nil && v.Response.Status == shim.OK {
+			proposalResp = v
+		}
 	}
 
 	if len(resps) == 0 {
 		return nil, errors.New("no invalod proposal responses received")
 	}
-
-	proposalResp = resps[0]
 
 	if invoke {
 		// assemble a signed transaction (it's an Envelope message)

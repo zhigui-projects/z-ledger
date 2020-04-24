@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	pb "github.com/hyperledger/fabric/protos/peer"
 
 	"github.com/golang/protobuf/proto"
@@ -181,13 +182,16 @@ func CreateSignedTx(
 
 		b1 := r.Payload
 		vrfPay := &utils.VrfPayload{}
-		if err := json.Unmarshal(r.Payload, vrfPay); err == nil && vrfPay.Payload != nil {
+		if err := json.Unmarshal(r.Payload, vrfPay); err == nil {
+			fmt.Println("=======================", string(vrfPay.VrfResult), "====", string(vrfPay.VrfProof), "=======", string(vrfPay.Payload))
 			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
 				Endorser: r.Endorsement.Endorser,
 				Result:   vrfPay.VrfResult,
 				Proof:    vrfPay.VrfProof,
 			})
 			b1 = vrfPay.Payload
+		} else {
+			fmt.Println("====================", err)
 		}
 
 		if n == 0 {
