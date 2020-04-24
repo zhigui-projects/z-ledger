@@ -12,7 +12,6 @@ import (
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/cauthdsl"
 	"github.com/hyperledger/fabric/common/policies"
-	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
@@ -149,7 +148,7 @@ func (a *ApplicationPolicyEvaluator) evaluateChannelConfigPolicyReference(channe
 // Impl by zig
 func (a *ApplicationPolicyEvaluator) evaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
 	// LifecycleEndorsementPolicyRef replace vrf-policy
-	p, err := a.channelPolicyReferenceProvider.NewPolicy(lifecycle.LifecycleEndorsementPolicyRef)
+	p, err := a.channelPolicyReferenceProvider.NewPolicy("/Channel/Application/LifecycleEndorsement")
 	if err != nil {
 		return errors.WithMessage(err, "could not create evaluator for channel reference policy")
 	}
