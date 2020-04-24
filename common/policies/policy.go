@@ -429,7 +429,7 @@ func VrfSetToValidIdentities(vrfData []*protoutil.VrfData, identityDeserializer 
 		// We check if this identity has already appeared before doing a signature check, to ensure that
 		// someone cannot force us to waste time checking the same signature thousands of times
 		if _, ok := idMap[key]; ok {
-			logger.Warningf("De-duplicating identity [%s] at index %d in signature set", key, i)
+			logger.Warningf("De-duplicating identity [%s] at index %d in vrf set", key, i)
 			continue
 		}
 

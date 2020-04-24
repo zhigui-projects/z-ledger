@@ -216,7 +216,6 @@ func (vscc *Validator) Validate(
 		va.rwset,
 		va.prp,
 		policyBytes,
-		va.payl.Header.ChannelHeader,
 		va.endorsements,
 		va.vrf,
 	)

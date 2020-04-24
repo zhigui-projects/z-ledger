@@ -79,6 +79,9 @@ type Support interface {
 	// GetLedgerHeight returns ledger height for given channelID
 	GetLedgerHeight(channelID string) (uint64, error)
 
+	// GetCurrentBlockHash returns ledger current block Hash for given channelID
+	GetCurrentBlockHash(channelID string) ([]byte, error)
+
 	// GetDeployedCCInfoProvider returns ledger.DeployedChaincodeInfoProvider
 	GetDeployedCCInfoProvider() ledger.DeployedChaincodeInfoProvider
 }
@@ -394,7 +397,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return invoke
 	}()
 
-	var result, proof []byte
+	var result, proof, msg []byte
 	if cdLedger.VrfEnabled && isInvoke {
 		logger.Infof("ProcessProposal start vrf endorser election for invoke transaction")
 		localIdentity, err := e.LocalMSP.DeserializeIdentity(peerIdentity)
@@ -402,8 +405,13 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 			return nil, err
 		}
 		logger.Infof("Deserialize local peer identity mspId: %s, id: %s", localIdentity.GetIdentifier().Mspid, localIdentity.GetIdentifier().Id)
-		chd, _ := proto.Marshal(up.ChannelHeader)
-		result, proof, err = e.Support.Vrf(chd)
+
+		msg, err = e.Support.GetCurrentBlockHash(up.ChannelHeader.ChannelId)
+		if err != nil {
+			return nil, err
+		}
+
+		result, proof, err = e.Support.Vrf(msg)
 		if err != nil {
 			logger.Infof("Compute vrf error: %v", err)
 			return nil, err
@@ -412,7 +420,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		if !ret {
 			logger.Infof("ProcessProposal vrf endorser election not selected, number: %d", num)
 
-			vp := &utils.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof}
+			vp := &utils.VrfPayload{Data: msg, Endorser: peerIdentity, VrfResult: result, VrfProof: proof}
 			vpBytes, err := json.Marshal(vp)
 			if err != nil {
 				return nil, err
@@ -489,7 +497,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
-	vp := &utils.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+	vp := &utils.VrfPayload{Data: msg, Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
 	vpBytes, err = json.Marshal(vp)
 	if err != nil {
 		return nil, err

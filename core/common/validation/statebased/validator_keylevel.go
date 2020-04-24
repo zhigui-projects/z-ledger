@@ -242,7 +242,7 @@ func (klv *KeyLevelValidator) PreValidate(txNum uint64, block *common.Block) {
 }
 
 // Validate implements the function of the StateBasedValidator interface
-func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetBytes, prp, ccEP, chdr []byte, endorsements []*peer.Endorsement, vrfs []*utils.VrfEndorsement) commonerrors.TxValidationError {
+func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetBytes, prp, ccEP []byte, endorsements []*peer.Endorsement, vrfs []*utils.VrfEndorsement) commonerrors.TxValidationError {
 	// construct signature set
 	signatureSet := []*protoutil.SignedData{}
 	for _, endorsement := range endorsements {
@@ -263,7 +263,7 @@ func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetB
 	vrfSet := []*protoutil.VrfData{}
 	for _, v := range vrfs {
 		vrfSet = append(vrfSet, &protoutil.VrfData{
-			Data:     chdr,
+			Data:     v.Data,
 			Identity: v.Endorser,
 			Result:   v.Result,
 			Proof:    v.Proof,

@@ -172,7 +172,7 @@ func CreateSignedTx(
 	}
 
 	// ensure that all actions are bitwise equal and that they are successful
-	var a1 []byte
+	var a1, b1 []byte
 	endorsements := make([]*peer.Endorsement, 0)
 	vrfEndorsements := make([]*utils.VrfEndorsement, 0)
 	for _, r := range resps {
@@ -185,12 +185,18 @@ func CreateSignedTx(
 			return nil, err
 		}
 
-		if vp.VrfResult != nil && vp.VrfProof != nil {
+		if vp.VrfResult != nil && vp.VrfProof != nil && vp.Data != nil {
 			vrfEndorsements = append(vrfEndorsements, &utils.VrfEndorsement{
 				Endorser: vp.Endorser,
+				Data:     vp.Data,
 				Result:   vp.VrfResult,
 				Proof:    vp.VrfProof,
 			})
+			if b1 == nil {
+				b1 = vp.Data
+			} else if !bytes.Equal(b1, vp.Data) {
+				return nil, errors.New("Vrf compute msg do not match")
+			}
 		}
 
 		if r.Response.Status == 300 {

@@ -153,6 +153,9 @@ func (a *ApplicationPolicyEvaluator) evaluateVrfPolicy(signatureSet []*protoutil
 		return errors.WithMessage(err, "could not create evaluator for channel reference policy")
 	}
 
+	if len(vrfSet) == 0 {
+		return p.EvaluateSignedData(signatureSet)
+	}
 	return p.EvaluateVrfPolicy(signatureSet, vrfSet)
 }
 

@@ -14,6 +14,7 @@ import (
 
 type VrfPayload struct {
 	Endorser  []byte
+	Data      []byte
 	VrfResult []byte
 	VrfProof  []byte
 	Payload   []byte
@@ -21,6 +22,7 @@ type VrfPayload struct {
 
 type VrfEndorsement struct {
 	Endorser []byte
+	Data     []byte
 	Result   []byte
 	Proof    []byte
 }
