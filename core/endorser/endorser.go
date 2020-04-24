@@ -386,7 +386,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 
 	// Impl by zig
 	isInvoke := func() bool {
-		inv, ok := up.Input.Decorations["vrf-policy"]
+		inv, ok := up.Input.Decorations["invoke"]
 		if !ok {
 			return true
 		}
