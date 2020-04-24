@@ -12,6 +12,24 @@ import (
 	"math/big"
 )
 
+type VrfPayload struct {
+	Endorser  []byte
+	VrfResult []byte
+	VrfProof  []byte
+	Payload   []byte
+}
+
+type VrfEndorsement struct {
+	Endorser []byte
+	Result   []byte
+	Proof    []byte
+}
+
+type ChaincodeResponsePayload struct {
+	Payload         []byte
+	VrfEndorsements []*VrfEndorsement
+}
+
 func VrfSortition(value []byte, candidate, threshold int64) (bool, *big.Int) {
 	h := sha256.Sum256(value)
 	i := new(big.Int)

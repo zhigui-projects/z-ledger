@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	commonerrors "github.com/hyperledger/fabric/common/errors"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/common/validation/statebased"
@@ -20,7 +21,6 @@ import (
 	vi "github.com/hyperledger/fabric/core/handlers/validation/api/identities"
 	vp "github.com/hyperledger/fabric/core/handlers/validation/api/policies"
 	vs "github.com/hyperledger/fabric/core/handlers/validation/api/state"
-	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
@@ -106,7 +106,7 @@ type validationArtifacts struct {
 	env          *common.Envelope
 	payl         *common.Payload
 	cap          *peer.ChaincodeActionPayload
-	vrf          []*pb.VrfEndorsement
+	vrf          []*utils.VrfEndorsement
 }
 
 func (vscc *Validator) extractValidationArtifacts(
@@ -169,7 +169,7 @@ func (vscc *Validator) extractValidationArtifacts(
 	}
 
 	// Impl by zig
-	crp := &pb.ChaincodeResponsePayload{}
+	crp := &utils.ChaincodeResponsePayload{}
 	if err := json.Unmarshal(cap.Action.ProposalResponsePayload, crp); err != nil {
 		return nil, err
 	}

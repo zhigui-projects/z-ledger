@@ -11,11 +11,11 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	commonerrors "github.com/hyperledger/fabric/common/errors"
 	validation "github.com/hyperledger/fabric/core/handlers/validation/api/policies"
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
-	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
@@ -242,7 +242,7 @@ func (klv *KeyLevelValidator) PreValidate(txNum uint64, block *common.Block) {
 }
 
 // Validate implements the function of the StateBasedValidator interface
-func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetBytes, prp, ccEP, chdr []byte, endorsements []*peer.Endorsement, vrfs []*pb.VrfEndorsement) commonerrors.TxValidationError {
+func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetBytes, prp, ccEP, chdr []byte, endorsements []*peer.Endorsement, vrfs []*utils.VrfEndorsement) commonerrors.TxValidationError {
 	// construct signature set
 	signatureSet := []*protoutil.SignedData{}
 	for _, endorsement := range endorsements {

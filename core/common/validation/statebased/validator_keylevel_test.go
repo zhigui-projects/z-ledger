@@ -12,11 +12,11 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/errors"
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
-	pbVrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -112,12 +112,12 @@ func TestKeylevelValidation(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, endorsements, []*pbVrf.VrfEndorsement{})
+	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, endorsements, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	pe.EvaluateRV = fmt.Errorf("policy evaluation error")
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, endorsements, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, endorsements, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }
@@ -150,12 +150,12 @@ func TestKeylevelValidationPvtData(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	pe.EvaluateRV = fmt.Errorf("policy evaluation error")
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }
@@ -188,12 +188,12 @@ func TestKeylevelValidationMetaUpdate(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	pe.EvaluateRV = fmt.Errorf("policy evaluation error")
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }
@@ -226,12 +226,12 @@ func TestKeylevelValidationPvtMetaUpdate(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	pe.EvaluateRV = fmt.Errorf("policy evaluation error")
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }
@@ -259,7 +259,7 @@ func TestKeylevelValidationPolicyRetrievalFailure(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCExecutionFailureError{}, err)
 }
@@ -280,7 +280,7 @@ func TestKeylevelValidationLedgerFailures(t *testing.T) {
 		pm := &KeyLevelValidationParameterManagerImpl{PolicyTranslator: &mockTranslator{}, StateFetcher: ms}
 		validator := NewKeyLevelValidator(NewV13Evaluator(&mockPolicyEvaluator{}, pm), pm)
 
-		err := validator.Validate("cc", 1, 0, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+		err := validator.Validate("cc", 1, 0, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 		assert.NoError(t, err)
 	})
 
@@ -290,7 +290,7 @@ func TestKeylevelValidationLedgerFailures(t *testing.T) {
 		pm := &KeyLevelValidationParameterManagerImpl{PolicyTranslator: &mockTranslator{}, StateFetcher: ms}
 		validator := NewKeyLevelValidator(NewV13Evaluator(&mockPolicyEvaluator{}, pm), pm)
 
-		err := validator.Validate("cc", 1, 0, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+		err := validator.Validate("cc", 1, 0, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 		assert.NoError(t, err)
 	})
 
@@ -300,7 +300,7 @@ func TestKeylevelValidationLedgerFailures(t *testing.T) {
 		pm := &KeyLevelValidationParameterManagerImpl{PolicyTranslator: &mockTranslator{}, StateFetcher: ms}
 		validator := NewKeyLevelValidator(NewV13Evaluator(&mockPolicyEvaluator{}, pm), pm)
 
-		err := validator.Validate("cc", 1, 0, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+		err := validator.Validate("cc", 1, 0, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 		assert.Error(t, err)
 		assert.IsType(t, &errors.VSCCExecutionFailureError{}, err)
 	})
@@ -336,12 +336,12 @@ func TestCCEPValidation(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	pe.EvaluateRV = fmt.Errorf("policy evaluation error")
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }
@@ -373,12 +373,12 @@ func TestCCEPValidationReads(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	pe.EvaluateRV = fmt.Errorf("policy evaluation error")
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }
@@ -414,7 +414,7 @@ func TestOnlySBEPChecked(t *testing.T) {
 		"SBEP": nil,
 	}
 
-	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	// we also test with a read-write set that has a read as well as a write
@@ -424,7 +424,7 @@ func TestOnlySBEPChecked(t *testing.T) {
 	rws := rwsbu.GetTxReadWriteSet()
 	rwsb, _ = rws.ToProtoBytes()
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 }
 
@@ -455,12 +455,12 @@ func TestCCEPValidationPvtReads(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, fmt.Errorf(""))
 	}()
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.NoError(t, err)
 
 	pe.EvaluateRV = fmt.Errorf("policy evaluation error")
 
-	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err = validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }
@@ -490,7 +490,7 @@ func TestKeylevelValidationFailure(t *testing.T) {
 		validator.PostValidate("cc", 1, 0, nil)
 	}()
 
-	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*pbVrf.VrfEndorsement{})
+	err := validator.Validate("cc", 1, 1, rwsb, prp, []byte("CCEP"), nil, []*pb.Endorsement{}, []*utils.VrfEndorsement{})
 	assert.Error(t, err)
 	assert.IsType(t, &errors.VSCCEndorsementPolicyError{}, err)
 }

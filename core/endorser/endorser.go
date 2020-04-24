@@ -8,6 +8,7 @@ package endorser
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -24,7 +25,6 @@ import (
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/msp"
-	pbvrf "github.com/hyperledger/fabric/protos/peer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -408,8 +408,8 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		if !ret {
 			logger.Infof("ProcessProposal vrf endorser election not selected, number: %d", num)
 
-			vp := &pbvrf.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof}
-			vpBytes, err := proto.Marshal(vp)
+			vp := &utils.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof}
+			vpBytes, err := json.Marshal(vp)
 			if err != nil {
 				return nil, err
 			}
@@ -445,8 +445,8 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 	}
 
 	var vpBytes []byte
-	vpd := &pbvrf.VrfPayload{Payload: prpBytes}
-	vpBytes, err = proto.Marshal(vpd)
+	vpd := &utils.VrfPayload{Payload: prpBytes}
+	vpBytes, err = json.Marshal(vpd)
 	if err != nil {
 		return nil, err
 	}
@@ -485,8 +485,8 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
-	vp := &pbvrf.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
-	vpBytes, err = proto.Marshal(vp)
+	vp := &utils.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+	vpBytes, err = json.Marshal(vp)
 	if err != nil {
 		return nil, err
 	}

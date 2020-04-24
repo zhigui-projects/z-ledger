@@ -15,7 +15,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
-	pb "github.com/hyperledger/fabric/protos/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/pkg/errors"
 )
 
@@ -174,19 +174,19 @@ func CreateSignedTx(
 	// ensure that all actions are bitwise equal and that they are successful
 	var a1 []byte
 	endorsements := make([]*peer.Endorsement, 0)
-	vrfEndorsements := make([]*pb.VrfEndorsement, 0)
+	vrfEndorsements := make([]*utils.VrfEndorsement, 0)
 	for _, r := range resps {
 		if r.Response.Status < 200 || r.Response.Status >= 400 {
 			return nil, errors.Errorf("proposal response was not successful, error code %d, msg %s", r.Response.Status, r.Response.Message)
 		}
 
-		vp := &pb.VrfPayload{}
-		if err := proto.Unmarshal(r.Payload, vp); err != nil {
+		vp := &utils.VrfPayload{}
+		if err := json.Unmarshal(r.Payload, vp); err != nil {
 			return nil, err
 		}
 
 		if vp.VrfResult != nil && vp.VrfProof != nil {
-			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
+			vrfEndorsements = append(vrfEndorsements, &utils.VrfEndorsement{
 				Endorser: vp.Endorser,
 				Result:   vp.VrfResult,
 				Proof:    vp.VrfProof,
@@ -215,7 +215,7 @@ func CreateSignedTx(
 
 	fmt.Println(fmt.Sprintf("ProposalResponsePayloads endorsements len: %d, vrfEndorsements: %d", len(endorsements), len(vrfEndorsements)))
 
-	prp, err := json.Marshal(&pb.ChaincodeResponsePayload{
+	prp, err := json.Marshal(&utils.ChaincodeResponsePayload{
 		Payload:         a1,
 		VrfEndorsements: vrfEndorsements,
 	})
