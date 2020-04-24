@@ -264,6 +264,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
+  name = "github.com/fsnotify/fsnotify"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "45d7d09e39ef4ac08d493309fa031790c15bfe8a"
+  version = "v1.4.9"
+
+[[projects]]
   digest = "1:5c1e2d8db21d3dd43627f0da5aab03e14a2bf04addb49d5e8385a2168c828c13"
   name = "github.com/fsouza/go-dockerclient"
   packages = [
@@ -1209,6 +1217,7 @@
     "github.com/VictoriaMetrics/fastcache",
     "github.com/colinmarc/hdfs",
     "github.com/davecgh/go-spew/spew",
+    "github.com/fsnotify/fsnotify",
     "github.com/fsouza/go-dockerclient",
     "github.com/go-kit/kit/metrics",
     "github.com/go-kit/kit/metrics/prometheus",
