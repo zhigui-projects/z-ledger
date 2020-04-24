@@ -7,10 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 package service
 
 import (
+	"fmt"
 	"github.com/colinmarc/hdfs"
+	"github.com/fsnotify/fsnotify"
 	"github.com/hyperledger/fabric/common/flogging"
+	coreconfig "github.com/hyperledger/fabric/core/config"
+	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
 	"github.com/pkg/errors"
+	"path/filepath"
 	"sync"
 )
 
@@ -30,6 +35,7 @@ type archiveSvc interface {
 type ArchiveService struct {
 	archiveSvc
 	dfsClient *hdfs.Client
+	watchers  map[string]*fsnotify.Watcher
 	lock      sync.RWMutex
 }
 
@@ -67,7 +73,51 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	//TODO
+	if _, exist := a.watchers[chainID]; exist {
+		errMsg := fmt.Sprintf("Archive service - ledger watcher already exists for %s found, can't start a new watcher", chainID)
+		logger.Warn(errMsg)
+		return errors.New(errMsg)
+	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		logger.Errorf("Archive service can't start watcher, due to %+v", err)
+	}
+	defer watcher.Close()
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					logger.Errorf("Archive service - watcher has been closed")
+					return
+				}
+				if event.Op&fsnotify.Create == fsnotify.Create {
+					logger.Infof("Created ledger file: %s", event.Name)
+					//TODO: transfer file
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					logger.Errorf("Archive service - watcher has been closed")
+					return
+				}
+				logger.Errorf("Archive service - watcher got error: %+v", err)
+			}
+		}
+	}()
+
+	rootFSPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "ledgersData")
+	ledgerDir := filepath.Join(kvledger.BlockStorePath(rootFSPath), chainID)
+
+	logger.Infof("Archive service - adding watcher for ledger directory: %s", ledgerDir)
+	err = watcher.Add(ledgerDir)
+	if err != nil {
+		errMsg := fmt.Sprintf("Archive service - add watching directory failed, due to %+v", err)
+		logger.Error(errMsg)
+		return errors.New(errMsg)
+	}
+	a.watchers[chainID] = watcher
+
 	return nil
 }
 
