@@ -74,7 +74,6 @@ func signProposal(proposal *pb.Proposal, signer Signer) (*pb.SignedProposal, err
 
 func createPolicyBytes(signaturePolicy, channelConfigPolicy string) ([]byte, error) {
 	if vrfEnabled {
-		logger.Infof("CreatePolicyBytes for vrf")
 		// The endorsement policy associated to this chaincode specified as a vrf random select policy
 		policy := &pb.ApplicationPolicy{
 			Type: &pb.ApplicationPolicy_ChannelConfigPolicyReference{

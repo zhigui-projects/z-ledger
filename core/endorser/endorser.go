@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package endorser
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"strconv"
@@ -474,24 +473,10 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
-	if cdLedger.VrfEnabled {
-		if !bytes.Equal(peerIdentity, endorsement.Endorser) {
-			logger.Errorf("Peer identity not match")
-		} else {
-			logger.Infof("Peer identity match")
-		}
-
-		vp := &pbvrf.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
-		vpBytes, err = proto.Marshal(vp)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		vp := &pbvrf.VrfPayload{Payload: mPrpBytes}
-		vpBytes, err = proto.Marshal(vp)
-		if err != nil {
-			return nil, err
-		}
+	vp := &pbvrf.VrfPayload{Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+	vpBytes, err = proto.Marshal(vp)
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.ProposalResponse{

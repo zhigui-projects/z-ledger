@@ -183,7 +183,7 @@ func CreateSignedTx(
 			return nil, err
 		}
 
-		if vp.Endorser != nil && vp.VrfResult != nil && vp.VrfProof != nil {
+		if vp.VrfResult != nil && vp.VrfProof != nil {
 			vrfEndorsements = append(vrfEndorsements, &pb.VrfEndorsement{
 				Endorser: vp.Endorser,
 				Result:   vp.VrfResult,
@@ -197,7 +197,7 @@ func CreateSignedTx(
 
 		endorsements = append(endorsements, r.Endorsement)
 
-		if n == 0 {
+		if a1 == nil {
 			a1 = vp.Payload
 			continue
 		}
