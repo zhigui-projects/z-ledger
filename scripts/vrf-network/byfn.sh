@@ -171,12 +171,11 @@ function networkUp() {
     exit 1
   fi
 
-  echo "Sleeping 15s to allow Raft cluster to complete booting"
-  sleep 15
+  sleep 5
 
   if [ "${NO_CHAINCODE}" != "true" ]; then
     echo Vendoring Go dependencies ...
-    pushd ../chaincode/abstore/go
+    pushd ./chaincode/abstore/go
     GO111MODULE=on go mod vendor
     popd
     echo Finished vendoring Go dependencies
@@ -260,7 +259,7 @@ function upgradeNetwork() {
 # Tear down running network
 function networkDown() {
   # stop org3 containers also in addition to org1 and org2, in case we were running sample to add org3
-  docker-compose -f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH -f $COMPOSE_FILE_RAFT2 -f $COMPOSE_FILE_CA -f $COMPOSE_FILE_ORG3 down --volumes --remove-orphans
+  docker-compose -f $COMPOSE_FILE down --volumes --remove-orphans
 
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   if [ "$MODE" != "restart" ]; then
