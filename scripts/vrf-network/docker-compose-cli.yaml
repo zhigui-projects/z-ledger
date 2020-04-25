@@ -11,6 +11,12 @@ volumes:
   peer1.org1.example.com:
   peer0.org2.example.com:
   peer1.org2.example.com:
+  peer0.org3.example.com:
+  peer1.org3.example.com:
+  peer0.org4.example.com:
+  peer1.org4.example.com:
+  peer0.org5.example.com:
+  peer1.org5.example.com:
 
 networks:
   byfn:
