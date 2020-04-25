@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/msp"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/flogging"
 	mspi "github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
@@ -418,9 +419,10 @@ func SignatureSetToValidIdentities(signedData []*protoutil.SignedData, identityD
 	return identities
 }
 
-func VrfSetToValidIdentities(vrfData []*protoutil.VrfData, identityDeserializer mspi.IdentityDeserializer) []mspi.Identity {
+func VrfSetToValidIdentities(vrfData []*protoutil.VrfData, identityDeserializer mspi.IdentityDeserializer) (identities, selected []mspi.Identity) {
 	idMap := map[string]struct{}{}
-	identities := make([]mspi.Identity, 0, len(vrfData))
+	identities = make([]mspi.Identity, 0, len(vrfData))
+	selected = make([]mspi.Identity, 0)
 
 	for i, sd := range vrfData {
 		identity, err := identityDeserializer.DeserializeIdentity(sd.Identity)
@@ -443,11 +445,14 @@ func VrfSetToValidIdentities(vrfData []*protoutil.VrfData, identityDeserializer 
 			logger.Warningf("vrf for identity %d verify failed: %s", i, err)
 			continue
 		}
-		logger.Infof("Vrf for identity %d validated", i)
+
+		if ok, _ := utils.VrfSortition(sd.Result, 10, 4); ok {
+			selected = append(selected, identity)
+		}
 
 		idMap[key] = struct{}{}
 		identities = append(identities, identity)
 	}
 
-	return identities
+	return
 }

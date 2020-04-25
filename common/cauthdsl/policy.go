@@ -8,6 +8,7 @@ package cauthdsl
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
@@ -113,16 +114,14 @@ func (p *policy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet 
 		return errors.New("no such policy")
 	}
 
-	vrfIds := policies.VrfSetToValidIdentities(vrfSet, p.deserializer)
-
-	if err := p.EvaluateIdentities(vrfIds); err != nil {
+	identities, selected := policies.VrfSetToValidIdentities(vrfSet, p.deserializer)
+	if err := p.EvaluateIdentities(identities); err != nil {
 		return err
 	}
 
 	sigIds := policies.SignatureSetToValidIdentities(signatureSet, p.deserializer)
-
-	if len(sigIds) == 0 {
-		return errors.New("no invalid endorsement signature for vrf-policy")
+	if !reflect.DeepEqual(selected, sigIds) {
+		return errors.New("vrf selected endorser number not match actual signatureSet")
 	}
 
 	return nil

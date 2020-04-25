@@ -386,7 +386,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 
 	// Impl by zig
 	isInvoke := func() bool {
-		inv, ok := up.Input.Decorations["invoke"]
+		inv, ok := up.Input.Decorations["vrfEnabled"]
 		if !ok {
 			return true
 		}
@@ -399,7 +399,6 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 
 	var result, proof, msg []byte
 	if cdLedger.VrfEnabled && isInvoke {
-		logger.Infof("ProcessProposal start vrf endorser election for invoke transaction")
 		//localIdentity, err := e.LocalMSP.DeserializeIdentity(peerIdentity)
 		//if err != nil {
 		//	return nil, err

@@ -565,71 +565,16 @@ func ChaincodeInvokeOrQuery(
 	deliverClients []pb.DeliverClient,
 	bc common.BroadcastClient,
 ) (*pb.ProposalResponse, error) {
-	// Build the ChaincodeInvocationSpec message
-	invocation := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
-
-	creator, err := signer.Serialize()
-	if err != nil {
-		return nil, errors.WithMessage(err, "error serializing identity")
-	}
-
 	funcName := "invoke"
 	if !invoke {
 		funcName = "query"
 	}
 
-	if invocation.ChaincodeSpec.Input.Decorations == nil {
-		invocation.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
-	}
-	invocation.ChaincodeSpec.Input.Decorations["invoke"] = []byte(strconv.FormatBool(invoke))
-
-	// extract the transient field if it exists
-	var tMap map[string][]byte
-	if transient != "" {
-		if err := json.Unmarshal([]byte(transient), &tMap); err != nil {
-			return nil, errors.Wrap(err, "error parsing transient string")
-		}
-	}
-
-	prop, txid, err := protoutil.CreateChaincodeProposalWithTxIDAndTransient(pcommon.HeaderType_ENDORSER_TRANSACTION, cID, invocation, creator, txID, tMap)
+	resps, proposalResp, prop, txid, err := proposalProcess(spec, signer, endorserClients, cID, txID, funcName, invoke)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "error creating proposal for %s", funcName)
+		return nil, err
 	}
-
-	signedProp, err := protoutil.GetSignedProposal(prop, signer)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "error creating signed proposal for %s", funcName)
-	}
-
-	responses, err := processProposals(endorserClients, signedProp)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "error endorsing %s", funcName)
-	}
-
-	if len(responses) == 0 {
-		// this should only happen if some new code has introduced a bug
-		return nil, errors.New("no proposal responses received - this might indicate a bug")
-	}
-	// all responses will be checked when the signed transaction is created.
-	// for now, just set this so we check the first response's status
-	var proposalResp *pb.ProposalResponse
-	resps := make([]*pb.ProposalResponse, 0)
-	for _, v := range responses {
-		if v == nil {
-			continue
-		}
-		if v.Response.Status >= shim.ERRORTHRESHOLD {
-			logger.Infof(" proposal responses received status: %d, message: %s", v.Response.Status, v.Response.Message)
-			continue
-		}
-		resps = append(resps, v)
-
-		if proposalResp == nil && v.Response.Status == shim.OK {
-			proposalResp = v
-		}
-	}
-
-	if len(resps) == 0 {
+	if proposalResp == nil {
 		return nil, errors.New("no invalid proposal responses received")
 	}
 
@@ -677,6 +622,85 @@ func ChaincodeInvokeOrQuery(
 	}
 
 	return proposalResp, nil
+}
+
+func createSignedProposal(
+	spec *pb.ChaincodeSpec,
+	signer identity.SignerSerializer,
+	cID, txID, funcName string,
+	vrfEnabled bool) (*pb.SignedProposal, *pb.Proposal, string, error) {
+	// Build the ChaincodeInvocationSpec message
+	invocation := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
+
+	creator, err := signer.Serialize()
+	if err != nil {
+		return nil, nil, "", errors.WithMessage(err, "error serializing identity")
+	}
+
+	if invocation.ChaincodeSpec.Input.Decorations == nil {
+		invocation.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
+	}
+	invocation.ChaincodeSpec.Input.Decorations["vrfEnabled"] = []byte(strconv.FormatBool(vrfEnabled))
+
+	// extract the transient field if it exists
+	var tMap map[string][]byte
+	if transient != "" {
+		if err := json.Unmarshal([]byte(transient), &tMap); err != nil {
+			return nil, nil, "", errors.Wrap(err, "error parsing transient string")
+		}
+	}
+
+	prop, txid, err := protoutil.CreateChaincodeProposalWithTxIDAndTransient(pcommon.HeaderType_ENDORSER_TRANSACTION, cID, invocation, creator, txID, tMap)
+	if err != nil {
+		return nil, nil, "", errors.WithMessagef(err, "error creating proposal for %s", funcName)
+	}
+
+	signedProp, err := protoutil.GetSignedProposal(prop, signer)
+	if err != nil {
+		return nil, nil, "", errors.WithMessagef(err, "error creating signed proposal for %s", funcName)
+	}
+	return signedProp, prop, txid, nil
+
+}
+
+func proposalProcess(spec *pb.ChaincodeSpec,
+	signer identity.SignerSerializer,
+	endorserClients []pb.EndorserClient,
+	cID, txID, funcName string,
+	vrfEnabled bool) ([]*pb.ProposalResponse, *pb.ProposalResponse, *pb.Proposal, string, error) {
+	signedProp, prop, txid, err := createSignedProposal(spec, signer, cID, txID, funcName, vrfEnabled)
+	if err != nil {
+		return nil, nil, nil, "", errors.WithMessagef(err, "error creating signed proposal for %s", funcName)
+	}
+
+	responses, err := processProposals(endorserClients, signedProp)
+	if err != nil {
+		return nil, nil, nil, "", errors.WithMessagef(err, "error endorsing %s", funcName)
+	}
+
+	if len(responses) == 0 {
+		// this should only happen if some new code has introduced a bug
+		return nil, nil, nil, "", errors.New("no proposal responses received - this might indicate a bug")
+	}
+	// all responses will be checked when the signed transaction is created.
+	// for now, just set this so we check the first response's status
+	var proposalResp *pb.ProposalResponse
+	resps := make([]*pb.ProposalResponse, 0)
+	for _, v := range responses {
+		if v == nil {
+			continue
+		}
+		if v.Response.Status >= shim.ERRORTHRESHOLD {
+			logger.Infof(" proposal responses received status: %d, message: %s", v.Response.Status, v.Response.Message)
+			continue
+		}
+		resps = append(resps, v)
+
+		if proposalResp == nil && v.Response.Status == shim.OK {
+			proposalResp = v
+		}
+	}
+	return resps, proposalResp, prop, txid, nil
 }
 
 // DeliverGroup holds all of the information needed to connect
