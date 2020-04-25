@@ -144,7 +144,7 @@ func (imp *ImplicitMetaPolicy) EvaluateIdentities(identities []msp.Identity) err
 }
 
 func (imp *ImplicitMetaPolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
-	logger.Infof("This is an vrf implicit meta policy, it will trigger other policy evaluations, whose failures may be benign")
+	logger.Infof("This is an vrf implicit meta policy,  this policy requires %d of the '%s' sub-policies to be satisfied", len(imp.SubPolicies), imp.Threshold, imp.SubPolicyName)
 	remaining := imp.Threshold
 
 	defer func() {

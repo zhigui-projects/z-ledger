@@ -116,7 +116,7 @@ func (p *policy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet 
 	vrfIds := policies.VrfSetToValidIdentities(vrfSet, p.deserializer)
 
 	if err := p.EvaluateIdentities(vrfIds); err != nil {
-		return nil
+		return err
 	}
 
 	sigIds := policies.SignatureSetToValidIdentities(signatureSet, p.deserializer)

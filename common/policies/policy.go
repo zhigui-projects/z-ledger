@@ -317,11 +317,16 @@ func (pl *PolicyLogger) EvaluateIdentities(identities []mspi.Identity) error {
 }
 
 func (pl *PolicyLogger) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	if logger.IsEnabledFor(zapcore.DebugLevel) {
+		logger.Debugf("== Evaluating %T Policy %s ==", pl.Policy, pl.policyName)
+		defer logger.Debugf("== Done Evaluating %T Policy %s", pl.Policy, pl.policyName)
+	}
+
 	err := pl.Policy.EvaluateVrfPolicy(signatureSet, vrfSet)
 	if err != nil {
-		logger.Info("VrfData or Signatures did not satisfy vrf-policy")
+		logger.Debugf("Vrf set did not satisfy policy %s", pl.policyName)
 	} else {
-		logger.Info("VrfData and Signatures satisfies vrf-policy")
+		logger.Debugf("Vrf set satisfies policy %s", pl.policyName)
 	}
 	return err
 }

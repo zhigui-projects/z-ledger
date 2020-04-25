@@ -400,11 +400,11 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 	var result, proof, msg []byte
 	if cdLedger.VrfEnabled && isInvoke {
 		logger.Infof("ProcessProposal start vrf endorser election for invoke transaction")
-		localIdentity, err := e.LocalMSP.DeserializeIdentity(peerIdentity)
-		if err != nil {
-			return nil, err
-		}
-		logger.Infof("Deserialize local peer identity mspId: %s, id: %s", localIdentity.GetIdentifier().Mspid, localIdentity.GetIdentifier().Id)
+		//localIdentity, err := e.LocalMSP.DeserializeIdentity(peerIdentity)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//logger.Infof("Deserialize local peer identity mspId: %s, id: %s", localIdentity.GetIdentifier().Mspid, localIdentity.GetIdentifier().Id)
 
 		msg, err = e.Support.GetCurrentBlockHash(up.ChannelHeader.ChannelId)
 		if err != nil {
