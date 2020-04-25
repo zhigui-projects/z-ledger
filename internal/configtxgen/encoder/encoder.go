@@ -230,6 +230,8 @@ func NewOrdererGroup(conf *genesisconfig.Orderer) (*cb.ConfigGroup, error) {
 			} else {
 				addValue(ordererGroup, channelconfig.ConsensusTypeValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
 			}
+		} else {
+			addValue(ordererGroup, channelconfig.ConsensusTypeValue(conf.OrdererType, nil), channelconfig.AdminsPolicyKey)
 		}
 		if conf.Sbft != nil {
 			// TODO ZIG
