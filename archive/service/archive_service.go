@@ -94,9 +94,8 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logger.Errorf("Archive service can't start watcher, due to %+v", err)
+		logger.Errorf("Archive service - can't start watcher, due to %+v", err)
 	}
-	defer watcher.Close()
 	go func() {
 		for {
 			select {
@@ -106,12 +105,12 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 					return
 				}
 				if event.Op&fsnotify.Create == fsnotify.Create {
-					logger.Infof("Created ledger file: %s", event.Name)
+					logger.Infof("Archive service - created ledger file: %s", event.Name)
 					//TODO: transfer file
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
-					logger.Errorf("Archive service - watcher has been closed")
+					logger.Errorf("Archive service - watcher has been closed, due to err: %+v", err)
 					return
 				}
 				logger.Errorf("Archive service - watcher got error: %+v", err)
@@ -119,10 +118,7 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 		}
 	}()
 
-	rootFSPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "ledgersData")
-	chainsDir := filepath.Join(kvledger.BlockStorePath(rootFSPath), hybridblkstorage.ChainsDir)
-	ledgerDir := filepath.Join(chainsDir, chainID)
-
+	ledgerDir := getLedgerDir(chainID)
 	logger.Infof("Archive service - adding watcher for ledger directory: %s", ledgerDir)
 	err = watcher.Add(ledgerDir)
 	if err != nil {
@@ -136,11 +132,33 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 }
 
 func (a *ArchiveService) StopWatcherForChannel(chainID string) error {
-	//TODO
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	watcher, exist := a.watchers[chainID]
+	if !exist {
+		errMsg := fmt.Sprintf("Archive service - ledger watcher does not exists for %s found", chainID)
+		logger.Warn(errMsg)
+		return errors.New(errMsg)
+	}
+
+	if err := watcher.Close(); err != nil {
+		errMsg := fmt.Sprintf("Archive service - close watcher failed for channel: %s, due to %+v", chainID, err)
+		logger.Error(errMsg)
+		return errors.New(errMsg)
+	}
+
 	return nil
 }
 
 func (a *ArchiveService) Stop() error {
 	//TODO
 	return nil
+}
+
+func getLedgerDir(chainID string) string {
+	rootFSPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "ledgersData")
+	chainsDir := filepath.Join(kvledger.BlockStorePath(rootFSPath), hybridblkstorage.ChainsDir)
+	ledgerDir := filepath.Join(chainsDir, chainID)
+	return ledgerDir
 }
