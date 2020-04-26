@@ -7,6 +7,7 @@ package stateormdb
 
 import (
 	"fmt"
+	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
@@ -14,37 +15,37 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb"
-	"github.com/spf13/viper"
 )
 
 var logger = flogging.MustGetLogger("stateormdb")
 
 // VersionedDBProvider implements interface VersionedDBProvider
 type VersionedDBProvider struct {
-	ormDBinstance *ormdb.ORMDBInstance
+	ormDBInstance *ormdb.ORMDBInstance
 	databases     map[string]*VersionedDB
 	mux           sync.Mutex
 	//openCounts    uint64
+	cache *statedb.Cache
 }
 
 // VersionedDB implements VersionedDB interface
 type VersionedDB struct {
-	ormDBInstance  *ormdb.ORMDBInstance
-	metadataDB     *ormdb.ORMDatabase            // A database per channel to store metadata.
-	chainName      string                        // The name of the chain/channel.
-	namespaceDBs   map[string]*ormdb.ORMDatabase // One database per deployed chaincode.
-	mux            sync.RWMutex
-	lsccStateCache *statedb.LsccStateCache
+	ormDBInstance *ormdb.ORMDBInstance
+	metadataDB    *ormdb.ORMDatabase            // A database per channel to store metadata.
+	chainName     string                        // The name of the chain/channel.
+	namespaceDBs  map[string]*ormdb.ORMDatabase // One database per deployed chaincode.
+	mux           sync.RWMutex
+	cache         *statedb.Cache
 }
 
 // NewVersionedDBProvider instantiates VersionedDBProvider
-func NewVersionedDBProvider(metricsProvider metrics.Provider) (*VersionedDBProvider, error) {
+func NewVersionedDBProvider(config *ormdbconfig.ORMDBConfig, metricsProvider metrics.Provider, cache *statedb.Cache) (*VersionedDBProvider, error) {
 	logger.Debugf("constructing ORMDB VersionedDBProvider")
-	instance, err := ormdb.NewORMDBInstance(metricsProvider)
+	instance, err := ormdb.NewORMDBInstance(config, metricsProvider)
 	if err != nil {
 		return nil, err
 	}
-	return &VersionedDBProvider{ormDBinstance: instance, databases: make(map[string]*VersionedDB)}, nil
+	return &VersionedDBProvider{ormDBInstance: instance, databases: make(map[string]*VersionedDB), cache: cache}, nil
 }
 
 // GetDBHandle gets the handle to a named database
@@ -54,7 +55,7 @@ func (provider *VersionedDBProvider) GetDBHandle(dbName string) (statedb.Version
 	vdb := provider.databases[dbName]
 	if vdb == nil {
 		var err error
-		vdb, err = newVersionedDB(provider.ormDBinstance, dbName)
+		vdb, err = newVersionedDB(provider.ormDBInstance, dbName, provider.cache)
 		if err != nil {
 			return nil, err
 		}
@@ -64,12 +65,11 @@ func (provider *VersionedDBProvider) GetDBHandle(dbName string) (statedb.Version
 }
 
 // newVersionedDB constructs an instance of VersionedDB
-func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string) (*VersionedDB, error) {
+func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, cache *statedb.Cache) (*VersionedDB, error) {
 	chainName := dbName
 	dbName = dbName + "_"
 
-	dbType := viper.GetString("ledger.state.stateDatabase")
-	metadataDB, err := ormdb.CreateORMDatabase(ormDBInstance, dbName, dbType)
+	metadataDB, err := ormdb.CreateORMDatabase(ormDBInstance, dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -79,52 +79,80 @@ func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string) (*Version
 		metadataDB:    metadataDB,
 		chainName:     chainName,
 		namespaceDBs:  namespaceDBMap,
-		lsccStateCache: &statedb.LsccStateCache{
-			Cache: make(map[string]*statedb.VersionedValue),
-		},
+		cache:         cache,
 	}, nil
 }
 
+// GetState implements method in VersionedDB interface
 func (v *VersionedDB) GetState(namespace string, key string) (*statedb.VersionedValue, error) {
-	//
-	//logger.Debugf("GetState(). ns=%s, key=%s", namespace, key)
-	//if namespace == "lscc" {
-	//	if value := v.lsccStateCache.GetState(key); value != nil {
-	//		return value, nil
-	//	}
-	//}
-	//
-	//db, err := v.getNamespaceDBHandle(namespace)
+	logger.Debugf("GetState(). ns=%s, key=%s", namespace, key)
+
+	// (1) read the KV from the cache if available
+	cacheEnabled := v.cache.Enabled(namespace)
+	if cacheEnabled {
+		cv, err := v.cache.GetState(v.chainName, namespace, key)
+		if err != nil {
+			return nil, err
+		}
+		if cv != nil {
+			vv, err := constructVersionedValue(cv)
+			if err != nil {
+				return nil, err
+			}
+			return vv, nil
+		}
+	}
+
+	// (2) read from the database if cache miss occurs
+	vv, err := v.readFromDB(namespace, key)
+	if err != nil {
+		return nil, err
+	}
+	if vv == nil {
+		return nil, nil
+	}
+
+	// (3) if the value is not nil, store in the cache
+	if cacheEnabled {
+		cacheValue := constructCacheValue(vv)
+		if err := v.cache.PutState(v.chainName, namespace, key, cacheValue); err != nil {
+			return nil, err
+		}
+	}
+
+	return vv, nil
+}
+
+func (vdb *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue, error) {
+	//db, err := vdb.getNamespaceDBHandle(namespace)
 	//if err != nil {
 	//	return nil, err
 	//}
-	//
-	//keys := strings.Split(key, "#@#")
-	//typeKey := keys[0]
-	//entId := keys[1]
-	//entType := db.ModelTypes[typeKey]
-	//entPtr := reflect.New(entType)
-	//db.DB.Find(entPtr, entId)
-	//
-	//if entPtr.IsNil() {
+	//couchDoc, _, err := db.ReadDoc(key)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if couchDoc == nil {
 	//	return nil, nil
 	//}
-	//
-	//kv, err := couchDocToKeyValue(entPtr.Elem())
+	//kv, err := couchDocToKeyValue(couchDoc)
 	//if err != nil {
 	//	return nil, err
 	//}
-	//
-	//if namespace == "lscc" {
-	//	vdb.lsccStateCache.SetState(key, kv.VersionedValue)
-	//}
-	//
-	//return kv.VersionedValue, nil
+	//return kv, nil
 	return nil, nil
 }
 
+// GetVersion implements method in VersionedDB interface
 func (v *VersionedDB) GetVersion(namespace string, key string) (*version.Height, error) {
-	panic("implement me")
+	versionedValue, err := v.GetState(namespace, key)
+	if err != nil {
+		return nil, err
+	}
+	if versionedValue == nil {
+		return nil, nil
+	}
+	return versionedValue.Version, nil
 }
 
 func (v *VersionedDB) GetStateMultipleKeys(namespace string, keys []string) ([]*statedb.VersionedValue, error) {
@@ -184,15 +212,34 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 	defer v.mux.Unlock()
 	db = v.namespaceDBs[namespace]
 	if db == nil {
-		var err error
-		dbType := viper.GetString("ledger.state.stateDatabase")
-		db, err = ormdb.CreateORMDatabase(v.ormDBInstance, namespaceDBName, dbType)
+		db, err := ormdb.CreateORMDatabase(v.ormDBInstance, namespaceDBName)
 		if err != nil {
 			return nil, err
 		}
 		v.namespaceDBs[namespace] = db
 	}
 	return db, nil
+}
+
+func constructVersionedValue(cv *statedb.CacheValue) (*statedb.VersionedValue, error) {
+	height, _, err := version.NewHeightFromBytes(cv.VersionBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &statedb.VersionedValue{
+		Value:    cv.Value,
+		Version:  height,
+		Metadata: cv.Metadata,
+	}, nil
+}
+
+func constructCacheValue(v *statedb.VersionedValue) *statedb.CacheValue {
+	return &statedb.CacheValue{
+		VersionBytes: v.Version.ToBytes(),
+		Value:        v.Value,
+		Metadata:     v.Metadata,
+	}
 }
 
 //func modelToKeyValue() (*statedb.VersionedValue, error) {

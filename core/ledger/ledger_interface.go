@@ -8,6 +8,7 @@ package ledger
 
 import (
 	"fmt"
+	ormdbconf "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-lib-go/healthz"
@@ -54,6 +55,9 @@ type StateDBConfig struct {
 	// CouchDB is the configuration for CouchDB.  It is used when StateDatabase
 	// is set to "CouchDB".
 	CouchDB *couchdb.Config
+	// ORMDB is the configuration for ORMDB.  It is used when StateDatabase
+	// is set to "mysql","postgresql","sqlite3","sqlserver".
+	ORMDB *ormdbconf.ORMDBConfig
 }
 
 // PrivateDataConfig is a structure used to configure a private data storage provider.

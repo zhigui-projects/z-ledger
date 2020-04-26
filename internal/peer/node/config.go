@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package node
 
 import (
+	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
+	"github.com/mitchellh/mapstructure"
 	"path/filepath"
 
 	coreconfig "github.com/hyperledger/fabric/core/config"
@@ -74,6 +76,12 @@ func ledgerConfig() *ledger.Config {
 			RedoLogPath:             filepath.Join(rootFSPath, "couchdbRedoLogs"),
 			UserCacheSizeMBs:        viper.GetInt("ledger.state.couchDBConfig.cacheSize"),
 		}
+	}
+
+	if conf.StateDBConfig.StateDatabase == "ORMDB" {
+		config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
+		_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
+		conf.StateDBConfig.ORMDB = config
 	}
 	return conf
 }

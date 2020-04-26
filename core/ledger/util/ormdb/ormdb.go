@@ -30,20 +30,16 @@ type ORMDatabase struct {
 }
 
 // NewORMDBInstance create a ORMDB instance through ORMDBConfig
-func NewORMDBInstance(metricsProvider metrics.Provider) (*ORMDBInstance, error) {
-	ormdbConfig, err := config.GetORMDBConfig()
-	if err != nil {
-
-	}
-	ormDBInstance := &ORMDBInstance{Config: ormdbConfig}
+func NewORMDBInstance(config *config.ORMDBConfig, metricsProvider metrics.Provider) (*ORMDBInstance, error) {
+	ormDBInstance := &ORMDBInstance{Config: config}
 	return ormDBInstance, nil
 }
 
 // CreateORMDatabase creates a ORM database object, as well as the underlying database if it does not exist
-func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string, dbType string) (*ORMDatabase, error) {
+func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string) (*ORMDatabase, error) {
 	var db *gorm.DB
 	var err error
-	switch dbType {
+	switch ormDBInstance.Config.DBType {
 	case "sqlite3":
 		db, err = sqllite3.CreateIfNotExistAndOpen(ormDBInstance.Config, dbName)
 		if err != nil {
@@ -52,7 +48,7 @@ func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string, dbType strin
 	default:
 		return nil, errors.New("not supported database type")
 	}
-	ormDBDatabase := &ORMDatabase{ORMDBInstance: ormDBInstance, DBName: dbName, DB: db, Type: dbType}
+	ormDBDatabase := &ORMDatabase{ORMDBInstance: ormDBInstance, DBName: dbName, DB: db, Type: ormDBInstance.Config.DBType}
 
 	return ormDBDatabase, nil
 }

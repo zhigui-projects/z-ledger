@@ -7,6 +7,8 @@ package ormdb
 
 import (
 	"bytes"
+	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
+	"github.com/mitchellh/mapstructure"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -19,6 +21,7 @@ func TestNewORMDBInstance(t *testing.T) {
 		"  state:\n" +
 		"    ormDBConfig:\n" +
 		"      username: test\n" +
+		"      dbtype: sqlite3\n" +
 		"      sqlite3Config:\n" +
 		"        path: /tmp/ormdb\n"
 
@@ -29,7 +32,9 @@ func TestNewORMDBInstance(t *testing.T) {
 		t.Fatalf("Error reading config: %s", err)
 	}
 
-	ormDBInstance, err := NewORMDBInstance(nil)
+	config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
+	_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
+	ormDBInstance, err := NewORMDBInstance(config, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, ormDBInstance)
 	assert.Equal(t, "test", ormDBInstance.Config.Username)
@@ -42,6 +47,7 @@ func TestCreateORMDatabase(t *testing.T) {
 		"  state:\n" +
 		"    ormDBConfig:\n" +
 		"      username: test\n" +
+		"      dbtype: sqlite3\n" +
 		"      sqlite3Config:\n" +
 		"        path: /tmp/ormdb\n"
 
@@ -52,10 +58,12 @@ func TestCreateORMDatabase(t *testing.T) {
 		t.Fatalf("Error reading config: %s", err)
 	}
 
-	ormDBInstance, err := NewORMDBInstance(nil)
+	config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
+	_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
+	ormDBInstance, err := NewORMDBInstance(config, nil)
 	assert.NoError(t, err)
 
-	db, err := CreateORMDatabase(ormDBInstance, "test", "sqlite3")
+	db, err := CreateORMDatabase(ormDBInstance, "test")
 	assert.NoError(t, err)
 	assert.NotNil(t, db)
 	err = DeleteORMDatabase(db, "test")
