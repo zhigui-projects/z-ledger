@@ -164,7 +164,7 @@ type GossipService struct {
 	privateHandlers map[string]privateHandler
 	chains          map[string]state.GossipStateProvider
 	leaderElection  map[string]election.LeaderElectionService
-	archiveService  map[string]archiveservice.ArchiveService
+	archiveService  map[string]*archiveservice.ArchiveService
 	deliveryService map[string]deliverservice.DeliverService
 	deliveryFactory DeliveryServiceFactory
 	lock            sync.RWMutex
@@ -239,7 +239,7 @@ func New(
 		privateHandlers: make(map[string]privateHandler),
 		chains:          make(map[string]state.GossipStateProvider),
 		leaderElection:  make(map[string]election.LeaderElectionService),
-		archiveService:  make(map[string]archiveservice.ArchiveService),
+		archiveService:  make(map[string]*archiveservice.ArchiveService),
 		deliveryService: make(map[string]deliverservice.DeliverService),
 		deliveryFactory: &deliveryFactoryImpl{
 			signer:               peerIdentity,
@@ -354,7 +354,7 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 
 	if g.archiveService[channelID] == nil {
 		logger.Debugf("Initializing archive service instance for channel: %s", channelID)
-		g.archiveService[channelID] = g.archiveService.New()
+		g.archiveService[channelID], _ = archiveservice.New()
 	}
 
 	// Delivery service might be nil only if it was not able to get connected

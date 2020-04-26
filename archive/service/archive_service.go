@@ -39,6 +39,15 @@ type ArchiveService struct {
 	lock      sync.RWMutex
 }
 
+// ArchiveServiceFactory factory to create and initialize archive service instance
+type ArchiveServiceFactory interface {
+	// Returns an instance of archive service
+	Service() (*ArchiveService, error)
+}
+
+type archiveFactoryImpl struct {
+}
+
 // New construction function to create and initialize
 // archive service instance. It tries to establish connection to
 // the specified dfs name node, in case it fails to dial to it, return nil
