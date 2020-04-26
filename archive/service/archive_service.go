@@ -11,6 +11,7 @@ import (
 	"github.com/colinmarc/hdfs"
 	"github.com/fsnotify/fsnotify"
 	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage"
 	coreconfig "github.com/hyperledger/fabric/core/config"
 	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
@@ -116,7 +117,8 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 	}()
 
 	rootFSPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "ledgersData")
-	ledgerDir := filepath.Join(kvledger.BlockStorePath(rootFSPath), chainID)
+	chainsDir := filepath.Join(kvledger.BlockStorePath(rootFSPath), hybridblkstorage.ChainsDir)
+	ledgerDir := filepath.Join(chainsDir, chainID)
 
 	logger.Infof("Archive service - adding watcher for ledger directory: %s", ledgerDir)
 	err = watcher.Add(ledgerDir)
