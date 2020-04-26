@@ -75,7 +75,10 @@ func New() (*ArchiveService, error) {
 		return nil, err
 	}
 
-	return &ArchiveService{dfsClient: client}, nil
+	return &ArchiveService{
+		dfsClient: client,
+		watchers:  make(map[string]*fsnotify.Watcher),
+	}, nil
 }
 
 // StartWatcherForChannel starts ledger watcher for channel
