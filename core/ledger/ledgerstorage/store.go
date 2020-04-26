@@ -22,8 +22,6 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/pvtdatastorage"
 )
 
-const maxBlockFileSize = 64 * 1024 * 1024
-
 var logger = flogging.MustGetLogger("ledgerstorage")
 
 // Provider encapsulates two providers 1) block store provider and 2) and pvt data store provider
@@ -58,15 +56,12 @@ func NewProvider(blockStoreDir string, archiveConf *ledger.ArchiveConfig, conf *
 	if archiveConf.Enabled {
 		logger.Info("Peer ledger archive is enabled")
 		blockStoreProvider, err = hybridblkstorage.NewProvider(
-			hybridblkstorage.NewConf(blockStoreDir, maxBlockFileSize),
+			hybridblkstorage.NewConf(blockStoreDir, ledgerconfig.GetDefaultMaxBlockfileSize()),
 			indexConfig,
 			metricsProvider)
 	} else {
 		blockStoreProvider, err = fsblkstorage.NewProvider(
-			fsblkstorage.NewConf(
-				blockStoreDir,
-				maxBlockFileSize,
-			),
+			fsblkstorage.NewConf(blockStoreDir, ledgerconfig.GetDefaultMaxBlockfileSize()),
 			indexConfig,
 			metricsProvider,
 		)
