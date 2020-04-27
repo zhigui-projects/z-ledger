@@ -13,12 +13,15 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/colinmarc/hdfs"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/archive/dfs"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage"
+	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage/msgs"
 	"github.com/hyperledger/fabric/common/ledger/util"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
 	"github.com/hyperledger/fabric/protoutil"
@@ -32,7 +35,8 @@ const (
 )
 
 var (
-	blkMgrInfoKey = []byte("blkMgrInfo")
+	blkMgrInfoKey      = []byte("blkMgrInfo")
+	archiveMetaInfoKey = []byte("archiveMetaInfo")
 )
 
 type hybridBlockfileMgr struct {
@@ -44,14 +48,8 @@ type hybridBlockfileMgr struct {
 	cpInfoCond        *sync.Cond
 	currentFileWriter *blockfileWriter
 	bcInfo            atomic.Value
-	amInfo            *archiveMetaInfo
-	//dfsClient *dfsClient
-}
-
-type archiveMetaInfo struct {
-	lastSentFileSuffix    int
-	lastArchiveFileSuffix int
-	fileProofs            map[int]string
+	amInfo            *msgs.ArchiveMetaInfo
+	dfsClient         *hdfs.Client
 }
 
 /*
@@ -103,8 +101,31 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	if err != nil {
 		panic(fmt.Sprintf("Error creating block storage root dir [%s]: %s", rootDir, err))
 	}
+	client, err := dfs.NewHDFSClient()
+	if err != nil {
+		panic(fmt.Sprintf("Could not connect to HDFS, due to %+v", err))
+	}
 	// Instantiate the manager, i.e. blockFileMgr structure
-	mgr := &hybridBlockfileMgr{rootDir: rootDir, conf: conf, db: indexStore}
+	mgr := &hybridBlockfileMgr{rootDir: rootDir, conf: conf, db: indexStore, dfsClient: client}
+
+	amInfo, err := mgr.loadArchiveMetaInfo()
+	if err != nil {
+		panic(fmt.Sprintf("Could not get archive meta info for ledger: %s from db: %s", id, err))
+	}
+	if amInfo == nil {
+		logger.Info("Getting archive info from dfs storage")
+		if amInfo, err = constructArchiveMetaInfoFromDfsBlockFiles(rootDir, client); err != nil {
+			panic(fmt.Sprintf("Could not build archive meta info from dfs block files: %s", err))
+		}
+		logger.Infof("Info constructed by scanning the dfs blocks dir = %s", spew.Sdump(amInfo))
+	} else {
+		logger.Info("Syncing archive meta info from dfs (if needed)")
+		syncArchiveMetaInfoFromDfs(rootDir, amInfo, client)
+	}
+	mgr.amInfo = amInfo
+	if err := mgr.saveArchiveMetaInfo(amInfo); err != nil {
+		panic(fmt.Sprintf("Could not save archive meta info to db: %s", err))
+	}
 
 	// cp = checkpointInfo, retrieve from the database the file suffix or number of where blocks were stored.
 	// It also retrieves the current size of that file and the last block number that was written to that file.
@@ -599,6 +620,34 @@ func (mgr *hybridBlockfileMgr) loadCurrentInfo() (*checkpointInfo, error) {
 	}
 	logger.Debugf("loaded checkpointInfo:%s", i)
 	return i, nil
+}
+
+//Get the current archive meta info that is stored in the database
+func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*msgs.ArchiveMetaInfo, error) {
+	var b []byte
+	var err error
+	if b, err = mgr.db.Get(archiveMetaInfoKey); b == nil || err != nil {
+		return nil, err
+	}
+	archiveMetaInfo := &msgs.ArchiveMetaInfo{}
+	if err := proto.Unmarshal(b, archiveMetaInfo); err != nil {
+		return nil, err
+	}
+	logger.Debugf("loaded archiveMetaInfo:%s", archiveMetaInfo)
+	return archiveMetaInfo, nil
+}
+
+func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *msgs.ArchiveMetaInfo) error {
+	b, err := proto.Marshal(amInfo)
+	if err != nil {
+		logger.Errorf("Marshal archive meta info with error: %s", err)
+		return err
+	}
+	if err = mgr.db.Put(archiveMetaInfoKey, b, true); err != nil {
+		logger.Errorf("Save archive meta info with error: %s", err)
+		return err
+	}
+	return nil
 }
 
 func (mgr *hybridBlockfileMgr) saveCurrentInfo(i *checkpointInfo, sync bool) error {

@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"github.com/colinmarc/hdfs"
 	"github.com/fsnotify/fsnotify"
+	"github.com/hyperledger/fabric/archive/dfs"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage"
 	coreconfig "github.com/hyperledger/fabric/core/config"
 	"github.com/hyperledger/fabric/core/ledger/kvledger"
-	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
 	"github.com/pkg/errors"
 	"path/filepath"
 	"sync"
@@ -44,23 +44,7 @@ type ArchiveService struct {
 // archive service instance. It tries to establish connection to
 // the specified dfs name node, in case it fails to dial to it, return nil
 func New() (*ArchiveService, error) {
-	if len(ledgerconfig.GetHDFSNameNodes()) == 0 {
-		errMsg := "Archive service can't be initialized, due to no namenode address in configuration"
-		logger.Error(errMsg)
-		return nil, errors.New(errMsg)
-	}
-
-	if len(ledgerconfig.GetHDFSUser()) == 0 {
-		errMsg := "Archive service can't be initialized, due to no HDFS user in configuration"
-		logger.Error(errMsg)
-		return nil, errors.New(errMsg)
-	}
-
-	client, err := hdfs.NewClient(hdfs.ClientOptions{
-		Addresses: ledgerconfig.GetHDFSNameNodes(),
-		User:      ledgerconfig.GetHDFSUser(),
-	})
-
+	client, err := dfs.NewHDFSClient()
 	if err != nil {
 		logger.Errorf("Archive service can't connect to HDFS, due to %+v", err)
 		return nil, err
