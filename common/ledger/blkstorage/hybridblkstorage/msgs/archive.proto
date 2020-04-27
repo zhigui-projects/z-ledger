@@ -1,0 +1,17 @@
+/*
+Copyright Zhigui.com. All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+option go_package = "github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage/msgs";
+
+package msgs;
+
+message archiveMetaInfo {
+  int32 last_sent_file_suffix = 1;
+  int32 last_archive_file_suffix = 2;
+  map<int32, string> file_proofs = 3;
+}
