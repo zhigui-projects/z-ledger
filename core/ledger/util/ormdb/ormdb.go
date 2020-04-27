@@ -6,8 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 package ormdb
 
 import (
-	"reflect"
-
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/common/metrics"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/sqllite3"
@@ -26,7 +25,7 @@ type ORMDatabase struct {
 	DBName        string
 	DB            *gorm.DB
 	Type          string
-	ModelTypes    map[string]reflect.Type
+	ModelTypes    map[string]entitydefinition.DynamicStruct
 }
 
 // NewORMDBInstance create a ORMDB instance through ORMDBConfig

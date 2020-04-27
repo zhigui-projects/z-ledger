@@ -6,8 +6,15 @@ SPDX-License-Identifier: Apache-2.0
 package stateormdb
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/msgs"
 	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
+	"github.com/pkg/errors"
+	"reflect"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
@@ -123,24 +130,52 @@ func (v *VersionedDB) GetState(namespace string, key string) (*statedb.Versioned
 	return vv, nil
 }
 
-func (vdb *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue, error) {
-	//db, err := vdb.getNamespaceDBHandle(namespace)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//couchDoc, _, err := db.ReadDoc(key)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if couchDoc == nil {
-	//	return nil, nil
-	//}
-	//kv, err := couchDocToKeyValue(couchDoc)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//return kv, nil
-	return nil, nil
+func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue, error) {
+	db, err := v.getNamespaceDBHandle(namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	keys, err := parseKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	entityName := keys[0]
+	entityId := keys[1]
+	entity := db.ModelTypes[entityName].Interface()
+	verAndMetaft, exist := db.ModelTypes[entityName].FieldByName("ID")
+	if !exist {
+		return nil, errors.New("entity no ID field")
+	}
+	if verAndMetaft.Type.Kind() == reflect.Int {
+		entityIdInt, err := strconv.Atoi(entityId)
+		if err != nil {
+			return nil, errors.WithMessage(err, "entity int ID convert failed")
+		}
+		db.DB.Find(entity, entityIdInt)
+	} else if verAndMetaft.Type.Kind() == reflect.String {
+		db.DB.Find(entity, entityId)
+	} else {
+		return nil, errors.New("not supported entity ID field type")
+	}
+
+	if entity == nil {
+		return nil, nil
+	}
+
+	verAndMetaft, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
+	if !exist {
+		return nil, errors.New("entity no VerAndMeta field")
+	}
+	verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
+	returnVersion, returnMetadata, err := msgs.DecodeVersionAndMetadata(verAndMeta)
+
+	entityBytes, err := json.Marshal(entity)
+	if err != nil {
+		return nil, err
+	}
+	return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: entityBytes}, nil
 }
 
 // GetVersion implements method in VersionedDB interface
@@ -240,6 +275,14 @@ func constructCacheValue(v *statedb.VersionedValue) *statedb.CacheValue {
 		Value:        v.Value,
 		Metadata:     v.Metadata,
 	}
+}
+
+func parseKey(key string) ([]string, error) {
+	keys := strings.Split(key, entitydefinition.ORMDB_SEPERATOR)
+	if len(keys) != 2 {
+		return nil, errors.New("wrong ormdb key")
+	}
+	return keys, nil
 }
 
 //func modelToKeyValue() (*statedb.VersionedValue, error) {
