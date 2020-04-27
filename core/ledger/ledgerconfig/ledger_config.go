@@ -16,7 +16,7 @@ const confHDFSUser = "ledger.archive.hdfs.user"
 func GetDefaultMaxBlockfileSize() int {
 	//TODO: [maxpeng] change back after all tasks has been finished
 	//return 64 * 1024 * 1024 // 64MB
-	return 32 * 1024 //32KB for testing
+	return 40 * 1024 // 40KB for testing
 }
 
 //IsArchiveEnabled exposes the archiveEnabled variable
