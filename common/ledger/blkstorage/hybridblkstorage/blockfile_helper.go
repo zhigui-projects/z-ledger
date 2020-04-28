@@ -133,7 +133,7 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Clie
 	amInfo.LastSentFileSuffix = int32(lastSentFileNum)
 	//TODO：calculate checksum
 	//amInfo.FileProofs[]
-	logger.Infof("Archive meta info constructed from dfs = %s", spew.Sdump(amInfo))
+	logger.Infof("Archive meta info constructed from dfs = %s", amInfo)
 	return amInfo, nil
 }
 
@@ -173,7 +173,7 @@ func retrieveLastFileSuffixFromDfs(rootDir string, client *hdfs.Client) (int, er
 	for _, fileInfo := range filesInfo {
 		name := fileInfo.Name()
 		if fileInfo.IsDir() || !isBlockFileName(name) {
-			logger.Debugf("Skipping File name = %s", name)
+			logger.Infof("Skipping File name = %s", name)
 			continue
 		}
 		fileSuffix := strings.TrimPrefix(name, blockfilePrefix)
@@ -185,7 +185,7 @@ func retrieveLastFileSuffixFromDfs(rootDir string, client *hdfs.Client) (int, er
 			biggestFileNum = fileNum
 		}
 	}
-	logger.Debugf("retrieveLastFileSuffixFromDfs() - biggestFileNum = %d", biggestFileNum)
+	logger.Infof("retrieveLastFileSuffixFromDfs() - biggestFileNum = %d", biggestFileNum)
 	return biggestFileNum, err
 }
 

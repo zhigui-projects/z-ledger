@@ -117,7 +117,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 		if amInfo, err = constructArchiveMetaInfoFromDfsBlockFiles(rootDir, client); err != nil {
 			panic(fmt.Sprintf("Could not build archive meta info from dfs block files: %s", err))
 		}
-		logger.Infof("Info constructed by scanning the dfs blocks dir = %s", spew.Sdump(amInfo))
+		logger.Infof("Archive meta info constructed by scanning the dfs blocks dir: %s", amInfo)
 	} else {
 		logger.Info("Syncing archive meta info from dfs (if needed)")
 		syncArchiveMetaInfoFromDfs(rootDir, amInfo, client)
