@@ -24,6 +24,17 @@ type ChaincodeStub struct {
 		result1 string
 		result2 error
 	}
+	CreateTableStub        func(interface{}) error
+	createTableMutex       sync.RWMutex
+	createTableArgsForCall []struct {
+		arg1 interface{}
+	}
+	createTableReturns struct {
+		result1 error
+	}
+	createTableReturnsOnCall map[int]struct {
+		result1 error
+	}
 	DelPrivateDataStub        func(string, string) error
 	delPrivateDataMutex       sync.RWMutex
 	delPrivateDataArgsForCall []struct {
@@ -561,6 +572,66 @@ func (fake *ChaincodeStub) CreateCompositeKeyReturnsOnCall(i int, result1 string
 		result1 string
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *ChaincodeStub) CreateTable(arg1 interface{}) error {
+	fake.createTableMutex.Lock()
+	ret, specificReturn := fake.createTableReturnsOnCall[len(fake.createTableArgsForCall)]
+	fake.createTableArgsForCall = append(fake.createTableArgsForCall, struct {
+		arg1 interface{}
+	}{arg1})
+	fake.recordInvocation("CreateTable", []interface{}{arg1})
+	fake.createTableMutex.Unlock()
+	if fake.CreateTableStub != nil {
+		return fake.CreateTableStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.createTableReturns
+	return fakeReturns.result1
+}
+
+func (fake *ChaincodeStub) CreateTableCallCount() int {
+	fake.createTableMutex.RLock()
+	defer fake.createTableMutex.RUnlock()
+	return len(fake.createTableArgsForCall)
+}
+
+func (fake *ChaincodeStub) CreateTableCalls(stub func(interface{}) error) {
+	fake.createTableMutex.Lock()
+	defer fake.createTableMutex.Unlock()
+	fake.CreateTableStub = stub
+}
+
+func (fake *ChaincodeStub) CreateTableArgsForCall(i int) interface{} {
+	fake.createTableMutex.RLock()
+	defer fake.createTableMutex.RUnlock()
+	argsForCall := fake.createTableArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *ChaincodeStub) CreateTableReturns(result1 error) {
+	fake.createTableMutex.Lock()
+	defer fake.createTableMutex.Unlock()
+	fake.CreateTableStub = nil
+	fake.createTableReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ChaincodeStub) CreateTableReturnsOnCall(i int, result1 error) {
+	fake.createTableMutex.Lock()
+	defer fake.createTableMutex.Unlock()
+	fake.CreateTableStub = nil
+	if fake.createTableReturnsOnCall == nil {
+		fake.createTableReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.createTableReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *ChaincodeStub) DelPrivateData(arg1 string, arg2 string) error {
@@ -2786,6 +2857,8 @@ func (fake *ChaincodeStub) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.createCompositeKeyMutex.RLock()
 	defer fake.createCompositeKeyMutex.RUnlock()
+	fake.createTableMutex.RLock()
+	defer fake.createTableMutex.RUnlock()
 	fake.delPrivateDataMutex.RLock()
 	defer fake.delPrivateDataMutex.RUnlock()
 	fake.delStateMutex.RLock()
