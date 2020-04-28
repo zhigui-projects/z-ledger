@@ -456,7 +456,7 @@
 
 [[projects]]
   branch = "ormdb"
-  digest = "1:d6c445e6399f02b770e8e375a773e88c523750526d0c9734ea82d620b5c48bb2"
+  digest = "1:4c3a8c15bab505700eb0bfc28352f289ec47c1799f3761c67ae384fbacbf1ee0"
   name = "github.com/hyperledger/fabric-chaincode-go"
   packages = [
     "pkg/attrmgr",
@@ -468,7 +468,7 @@
     "shimtest",
   ]
   pruneopts = "NUT"
-  revision = "58ee7e801971a568807c282cd9f5453201470b21"
+  revision = "22619953cb65558a9798dbf2054c6f0d5742f5b8"
   source = "github.com/zhigui-projects/fabric-chaincode-go"
 
 [[projects]]
@@ -1243,6 +1243,7 @@
     "github.com/hyperledger/fabric-amcl/amcl/FP256BN",
     "github.com/hyperledger/fabric-chaincode-go/pkg/statebased",
     "github.com/hyperledger/fabric-chaincode-go/shim",
+    "github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition",
     "github.com/hyperledger/fabric-chaincode-go/shimtest",
     "github.com/hyperledger/fabric-contract-api-go/contractapi",
     "github.com/hyperledger/fabric-lib-go/healthz",
