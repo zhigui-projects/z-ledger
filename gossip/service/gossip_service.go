@@ -17,6 +17,7 @@ import (
 	"github.com/hyperledger/fabric/core/committer/txvalidator"
 	"github.com/hyperledger/fabric/core/common/privdata"
 	"github.com/hyperledger/fabric/core/deliverservice"
+	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
 	"github.com/hyperledger/fabric/core/transientstore"
 	"github.com/hyperledger/fabric/gossip/api"
 	"github.com/hyperledger/fabric/gossip/comm"
@@ -164,6 +165,7 @@ type GossipService struct {
 	privateHandlers map[string]privateHandler
 	chains          map[string]state.GossipStateProvider
 	leaderElection  map[string]election.LeaderElectionService
+	ledgerMgr       *ledgermgmt.LedgerMgr
 	archiveService  map[string]*archiveservice.ArchiveService
 	deliveryService map[string]deliverservice.DeliverService
 	deliveryFactory DeliveryServiceFactory
@@ -215,6 +217,7 @@ func New(
 	gossipConfig *gossip.Config,
 	serviceConfig *ServiceConfig,
 	deliverServiceConfig *deliverservice.DeliverServiceConfig,
+	ledgerMgr *ledgermgmt.LedgerMgr,
 ) (*GossipService, error) {
 	serializedIdentity, err := peerIdentity.Serialize()
 	if err != nil {
@@ -239,6 +242,7 @@ func New(
 		privateHandlers: make(map[string]privateHandler),
 		chains:          make(map[string]state.GossipStateProvider),
 		leaderElection:  make(map[string]election.LeaderElectionService),
+		ledgerMgr:       ledgerMgr,
 		archiveService:  make(map[string]*archiveservice.ArchiveService),
 		deliveryService: make(map[string]deliverservice.DeliverService),
 		deliveryFactory: &deliveryFactoryImpl{
@@ -354,7 +358,7 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 
 	if g.archiveService[channelID] == nil {
 		logger.Debugf("Initializing archive service instance for channel: %s", channelID)
-		g.archiveService[channelID], _ = archiveservice.New()
+		g.archiveService[channelID], _ = archiveservice.New(g.ledgerMgr)
 	}
 
 	// Delivery service might be nil only if it was not able to get connected

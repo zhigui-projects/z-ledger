@@ -47,6 +47,11 @@ func newFsBlockStore(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	return &fsBlockStore{id, conf, fileMgr, ledgerStats}
 }
 
+func (store *fsBlockStore) TransferBlockFiles() error {
+	//dummy implementation
+	return nil
+}
+
 // AddBlock adds a new block
 func (store *fsBlockStore) AddBlock(block *common.Block) error {
 	// track elapsed time to collect block commit time

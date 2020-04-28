@@ -101,6 +101,7 @@ type PeerLedgerProvider interface {
 // that tells apart valid transactions from invalid ones
 type PeerLedger interface {
 	commonledger.Ledger
+	TransferBlockFiles() error
 	// GetTransactionByID retrieves a transaction by id
 	GetTransactionByID(txID string) (*peer.ProcessedTransaction, error)
 	// GetBlockByHash returns a block given it's hash

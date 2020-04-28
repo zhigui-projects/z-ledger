@@ -37,6 +37,10 @@ func newHybridBlockStore(id string, conf *Conf, indexConfig *blkstorage.IndexCon
 	return &hybridBlockStore{id, conf, fileMgr, ledgerStats}
 }
 
+func (store *hybridBlockStore) TransferBlockFiles() error {
+	return store.fileMgr.transferBlockFiles()
+}
+
 // AddBlock adds a new block
 func (store *hybridBlockStore) AddBlock(block *common.Block) error {
 	// track elapsed time to collect block commit time

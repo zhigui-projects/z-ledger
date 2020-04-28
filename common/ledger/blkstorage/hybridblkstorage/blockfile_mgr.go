@@ -607,21 +607,6 @@ func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error)
 	return b, nil
 }
 
-//Get the current checkpoint information that is stored in the database
-func (mgr *hybridBlockfileMgr) loadCurrentInfo() (*checkpointInfo, error) {
-	var b []byte
-	var err error
-	if b, err = mgr.db.Get(blkMgrInfoKey); b == nil || err != nil {
-		return nil, err
-	}
-	i := &checkpointInfo{}
-	if err = i.unmarshal(b); err != nil {
-		return nil, err
-	}
-	logger.Debugf("loaded checkpointInfo:%s", i)
-	return i, nil
-}
-
 //Get the current archive meta info that is stored in the database
 func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*msgs.ArchiveMetaInfo, error) {
 	var b []byte
@@ -648,6 +633,27 @@ func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *msgs.ArchiveMetaInfo)
 		return err
 	}
 	return nil
+}
+
+func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
+	//TODO
+	fmt.Println("========transferBlockFiles========")
+	return nil
+}
+
+//Get the current checkpoint information that is stored in the database
+func (mgr *hybridBlockfileMgr) loadCurrentInfo() (*checkpointInfo, error) {
+	var b []byte
+	var err error
+	if b, err = mgr.db.Get(blkMgrInfoKey); b == nil || err != nil {
+		return nil, err
+	}
+	i := &checkpointInfo{}
+	if err = i.unmarshal(b); err != nil {
+		return nil, err
+	}
+	logger.Debugf("loaded checkpointInfo:%s", i)
+	return i, nil
 }
 
 func (mgr *hybridBlockfileMgr) saveCurrentInfo(i *checkpointInfo, sync bool) error {

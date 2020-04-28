@@ -321,25 +321,6 @@ func serve(args []string) error {
 		logger.Panicf("Could not create the deliver grpc client: [%+v]", err)
 	}
 
-	// FIXME: Creating the gossip service has the side effect of starting a bunch
-	// of go routines and registration with the grpc server.
-	gossipService, err := initGossipService(
-		policyMgr,
-		metricsProvider,
-		peerServer,
-		signingIdentity,
-		cs,
-		coreConfig.PeerAddress,
-		deliverGRPCClient,
-		deliverServiceConfig,
-	)
-	if err != nil {
-		return errors.WithMessage(err, "failed to initialize gossip service")
-	}
-	defer gossipService.Stop()
-
-	peerInstance.GossipService = gossipService
-
 	policyChecker := policy.NewPolicyChecker(
 		policies.PolicyManagerGetterFunc(peerInstance.GetPolicyManager),
 		mgmt.GetLocalMSP(factory.GetDefault()),
@@ -439,6 +420,26 @@ func serve(args []string) error {
 			EbMetadataProvider:              ebMetadataProvider,
 		},
 	)
+
+	// FIXME: Creating the gossip service has the side effect of starting a bunch
+	// of go routines and registration with the grpc server.
+	gossipService, err := initGossipService(
+		policyMgr,
+		metricsProvider,
+		peerServer,
+		signingIdentity,
+		cs,
+		coreConfig.PeerAddress,
+		deliverGRPCClient,
+		deliverServiceConfig,
+		peerInstance.LedgerMgr,
+	)
+	if err != nil {
+		return errors.WithMessage(err, "failed to initialize gossip service")
+	}
+	defer gossipService.Stop()
+
+	peerInstance.GossipService = gossipService
 
 	// Configure CC package storage
 	lsccInstallPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "chaincodes")
@@ -1134,6 +1135,7 @@ func initGossipService(
 	peerAddress string,
 	deliverGRPCClient *comm.GRPCClient,
 	deliverServiceConfig *deliverservice.DeliverServiceConfig,
+	ledgerMgr *ledgermgmt.LedgerMgr,
 ) (*gossipservice.GossipService, error) {
 
 	var certs *gossipcommon.TLSCertificates
@@ -1179,6 +1181,7 @@ func initGossipService(
 		gossipConfig,
 		serviceConfig,
 		deliverServiceConfig,
+		ledgerMgr,
 	)
 }
 

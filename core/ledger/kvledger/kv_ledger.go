@@ -321,6 +321,10 @@ func (l *kvLedger) recommitLostBlocks(firstBlockNum uint64, lastBlockNum uint64,
 	return nil
 }
 
+func (l *kvLedger) TransferBlockFiles() error {
+	return l.blockStore.TransferBlockFiles()
+}
+
 // GetTransactionByID retrieves a transaction by id
 func (l *kvLedger) GetTransactionByID(txID string) (*peer.ProcessedTransaction, error) {
 	tranEnv, err := l.blockStore.RetrieveTxByID(txID)
