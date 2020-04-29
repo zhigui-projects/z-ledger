@@ -652,7 +652,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 	fmt.Printf("amInfo: %#v", mgr.amInfo)
 	lastSentFileNum := int(mgr.amInfo.LastSentFileSuffix)
 	latestFileNum := mgr.cpInfo.latestFileChunkSuffixNum
-	if latestFileNum >= lastSentFileNum+2 {
+	for ; latestFileNum >= lastSentFileNum+2; lastSentFileNum++ {
 		logger.Infof("Start transferring the blockfile[%d] to dfs", lastSentFileNum+1)
 		filePath := deriveBlockfilePath(mgr.rootDir, lastSentFileNum+1)
 		if _, err := mgr.dfsClient.Stat(filePath); err != nil {
