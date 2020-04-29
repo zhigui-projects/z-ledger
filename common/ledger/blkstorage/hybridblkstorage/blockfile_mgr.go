@@ -655,10 +655,14 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 	if latestFileNum >= lastSentFileNum+2 {
 		logger.Infof("Start transferring the blockfile[%d] to dfs", lastSentFileNum+1)
 		filePath := deriveBlockfilePath(mgr.rootDir, lastSentFileNum+1)
-		if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
-			logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
-			mgr.dfsClient.Remove(filePath)
-			return err
+		if _, err := mgr.dfsClient.Stat(filePath); err != nil {
+			if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
+				logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
+				mgr.dfsClient.Remove(filePath)
+				return err
+			}
+		} else {
+			logger.Warnf("Blockfile already exists[%s] in dfs", filePath)
 		}
 		newAmInfo := &msgs.ArchiveMetaInfo{
 			LastSentFileSuffix:    int32(lastSentFileNum + 1),
