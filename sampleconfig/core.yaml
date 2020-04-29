@@ -587,6 +587,7 @@ chaincode:
 ledger:
   archive:
     enable: false
+    type: hdfs
     hdfs:
       nameNodes:
         - 47.52.139.52:9000
