@@ -51,7 +51,6 @@ type hybridBlockfileMgr struct {
 	amInfo            *msgs.ArchiveMetaInfo
 	amInfoCond        *sync.Cond
 	dfsClient         *hdfs.Client
-	lock              sync.RWMutex
 }
 
 /*
@@ -626,7 +625,7 @@ func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*msgs.ArchiveMetaInfo, err
 }
 
 func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *msgs.ArchiveMetaInfo) error {
-	logger.Infof("Saving archive meta info: %s", spew.Sdump(amInfo))
+	logger.Infof("Saving archive meta info: %#v", spew.Sdump(amInfo))
 	b, err := proto.Marshal(amInfo)
 	if err != nil {
 		logger.Errorf("Marshal archive meta info with error: %s", err)
@@ -643,15 +642,14 @@ func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *msgs.ArchiveMetaInf
 	mgr.amInfoCond.L.Lock()
 	defer mgr.amInfoCond.L.Unlock()
 	mgr.amInfo = amInfo
+	fmt.Printf("updated LastSentFileSuffix: %d", amInfo.LastSentFileSuffix)
 	logger.Infof("Broadcasting about update archive meta info: %s", spew.Sdump(amInfo))
 	mgr.amInfoCond.Broadcast()
 }
 
 func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
-	mgr.lock.Lock()
-	defer mgr.lock.Unlock()
-
 	logger.Infof("Transferring block files to dfs if needed")
+	fmt.Printf("amInfo: %#v", mgr.amInfo)
 	lastSentFileNum := int(mgr.amInfo.LastSentFileSuffix)
 	latestFileNum := mgr.cpInfo.latestFileChunkSuffixNum
 	if latestFileNum >= lastSentFileNum+2 {
@@ -659,6 +657,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 		filePath := deriveBlockfilePath(mgr.rootDir, lastSentFileNum+1)
 		if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
 			logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
+			mgr.dfsClient.Remove(filePath)
 			return err
 		}
 		newAmInfo := &msgs.ArchiveMetaInfo{
@@ -667,6 +666,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 			FileProofs:            mgr.amInfo.FileProofs,
 		}
 		//TODO: update file proofs
+		fmt.Printf("newAmInfo: %#v", newAmInfo)
 		if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
 			panic(fmt.Sprintf("Could not save archive meta info: %s to db: %+v", spew.Sdump(newAmInfo), err))
 		}
