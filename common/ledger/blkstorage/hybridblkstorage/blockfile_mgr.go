@@ -642,14 +642,12 @@ func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *msgs.ArchiveMetaInf
 	mgr.amInfoCond.L.Lock()
 	defer mgr.amInfoCond.L.Unlock()
 	mgr.amInfo = amInfo
-	fmt.Printf("updated LastSentFileSuffix: %d", amInfo.LastSentFileSuffix)
 	logger.Infof("Broadcasting about update archive meta info: %s", spew.Sdump(amInfo))
 	mgr.amInfoCond.Broadcast()
 }
 
 func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 	logger.Infof("Transferring block files to dfs if needed")
-	fmt.Printf("amInfo: %#v", mgr.amInfo)
 	lastSentFileNum := int(mgr.amInfo.LastSentFileSuffix)
 	latestFileNum := mgr.cpInfo.latestFileChunkSuffixNum
 	for ; latestFileNum >= lastSentFileNum+2; lastSentFileNum++ {
@@ -658,7 +656,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 		if _, err := mgr.dfsClient.Stat(filePath); err != nil {
 			if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
 				logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
-				//mgr.dfsClient.Remove(filePath)
+				mgr.dfsClient.Remove(filePath)
 				return err
 			}
 		} else {
@@ -670,7 +668,6 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 			FileProofs:            mgr.amInfo.FileProofs,
 		}
 		//TODO: update file proofs
-		fmt.Printf("newAmInfo: %#v", newAmInfo)
 		if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
 			panic(fmt.Sprintf("Could not save archive meta info: %s to db: %+v", spew.Sdump(newAmInfo), err))
 		}

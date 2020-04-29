@@ -110,8 +110,6 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 }
 
 func (a *ArchiveService) transferBlockFiles(chainID string) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
 	ledger, err := a.ledgerMgr.GetOpenedLedger(chainID)
 	if err != nil {
 		logger.Warnf("Archive service - get opened ledger for chain: %s failed with error: %s", chainID, err)
