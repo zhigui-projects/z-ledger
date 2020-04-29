@@ -51,6 +51,7 @@ type hybridBlockfileMgr struct {
 	amInfo            *msgs.ArchiveMetaInfo
 	amInfoCond        *sync.Cond
 	dfsClient         *hdfs.Client
+	lock              sync.RWMutex
 }
 
 /*
@@ -118,7 +119,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 		if amInfo, err = constructArchiveMetaInfoFromDfsBlockFiles(rootDir, client); err != nil {
 			panic(fmt.Sprintf("Could not build archive meta info from dfs block files: %+v", err))
 		}
-		logger.Infof("Archive meta info constructed by scanning the dfs blocks dir: %+v", amInfo)
+		logger.Infof("Archive meta info constructed by scanning the dfs blocks dir: %s", spew.Sdump(amInfo))
 	} else {
 		logger.Info("Syncing archive meta info from dfs (if needed)")
 		syncArchiveMetaInfoFromDfs(rootDir, amInfo, client)
@@ -625,7 +626,7 @@ func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*msgs.ArchiveMetaInfo, err
 }
 
 func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *msgs.ArchiveMetaInfo) error {
-	logger.Infof("Saving archive meta info: %+v", amInfo)
+	logger.Infof("Saving archive meta info: %s", spew.Sdump(amInfo))
 	b, err := proto.Marshal(amInfo)
 	if err != nil {
 		logger.Errorf("Marshal archive meta info with error: %s", err)
@@ -642,16 +643,19 @@ func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *msgs.ArchiveMetaInf
 	mgr.amInfoCond.L.Lock()
 	defer mgr.amInfoCond.L.Unlock()
 	mgr.amInfo = amInfo
-	logger.Infof("Broadcasting about update archive meta info: %s", amInfo)
+	logger.Infof("Broadcasting about update archive meta info: %s", spew.Sdump(amInfo))
 	mgr.amInfoCond.Broadcast()
 }
 
 func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
+	mgr.lock.Lock()
+	defer mgr.lock.Unlock()
+
 	logger.Infof("Transferring block files to dfs if needed")
 	lastSentFileNum := int(mgr.amInfo.LastSentFileSuffix)
 	latestFileNum := mgr.cpInfo.latestFileChunkSuffixNum
 	if latestFileNum >= lastSentFileNum+2 {
-		logger.Infof("Start transferring the blockfile[%s] to dfs", lastSentFileNum+1)
+		logger.Infof("Start transferring the blockfile[%d] to dfs", lastSentFileNum+1)
 		filePath := deriveBlockfilePath(mgr.rootDir, lastSentFileNum+1)
 		if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
 			logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
@@ -664,7 +668,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 		}
 		//TODO: update file proofs
 		if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
-			panic(fmt.Sprintf("Could not save archive meta info to db: %+v", err))
+			panic(fmt.Sprintf("Could not save archive meta info: %s to db: %+v", spew.Sdump(newAmInfo), err))
 		}
 		mgr.updateArchiveMetaInfo(newAmInfo)
 	}

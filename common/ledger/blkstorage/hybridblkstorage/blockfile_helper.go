@@ -82,7 +82,7 @@ func constructCheckpointInfoFromBlockFiles(rootDir string) (*checkpointInfo, err
 }
 
 func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *msgs.ArchiveMetaInfo, client *hdfs.Client) {
-	logger.Infof("syncAMInfoFromDfs amInfo=%s", amInfo)
+	logger.Infof("syncAMInfoFromDfs amInfo=%s", spew.Sdump(amInfo))
 	//Checks if the file suffix of where the last block was written exists
 	filePath := deriveBlockfilePath(rootDir, int(amInfo.LastSentFileSuffix))
 	if _, err := client.Stat(filePath); err != nil {
@@ -133,7 +133,7 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Clie
 	amInfo.LastSentFileSuffix = int32(lastSentFileNum)
 	//TODO：calculate checksum
 	//amInfo.FileProofs[]
-	logger.Infof("Archive meta info constructed from dfs = %s", amInfo)
+	logger.Infof("Archive meta info constructed from dfs = %s", spew.Sdump(amInfo))
 	return amInfo, nil
 }
 
