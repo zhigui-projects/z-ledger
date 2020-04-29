@@ -11,12 +11,12 @@ import (
 
 	gproto "github.com/hyperledger/fabric-protos-go/gossip"
 	tspb "github.com/hyperledger/fabric-protos-go/transientstore"
-	archiveservice "github.com/hyperledger/fabric/archive/service"
 	corecomm "github.com/hyperledger/fabric/core/comm"
 	"github.com/hyperledger/fabric/core/committer"
 	"github.com/hyperledger/fabric/core/committer/txvalidator"
 	"github.com/hyperledger/fabric/core/common/privdata"
 	"github.com/hyperledger/fabric/core/deliverservice"
+	archiveservice "github.com/hyperledger/fabric/core/ledger/archive/service"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
 	"github.com/hyperledger/fabric/core/transientstore"
 	"github.com/hyperledger/fabric/gossip/api"
