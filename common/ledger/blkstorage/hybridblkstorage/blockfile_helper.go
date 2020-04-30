@@ -115,7 +115,11 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Clie
 	var lastArchiveFileNum int
 	var lastSentFileNum int
 	var err error
-	amInfo := &msgs.ArchiveMetaInfo{}
+	amInfo := &msgs.ArchiveMetaInfo{
+		LastSentFileSuffix:    -1,
+		LastArchiveFileSuffix: -1,
+		FileProofs:            make(map[int32]string),
+	}
 
 	if lastArchiveFileNum, err = retrieveFirstFileSuffix(rootDir); err != nil {
 		return nil, err
