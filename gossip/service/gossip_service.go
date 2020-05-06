@@ -357,7 +357,7 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 	}
 
 	if g.archiveService[channelID] == nil {
-		logger.Debugf("Initializing archive service instance for channel: %s", channelID)
+		logger.Infof("Initializing archive service instance for channel: %s", channelID)
 		g.archiveService[channelID], _ = archiveservice.New(g.ledgerMgr)
 	}
 
@@ -385,7 +385,7 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 			logger.Debug("This peer is configured to connect to ordering service for blocks delivery, channel", channelID)
 			g.deliveryService[channelID].StartDeliverForChannel(channelID, support.Committer, func() {})
 
-			logger.Debug("This peer is configured to start a ledger watcher for channel", channelID)
+			logger.Info("This peer is configured to start a ledger watcher for channel", channelID)
 			g.archiveService[channelID].StartWatcherForChannel(channelID)
 		} else {
 			logger.Debug("This peer is not configured to connect to ordering service for blocks delivery, channel", channelID)
