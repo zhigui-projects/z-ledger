@@ -6,13 +6,47 @@ SPDX-License-Identifier: Apache-2.0
 package ormdb
 
 import (
+	"encoding/json"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/common/metrics"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
+	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/sqllite3"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 )
+
+// couchSavepointData data for couchdb
+type couchSavepointData struct {
+	BlockNum uint64 `json:"BlockNum"`
+	TxNum    uint64 `json:"TxNum"`
+}
+
+func encodeSavepoint(height *version.Height) (*couchdb.CouchDoc, error) {
+	var err error
+	var savepointDoc couchSavepointData
+	// construct savepoint document
+	savepointDoc.BlockNum = height.BlockNum
+	savepointDoc.TxNum = height.TxNum
+	savepointDocJSON, err := json.Marshal(savepointDoc)
+	if err != nil {
+		err = errors.Wrap(err, "failed to marshal savepoint data")
+		logger.Errorf("%+v", err)
+		return nil, err
+	}
+	return &couchdb.CouchDoc{JSONValue: savepointDocJSON, Attachments: nil}, nil
+}
+
+func decodeSavepoint(couchDoc *couchdb.CouchDoc) (*version.Height, error) {
+	savepointDoc := &couchSavepointData{}
+	if err := json.Unmarshal(couchDoc.JSONValue, &savepointDoc); err != nil {
+		err = errors.Wrap(err, "failed to unmarshal savepoint data")
+		logger.Errorf("%+v", err)
+		return nil, err
+	}
+	return &version.Height{BlockNum: savepointDoc.BlockNum, TxNum: savepointDoc.TxNum}, nil
+}
 
 //ORMDBInstance represents a ORMDB instance
 type ORMDBInstance struct {

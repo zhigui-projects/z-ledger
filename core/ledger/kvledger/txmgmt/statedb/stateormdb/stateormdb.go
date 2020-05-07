@@ -6,10 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 package stateormdb
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
-	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/msgs"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/statecouchdb"
 	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 	"github.com/pkg/errors"
 	"reflect"
@@ -26,13 +27,21 @@ import (
 
 var logger = flogging.MustGetLogger("stateormdb")
 
+const savePointKey = "savepoint"
+
+type savePoint struct {
+	key    string
+	height string
+}
+
 // VersionedDBProvider implements interface VersionedDBProvider
 type VersionedDBProvider struct {
 	ormDBInstance *ormdb.ORMDBInstance
 	databases     map[string]*VersionedDB
 	mux           sync.Mutex
 	//openCounts    uint64
-	cache *statedb.Cache
+	cache              *statedb.Cache
+	redoLoggerProvider *statecouchdb.RedoLoggerProvider
 }
 
 // VersionedDB implements VersionedDB interface
@@ -41,8 +50,15 @@ type VersionedDB struct {
 	metadataDB    *ormdb.ORMDatabase            // A database per channel to store metadata.
 	chainName     string                        // The name of the chain/channel.
 	namespaceDBs  map[string]*ormdb.ORMDatabase // One database per deployed chaincode.
+	redoLog       *statecouchdb.RedoLogger
 	mux           sync.RWMutex
 	cache         *statedb.Cache
+}
+
+// ormDBSavepointData data for couchdb
+type ormDBSavepointData struct {
+	BlockNum uint64 `json:"BlockNum"`
+	TxNum    uint64 `json:"TxNum"`
 }
 
 // NewVersionedDBProvider instantiates VersionedDBProvider
@@ -50,9 +66,13 @@ func NewVersionedDBProvider(config *ormdbconfig.ORMDBConfig, metricsProvider met
 	logger.Debugf("constructing ORMDB VersionedDBProvider")
 	instance, err := ormdb.NewORMDBInstance(config, metricsProvider)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "create ormdb instance failed")
 	}
-	return &VersionedDBProvider{ormDBInstance: instance, databases: make(map[string]*VersionedDB), cache: cache}, nil
+	p, err := statecouchdb.NewRedoLoggerProvider(config.RedoLogPath)
+	if err != nil {
+		return nil, errors.WithMessage(err, "create redo log failed")
+	}
+	return &VersionedDBProvider{ormDBInstance: instance, databases: make(map[string]*VersionedDB), redoLoggerProvider: p, cache: cache}, nil
 }
 
 // GetDBHandle gets the handle to a named database
@@ -62,7 +82,7 @@ func (provider *VersionedDBProvider) GetDBHandle(dbName string) (statedb.Version
 	vdb := provider.databases[dbName]
 	if vdb == nil {
 		var err error
-		vdb, err = newVersionedDB(provider.ormDBInstance, dbName, provider.cache)
+		vdb, err = newVersionedDB(provider.ormDBInstance, dbName, provider.redoLoggerProvider.NewRedoLogger(dbName), provider.cache)
 		if err != nil {
 			return nil, err
 		}
@@ -72,11 +92,15 @@ func (provider *VersionedDBProvider) GetDBHandle(dbName string) (statedb.Version
 }
 
 // newVersionedDB constructs an instance of VersionedDB
-func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, cache *statedb.Cache) (*VersionedDB, error) {
+func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, redoLog *statecouchdb.RedoLogger, cache *statedb.Cache) (*VersionedDB, error) {
 	chainName := dbName
 	dbName = dbName + "_"
 
 	metadataDB, err := ormdb.CreateORMDatabase(ormDBInstance, dbName)
+	if err != nil {
+		return nil, err
+	}
+	err = metadataDB.DB.CreateTable(&savePoint{}).Error
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +110,7 @@ func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, cache *st
 		metadataDB:    metadataDB,
 		chainName:     chainName,
 		namespaceDBs:  namespaceDBMap,
+		redoLog:       redoLog,
 		cache:         cache,
 	}, nil
 }
@@ -144,17 +169,17 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 	entityName := keys[0]
 	entityId := keys[1]
 	entity := db.ModelTypes[entityName].Interface()
-	verAndMetaft, exist := db.ModelTypes[entityName].FieldByName("ID")
+	id, exist := db.ModelTypes[entityName].FieldByName("ID")
 	if !exist {
 		return nil, errors.New("entity no ID field")
 	}
-	if verAndMetaft.Type.Kind() == reflect.Int {
+	if id.Type.Kind() == reflect.Int {
 		entityIdInt, err := strconv.Atoi(entityId)
 		if err != nil {
 			return nil, errors.WithMessage(err, "entity int ID convert failed")
 		}
 		db.DB.Find(entity, entityIdInt)
-	} else if verAndMetaft.Type.Kind() == reflect.String {
+	} else if id.Type.Kind() == reflect.String {
 		db.DB.Find(entity, entityId)
 	} else {
 		return nil, errors.New("not supported entity ID field type")
@@ -164,12 +189,12 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 		return nil, nil
 	}
 
-	verAndMetaft, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
+	id, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
 	if !exist {
 		return nil, errors.New("entity no VerAndMeta field")
 	}
 	verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
-	returnVersion, returnMetadata, err := msgs.DecodeVersionAndMetadata(verAndMeta)
+	returnVersion, returnMetadata, err := statecouchdb.DecodeVersionAndMetadata(verAndMeta)
 
 	entityBytes, err := json.Marshal(entity)
 	if err != nil {
@@ -210,8 +235,101 @@ func (v *VersionedDB) ExecuteQueryWithMetadata(namespace, query string, metadata
 	panic("implement me")
 }
 
-func (v *VersionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height) error {
-	panic("implement me")
+// ApplyUpdates implements method in VersionedDB interface
+func (v *VersionedDB) ApplyUpdates(updates *statedb.UpdateBatch, height *version.Height) error {
+	if height != nil && updates.ContainsPostOrderWrites {
+		// height is passed nil when committing missing private data for previously committed blocks
+		r := &statecouchdb.RedoRecord{
+			UpdateBatch: updates,
+			Version:     height,
+		}
+		if err := v.redoLog.Persist(r); err != nil {
+			return err
+		}
+	}
+	return v.applyUpdates(updates, height)
+}
+
+func (v *VersionedDB) applyUpdates(updates *statedb.UpdateBatch, height *version.Height) error {
+	// stage 1 - buildCommitters builds committers per namespace (per DB). Each committer transforms the
+	// given batch in the form of underlying db and keep it in memory.
+	committers, err := v.buildCommitters(updates)
+	if err != nil {
+		return err
+	}
+
+	// stage 2 -- executeCommitter executes each committer to push the changes to the DB
+	if err = v.executeCommitter(committers); err != nil {
+		return err
+	}
+
+	// Stgae 3 - postCommitProcessing - flush and record savepoint.
+	namespaces := updates.GetUpdatedNamespaces()
+	if err := v.postCommitProcessing(committers, namespaces, height); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v *VersionedDB) postCommitProcessing(committers []*committer, namespaces []string, height *version.Height) error {
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	errChan := make(chan error, 1)
+	defer close(errChan)
+	go func() {
+		defer wg.Done()
+
+		cacheUpdates := make(statedb.CacheUpdates)
+		for _, c := range committers {
+			if !c.cacheEnabled {
+				continue
+			}
+			cacheUpdates.Add(c.namespace, c.cacheKVs)
+		}
+
+		if len(cacheUpdates) == 0 {
+			return
+		}
+
+		// update the cache
+		if err := v.cache.UpdateStates(v.chainName, cacheUpdates); err != nil {
+			v.cache.Reset()
+			errChan <- err
+		}
+
+	}()
+
+	// Record a savepoint at a given height
+	if err := v.recordSavepoint(height); err != nil {
+		logger.Errorf("Error during recordSavepoint: %s", err.Error())
+		return err
+	}
+
+	wg.Wait()
+	select {
+	case err := <-errChan:
+		return err
+	default:
+		return nil
+	}
+}
+
+func (vdb *VersionedDB) recordSavepoint(height *version.Height) error {
+	if height == nil {
+		return nil
+	}
+
+	savePoint := &savePoint{key: savePointKey, height: base64.StdEncoding.EncodeToString(height.ToBytes())}
+	err := vdb.metadataDB.DB.Save(savePoint).Error
+
+	if err != nil {
+		logger.Errorf("Failed to save the savepoint to DB %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
@@ -251,6 +369,7 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 		if err != nil {
 			return nil, err
 		}
+		db.DB.CreateTable(&entitydefinition.EntityFieldDefinition{})
 		v.namespaceDBs[namespace] = db
 	}
 	return db, nil
@@ -284,54 +403,3 @@ func parseKey(key string) ([]string, error) {
 	}
 	return keys, nil
 }
-
-//func modelToKeyValue() (*statedb.VersionedValue, error) {
-//	// initialize the return value
-//	var returnValue []byte
-//	var err error
-//	reflect.Type()
-//	// create a generic map unmarshal the json
-//	var valueBytes bytes.Buffer
-//	encoder:=gob.NewEncoder(&valueBytes)
-//	encoder.EncodeValue()
-//	decoder := json.NewDecoder(bytes.NewBuffer(doc.JSONValue))
-//	decoder.UseNumber()
-//	if err = decoder.Decode(&jsonResult); err != nil {
-//		return nil, err
-//	}
-//	// verify the version field exists
-//	if _, fieldFound := jsonResult[versionField]; !fieldFound {
-//		return nil, errors.Errorf("version field %s was not found", versionField)
-//	}
-//	key := jsonResult[idField].(string)
-//	// create the return version from the version field in the JSON
-//
-//	returnVersion, returnMetadata, err := decodeVersionAndMetadata(jsonResult[versionField].(string))
-//	if err != nil {
-//		return nil, err
-//	}
-//	// remove the _id, _rev and version fields
-//	delete(jsonResult, idField)
-//	delete(jsonResult, revField)
-//	delete(jsonResult, versionField)
-//
-//	// handle binary or json data
-//	if doc.Attachments != nil { // binary attachment
-//		// get binary data from attachment
-//		for _, attachment := range doc.Attachments {
-//			if attachment.Name == binaryWrapper {
-//				returnValue = attachment.AttachmentBytes
-//			}
-//		}
-//	} else {
-//		// marshal the returned JSON data.
-//		if returnValue, err = json.Marshal(jsonResult); err != nil {
-//			return nil, err
-//		}
-//	}
-//	return &keyValue{key, &statedb.VersionedValue{
-//		Value:    returnValue,
-//		Metadata: returnMetadata,
-//		Version:  returnVersion},
-//	}, nil
-//}

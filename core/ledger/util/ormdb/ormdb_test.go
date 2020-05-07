@@ -15,6 +15,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type ABC struct {
+	ID   string `gorm:"primary_key"`
+	Test string
+}
+
 func TestNewORMDBInstance(t *testing.T) {
 	yaml := "---\n" +
 		"ledger:\n" +
@@ -66,6 +71,18 @@ func TestCreateORMDatabase(t *testing.T) {
 	db, err := CreateORMDatabase(ormDBInstance, "test")
 	assert.NoError(t, err)
 	assert.NotNil(t, db)
+	db.DB.CreateTable(&ABC{})
+	testABC := &ABC{ID: "6F1351B1-F6D1-4B05-AE8F-99CBE6ED106B", Test: "123"}
+	db.DB.Save(testABC)
+	testABC1 := &ABC{ID: "6F1351B1-F6D1-4B05-AE8F-99CBE6ED106B"}
+	db.DB.Find(testABC1)
+	assert.Equal(t, "123", testABC1.Test)
+	testABC1.Test = "789"
+	db.DB.Save(testABC1)
+	testABC2 := &ABC{ID: "6F1351B1-F6D1-4B05-AE8F-99CBE6ED106B"}
+	db.DB.Find(testABC2)
+	assert.Equal(t, "789", testABC2.Test)
 	err = DeleteORMDatabase(db, "test")
 	assert.NoError(t, err)
+
 }
