@@ -654,6 +654,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 		logger.Infof("Start transferring the blockfile[%d] to dfs", lastSentFileNum+1)
 		filePath := deriveBlockfilePath(mgr.rootDir, lastSentFileNum+1)
 		if _, err := mgr.dfsClient.Stat(filePath); err != nil {
+			logger.Infof("Blockfile[%s] not exits in dfs, error: %+v", filePath, err)
 			if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
 				logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
 				mgr.dfsClient.Remove(filePath)

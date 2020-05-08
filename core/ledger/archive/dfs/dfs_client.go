@@ -26,5 +26,6 @@ func NewHDFSClient() (*hdfs.Client, error) {
 		Addresses: ledgerconfig.GetHDFSNameNodes(),
 		User:      ledgerconfig.GetHDFSUser(),
 	})
+	logger.Infof("Created a dfs client: %+v, error: %+v", client, err)
 	return client, err
 }
