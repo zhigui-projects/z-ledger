@@ -8,6 +8,7 @@ package kvledger
 
 import (
 	"fmt"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"sync"
 	"time"
 
@@ -323,6 +324,10 @@ func (l *kvLedger) recommitLostBlocks(firstBlockNum uint64, lastBlockNum uint64,
 
 func (l *kvLedger) TransferBlockFiles() error {
 	return l.blockStore.TransferBlockFiles()
+}
+
+func (l *kvLedger) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
+	return l.blockStore.GetArchiveMetaInfo()
 }
 
 // GetTransactionByID retrieves a transaction by id

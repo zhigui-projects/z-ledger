@@ -17,6 +17,7 @@ limitations under the License.
 package fsblkstorage
 
 import (
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"time"
 
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -50,6 +51,11 @@ func newFsBlockStore(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 func (store *fsBlockStore) TransferBlockFiles() error {
 	//dummy implementation
 	return nil
+}
+
+func (store *fsBlockStore) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
+	//dummy implementation
+	return nil, nil
 }
 
 // AddBlock adds a new block

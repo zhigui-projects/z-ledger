@@ -17,10 +17,10 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage"
-	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage/msgs"
 	"github.com/hyperledger/fabric/common/ledger/util"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
 	"github.com/hyperledger/fabric/core/ledger/archive/dfs"
@@ -48,7 +48,7 @@ type hybridBlockfileMgr struct {
 	cpInfoCond        *sync.Cond
 	currentFileWriter *blockfileWriter
 	bcInfo            atomic.Value
-	amInfo            *msgs.ArchiveMetaInfo
+	amInfo            *archive.ArchiveMetaInfo
 	amInfoCond        *sync.Cond
 	dfsClient         *hdfs.Client
 }
@@ -610,21 +610,21 @@ func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error)
 }
 
 //Get the current archive meta info that is stored in the database
-func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*msgs.ArchiveMetaInfo, error) {
+func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
 	var b []byte
 	var err error
 	if b, err = mgr.db.Get(archiveMetaInfoKey); b == nil || err != nil {
 		return nil, err
 	}
-	archiveMetaInfo := &msgs.ArchiveMetaInfo{}
+	archiveMetaInfo := &archive.ArchiveMetaInfo{}
 	if err := proto.Unmarshal(b, archiveMetaInfo); err != nil {
 		return nil, err
 	}
-	logger.Debugf("loaded archiveMetaInfo:%s", archiveMetaInfo)
+	logger.Infof("load archiveMetaInfo:%+v", archiveMetaInfo)
 	return archiveMetaInfo, nil
 }
 
-func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *msgs.ArchiveMetaInfo) error {
+func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *archive.ArchiveMetaInfo) error {
 	logger.Infof("Saving archive meta info: %#v", spew.Sdump(amInfo))
 	b, err := proto.Marshal(amInfo)
 	if err != nil {
@@ -638,7 +638,7 @@ func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *msgs.ArchiveMetaInfo)
 	return nil
 }
 
-func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *msgs.ArchiveMetaInfo) {
+func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *archive.ArchiveMetaInfo) {
 	mgr.amInfoCond.L.Lock()
 	defer mgr.amInfoCond.L.Unlock()
 	mgr.amInfo = amInfo
@@ -662,7 +662,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 		} else {
 			logger.Warnf("Blockfile already exists[%s] in dfs", filePath)
 		}
-		newAmInfo := &msgs.ArchiveMetaInfo{
+		newAmInfo := &archive.ArchiveMetaInfo{
 			LastSentFileSuffix:    int32(lastSentFileNum + 1),
 			LastArchiveFileSuffix: mgr.amInfo.LastArchiveFileSuffix,
 			FileProofs:            mgr.amInfo.FileProofs,

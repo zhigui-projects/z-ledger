@@ -516,12 +516,13 @@
 
 [[projects]]
   branch = "archive-v2.0.0"
-  digest = "1:395a5f977a65907f61b64aff820dcdeb250deacf27f9ebffe3b3f516a1e98d4e"
+  digest = "1:914630778c2d6eaea199bbffa0d45bf342cb280085a15b5b91efba37780476b3"
   name = "github.com/hyperledger/fabric-protos-go"
   packages = [
     "common",
     "discovery",
     "gossip",
+    "ledger/archive",
     "ledger/queryresult",
     "ledger/rwset",
     "ledger/rwset/kvrwset",
@@ -533,7 +534,7 @@
     "transientstore",
   ]
   pruneopts = "NUT"
-  revision = "e9cfc186ba7b712d582dfce320b7441e50e18b4e"
+  revision = "c81f3a2aa9dfd8ee3d7020dd308fd60dd6a47d49"
   source = "github.com/zhigui-projects/fabric-protos-go"
 
 [[projects]]
@@ -1244,6 +1245,7 @@
     "github.com/hyperledger/fabric-protos-go/common",
     "github.com/hyperledger/fabric-protos-go/discovery",
     "github.com/hyperledger/fabric-protos-go/gossip",
+    "github.com/hyperledger/fabric-protos-go/ledger/archive",
     "github.com/hyperledger/fabric-protos-go/ledger/queryresult",
     "github.com/hyperledger/fabric-protos-go/ledger/rwset",
     "github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset",

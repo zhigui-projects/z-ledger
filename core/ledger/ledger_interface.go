@@ -8,10 +8,10 @@ package ledger
 
 import (
 	"fmt"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-lib-go/healthz"
 	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -102,6 +102,7 @@ type PeerLedgerProvider interface {
 type PeerLedger interface {
 	commonledger.Ledger
 	TransferBlockFiles() error
+	GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error)
 	// GetTransactionByID retrieves a transaction by id
 	GetTransactionByID(txID string) (*peer.ProcessedTransaction, error)
 	// GetBlockByHash returns a block given it's hash

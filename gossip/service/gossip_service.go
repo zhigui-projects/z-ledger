@@ -358,7 +358,7 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 
 	if g.archiveService[channelID] == nil {
 		logger.Infof("Initializing archive service instance for channel: %s", channelID)
-		g.archiveService[channelID], _ = archiveservice.New(g.ledgerMgr)
+		g.archiveService[channelID], _ = archiveservice.New(g, g.ledgerMgr)
 	}
 
 	// Delivery service might be nil only if it was not able to get connected

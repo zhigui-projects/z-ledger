@@ -8,6 +8,7 @@ package blkstorage
 
 import (
 	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/ledger"
 	l "github.com/hyperledger/fabric/core/ledger"
@@ -62,6 +63,7 @@ type BlockStoreProvider interface {
 // of type `IndexConfig` which configures the block store on what items should be indexed
 type BlockStore interface {
 	TransferBlockFiles() error
+	GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error)
 	AddBlock(block *common.Block) error
 	GetBlockchainInfo() (*common.BlockchainInfo, error)
 	RetrieveBlocks(startNum uint64) (ledger.ResultsIterator, error)

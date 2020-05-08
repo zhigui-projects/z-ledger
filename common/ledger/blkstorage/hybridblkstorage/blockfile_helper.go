@@ -17,7 +17,7 @@ import (
 	"github.com/colinmarc/hdfs"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage/msgs"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/pkg/errors"
 )
 
@@ -81,7 +81,7 @@ func constructCheckpointInfoFromBlockFiles(rootDir string) (*checkpointInfo, err
 	return cpInfo, nil
 }
 
-func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *msgs.ArchiveMetaInfo, client *hdfs.Client) {
+func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo, client *hdfs.Client) {
 	logger.Infof("syncAMInfoFromDfs amInfo=%s", spew.Sdump(amInfo))
 	//Checks if the file suffix of where the last block was written exists
 	filePath := deriveBlockfilePath(rootDir, int(amInfo.LastSentFileSuffix))
@@ -110,12 +110,12 @@ func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *msgs.ArchiveMetaInfo, cl
 	//amInfo.FileProofs[]
 }
 
-func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Client) (*msgs.ArchiveMetaInfo, error) {
+func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Client) (*archive.ArchiveMetaInfo, error) {
 	logger.Info("Retrieving archive meta info from dfs block files")
 	var lastArchiveFileNum int
 	var lastSentFileNum int
 	var err error
-	amInfo := &msgs.ArchiveMetaInfo{
+	amInfo := &archive.ArchiveMetaInfo{
 		LastSentFileSuffix:    -1,
 		LastArchiveFileSuffix: -1,
 		FileProofs:            make(map[int32]string),

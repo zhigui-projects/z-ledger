@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package hybridblkstorage
 
 import (
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"time"
 
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -39,6 +40,10 @@ func newHybridBlockStore(id string, conf *Conf, indexConfig *blkstorage.IndexCon
 
 func (store *hybridBlockStore) TransferBlockFiles() error {
 	return store.fileMgr.transferBlockFiles()
+}
+
+func (store *hybridBlockStore) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
+	return store.fileMgr.loadArchiveMetaInfo()
 }
 
 // AddBlock adds a new block
