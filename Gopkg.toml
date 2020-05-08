@@ -182,8 +182,9 @@ noverify = [
       non-go = false
 
 [[constraint]]
-  branch = "master"
+  branch = "archive-v2.0.0"
   name = "github.com/hyperledger/fabric-protos-go"
+  source = "github.com/zhigui-projects/fabric-protos-go"
 
 [[constraint]]
   branch = "master"
