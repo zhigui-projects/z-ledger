@@ -640,6 +640,7 @@ func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *archive.ArchiveMetaIn
 }
 
 func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *archive.ArchiveMetaInfo) {
+	logger.Infof("Updating archive meta info: %s", spew.Sdump(amInfo))
 	mgr.amInfoCond.L.Lock()
 	defer mgr.amInfoCond.L.Unlock()
 	mgr.amInfo = amInfo
@@ -661,22 +662,23 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 			logger.Infof("Blockfile[%s] not exits in dfs, error: %+v", filePath, notExistErr)
 			if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
 				logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
-				//mgr.dfsClient.Remove(filePath)
 				return err
 			}
 		} else {
 			logger.Warnf("Blockfile already exists[%s] in dfs", filePath)
 		}
-		newAmInfo := &archive.ArchiveMetaInfo{
-			LastSentFileSuffix:    int32(lastSentFileNum + 1),
-			LastArchiveFileSuffix: mgr.amInfo.LastArchiveFileSuffix,
-			FileProofs:            mgr.amInfo.FileProofs,
+		if int32(lastSentFileNum+1) > mgr.amInfo.LastSentFileSuffix {
+			newAmInfo := &archive.ArchiveMetaInfo{
+				LastSentFileSuffix:    int32(lastSentFileNum + 1),
+				LastArchiveFileSuffix: mgr.amInfo.LastArchiveFileSuffix,
+				FileProofs:            mgr.amInfo.FileProofs,
+			}
+			//TODO: update file proofs
+			if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
+				panic(fmt.Sprintf("Could not save archive meta info: %s to db: %+v", spew.Sdump(newAmInfo), err))
+			}
+			mgr.updateArchiveMetaInfo(newAmInfo)
 		}
-		//TODO: update file proofs
-		if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
-			panic(fmt.Sprintf("Could not save archive meta info: %s to db: %+v", spew.Sdump(newAmInfo), err))
-		}
-		mgr.updateArchiveMetaInfo(newAmInfo)
 	}
 	return nil
 }
