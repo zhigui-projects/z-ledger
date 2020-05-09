@@ -51,6 +51,7 @@ type hybridBlockfileMgr struct {
 	amInfo            *archive.ArchiveMetaInfo
 	amInfoCond        *sync.Cond
 	dfsClient         *hdfs.Client
+	lock              sync.RWMutex
 }
 
 /*
@@ -647,6 +648,9 @@ func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *archive.ArchiveMeta
 }
 
 func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
+	mgr.lock.Lock()
+	defer mgr.lock.Unlock()
+
 	logger.Infof("Transferring block files to dfs if needed")
 	lastSentFileNum := int(mgr.amInfo.LastSentFileSuffix)
 	latestFileNum := mgr.cpInfo.latestFileChunkSuffixNum
