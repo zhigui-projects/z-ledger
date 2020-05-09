@@ -104,7 +104,7 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 				}
 				if event.Op&fsnotify.Create == fsnotify.Create {
 					logger.Infof("Archive service - new ledger file CREATED event: %s", event.Name)
-					go a.transferBlockFiles(chainID)
+					a.transferBlockFiles(chainID)
 					go a.broadcastMetaInfo(chainID)
 				}
 			case err, ok := <-watcher.Errors:
