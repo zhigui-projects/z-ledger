@@ -22,10 +22,12 @@ func NewHDFSClient() (*hdfs.Client, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	client, err := hdfs.NewClient(hdfs.ClientOptions{
+	options := hdfs.ClientOptions{
 		Addresses: ledgerconfig.GetHDFSNameNodes(),
 		User:      ledgerconfig.GetHDFSUser(),
-	})
-	logger.Infof("Created a dfs client: %+v, error: %+v", client, err)
+	}
+	client, err := hdfs.NewClient(options)
+
+	logger.Infof("Created a dfs client with options: %+v, error: %+v", options, err)
 	return client, err
 }
