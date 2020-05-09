@@ -621,12 +621,12 @@ func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*archive.ArchiveMetaInfo, 
 	if err := proto.Unmarshal(b, archiveMetaInfo); err != nil {
 		return nil, err
 	}
-	logger.Infof("load archiveMetaInfo:%+v", archiveMetaInfo)
+	logger.Infof("load archiveMetaInfo:%s", spew.Sdump(archiveMetaInfo))
 	return archiveMetaInfo, nil
 }
 
 func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *archive.ArchiveMetaInfo) error {
-	logger.Infof("Saving archive meta info: %#v", spew.Sdump(amInfo))
+	logger.Infof("Saving archive meta info: %s", spew.Sdump(amInfo))
 	b, err := proto.Marshal(amInfo)
 	if err != nil {
 		logger.Errorf("Marshal archive meta info with error: %s", err)
@@ -661,7 +661,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 			logger.Infof("Blockfile[%s] not exits in dfs, error: %+v", filePath, notExistErr)
 			if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
 				logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
-				mgr.dfsClient.Remove(filePath)
+				//mgr.dfsClient.Remove(filePath)
 				return err
 			}
 		} else {
