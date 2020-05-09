@@ -8,7 +8,6 @@ package statecouchdb
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/msgs"
 	"strings"
 	"unicode/utf8"
 
@@ -84,7 +83,7 @@ func couchDocToKeyValue(doc *couchdb.CouchDoc) (*keyValue, error) {
 	key := jsonResult[idField].(string)
 	// create the return version from the version field in the JSON
 
-	returnVersion, returnMetadata, err := msgs.DecodeVersionAndMetadata(jsonResult[versionField].(string))
+	returnVersion, returnMetadata, err := decodeVersionAndMetadata(jsonResult[versionField].(string))
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +149,7 @@ func keyValToCouchDoc(kv *keyValue) (*couchdb.CouchDoc, error) {
 		kvtype = kvTypeAttachment
 	}
 
-	verAndMetadata, err := msgs.EncodeVersionAndMetadata(version, metadata)
+	verAndMetadata, err := encodeVersionAndMetadata(version, metadata)
 	if err != nil {
 		return nil, err
 	}

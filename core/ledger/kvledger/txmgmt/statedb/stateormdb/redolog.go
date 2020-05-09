@@ -1,5 +1,5 @@
 /*
-Copyright IBM Corp. All Rights Reserved.
+Copyright Zhigui.com. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
@@ -16,47 +16,47 @@ import (
 
 var redologKeyPrefix = []byte{byte(0)}
 
-type RedoLoggerProvider struct {
+type redoLoggerProvider struct {
 	leveldbProvider *leveldbhelper.Provider
 }
-type RedoLogger struct {
+type redoLogger struct {
 	dbName   string
 	dbHandle *leveldbhelper.DBHandle
 }
 
-type RedoRecord struct {
-	UpdateBatch *statedb.UpdateBatch
-	Version     *version.Height
+type redoRecord struct {
+	updateBatch *statedb.UpdateBatch
+	version     *version.Height
 }
 
-func NewRedoLoggerProvider(dirPath string) (*RedoLoggerProvider, error) {
+func newRedoLoggerProvider(dirPath string) (*redoLoggerProvider, error) {
 	provider, err := leveldbhelper.NewProvider(&leveldbhelper.Conf{DBPath: dirPath})
 	if err != nil {
 		return nil, err
 	}
-	return &RedoLoggerProvider{leveldbProvider: provider}, nil
+	return &redoLoggerProvider{leveldbProvider: provider}, nil
 }
 
-func (p *RedoLoggerProvider) NewRedoLogger(dbName string) *RedoLogger {
-	return &RedoLogger{
+func (p *redoLoggerProvider) newRedoLogger(dbName string) *redoLogger {
+	return &redoLogger{
 		dbHandle: p.leveldbProvider.GetDBHandle(dbName),
 	}
 }
 
-func (p *RedoLoggerProvider) Close() {
+func (p *redoLoggerProvider) close() {
 	p.leveldbProvider.Close()
 }
 
-func (l *RedoLogger) Persist(r *RedoRecord) error {
+func (l *redoLogger) persist(r *redoRecord) error {
 	k := encodeRedologKey(l.dbName)
-	v, err := EncodeRedologVal(r)
+	v, err := encodeRedologVal(r)
 	if err != nil {
 		return err
 	}
 	return l.dbHandle.Put(k, v, true)
 }
 
-func (l *RedoLogger) Load() (*RedoRecord, error) {
+func (l *redoLogger) load() (*redoRecord, error) {
 	k := encodeRedologKey(l.dbName)
 	v, err := l.dbHandle.Get(k)
 	if err != nil || v == nil {
@@ -69,7 +69,7 @@ func encodeRedologKey(dbName string) []byte {
 	return append(redologKeyPrefix, []byte(dbName)...)
 }
 
-func EncodeRedologVal(r *RedoRecord) ([]byte, error) {
+func encodeRedologVal(r *redoRecord) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder := gob.NewEncoder(buf)
 	if err := encoder.Encode(r); err != nil {
@@ -78,9 +78,9 @@ func EncodeRedologVal(r *RedoRecord) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func decodeRedologVal(b []byte) (*RedoRecord, error) {
+func decodeRedologVal(b []byte) (*redoRecord, error) {
 	decoder := gob.NewDecoder(bytes.NewBuffer(b))
-	var r *RedoRecord
+	var r *redoRecord
 	if err := decoder.Decode(&r); err != nil {
 		return nil, err
 	}

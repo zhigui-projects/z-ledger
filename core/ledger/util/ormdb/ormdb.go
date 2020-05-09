@@ -6,47 +6,16 @@ SPDX-License-Identifier: Apache-2.0
 package ormdb
 
 import (
-	"encoding/json"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/metrics"
-	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
-	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/sqllite3"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 )
 
-// couchSavepointData data for couchdb
-type couchSavepointData struct {
-	BlockNum uint64 `json:"BlockNum"`
-	TxNum    uint64 `json:"TxNum"`
-}
-
-func encodeSavepoint(height *version.Height) (*couchdb.CouchDoc, error) {
-	var err error
-	var savepointDoc couchSavepointData
-	// construct savepoint document
-	savepointDoc.BlockNum = height.BlockNum
-	savepointDoc.TxNum = height.TxNum
-	savepointDocJSON, err := json.Marshal(savepointDoc)
-	if err != nil {
-		err = errors.Wrap(err, "failed to marshal savepoint data")
-		logger.Errorf("%+v", err)
-		return nil, err
-	}
-	return &couchdb.CouchDoc{JSONValue: savepointDocJSON, Attachments: nil}, nil
-}
-
-func decodeSavepoint(couchDoc *couchdb.CouchDoc) (*version.Height, error) {
-	savepointDoc := &couchSavepointData{}
-	if err := json.Unmarshal(couchDoc.JSONValue, &savepointDoc); err != nil {
-		err = errors.Wrap(err, "failed to unmarshal savepoint data")
-		logger.Errorf("%+v", err)
-		return nil, err
-	}
-	return &version.Height{BlockNum: savepointDoc.BlockNum, TxNum: savepointDoc.TxNum}, nil
-}
+var logger = flogging.MustGetLogger("ormdb")
 
 //ORMDBInstance represents a ORMDB instance
 type ORMDBInstance struct {
@@ -55,7 +24,7 @@ type ORMDBInstance struct {
 
 //ORMDatabase represents a database within a ORMDB instance
 type ORMDatabase struct {
-	ORMDBInstance *ORMDBInstance //connection configuration
+	ORMDBInstance *ORMDBInstance
 	DBName        string
 	DB            *gorm.DB
 	Type          string
@@ -76,6 +45,7 @@ func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string) (*ORMDatabas
 	case "sqlite3":
 		db, err = sqllite3.CreateIfNotExistAndOpen(ormDBInstance.Config, dbName)
 		if err != nil {
+			logger.Errorf("create sqlite3 database with dbname [%s] failed", dbName)
 			return nil, errors.WithMessage(err, "create sqlite3 database failed")
 		}
 	default:
@@ -93,6 +63,7 @@ func DeleteORMDatabase(ormDatabase *ORMDatabase, dbName string) error {
 	case "sqlite3":
 		err = sqllite3.DropAndDelete(ormDatabase.DB, ormDatabase.ORMDBInstance.Config, dbName)
 		if err != nil {
+			logger.Errorf("delete sqlite3 database with dbname [%s] failed", dbName)
 			return errors.WithMessage(err, "delete sqlite3 database failed")
 		}
 	default:

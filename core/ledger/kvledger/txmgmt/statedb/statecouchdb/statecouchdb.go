@@ -11,7 +11,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/msgs"
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
@@ -314,7 +313,7 @@ func (vdb *VersionedDB) LoadCommittedVersions(keys []*statedb.CompositeKey) erro
 		for _, keyMetadata := range nsMetadata {
 			// TODO - why would version be ever zero if loaded from db?
 			if len(keyMetadata.Version) != 0 {
-				version, _, err := msgs.DecodeVersionAndMetadata(keyMetadata.Version)
+				version, _, err := decodeVersionAndMetadata(keyMetadata.Version)
 				if err != nil {
 					return err
 				}

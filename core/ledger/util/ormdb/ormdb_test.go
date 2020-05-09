@@ -79,8 +79,8 @@ func TestCreateORMDatabase(t *testing.T) {
 	assert.Equal(t, "123", testABC1.Test)
 	testABC1.Test = "789"
 	db.DB.Save(testABC1)
-	testABC2 := &ABC{ID: "6F1351B1-F6D1-4B05-AE8F-99CBE6ED106B"}
-	db.DB.Find(testABC2)
+	testABC2 := &ABC{}
+	db.DB.Where(&ABC{ID: "6F1351B1-F6D1-4B05-AE8F-99CBE6ED106B"}).Find(testABC2)
 	assert.Equal(t, "789", testABC2.Test)
 	err = DeleteORMDatabase(db, "test")
 	assert.NoError(t, err)

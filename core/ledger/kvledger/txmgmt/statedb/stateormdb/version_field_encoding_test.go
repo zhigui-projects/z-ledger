@@ -1,6 +1,5 @@
 /*
-Copyright IBM Corp. All Rights Reserved.
-
+Copyright Zhigui.com. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
@@ -37,10 +36,10 @@ func TestEncodeDecode(t *testing.T) {
 }
 
 func testEncodeDecode(t *testing.T, v *statedb.VersionedValue) {
-	encodedVerField, err := EncodeVersionAndMetadata(v.Version, v.Metadata)
+	encodedVerField, err := encodeVersionAndMetadata(v.Version, v.Metadata)
 	assert.NoError(t, err)
 
-	ver, metadata, err := DecodeVersionAndMetadata(encodedVerField)
+	ver, metadata, err := decodeVersionAndMetadata(encodedVerField)
 	assert.NoError(t, err)
 	assert.Equal(t, v.Version, ver)
 	assert.Equal(t, v.Metadata, metadata)

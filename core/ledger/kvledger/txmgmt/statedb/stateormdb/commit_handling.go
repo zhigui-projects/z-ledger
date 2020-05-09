@@ -8,12 +8,10 @@ package stateormdb
 import (
 	"encoding/json"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
-	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/statecouchdb"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb"
 	"github.com/pkg/errors"
 	"math"
 	"reflect"
-	"strconv"
 	"sync"
 )
 
@@ -110,20 +108,14 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 			if !exist {
 				return nil, errors.New("entity no ID field")
 			}
-			if id.Type.Kind() == reflect.Int {
-				entityIdInt, err := strconv.Atoi(key)
-				if err != nil {
-					return nil, errors.WithMessage(err, "entity int ID convert failed")
-				}
-				reflect.ValueOf(entity).Elem().FieldByName("ID").SetInt(int64(entityIdInt))
-			} else if id.Type.Kind() == reflect.String {
+			if id.Type.Kind() == reflect.String {
 				reflect.ValueOf(entity).Elem().FieldByName("ID").SetString(key)
 			} else {
 				return nil, errors.New("not supported entity ID field type")
 			}
 		}
 
-		verAndMeta, err := statecouchdb.EncodeVersionAndMetadata(vv.Version, vv.Metadata)
+		verAndMeta, err := encodeVersionAndMetadata(vv.Version, vv.Metadata)
 		if err != nil {
 			return nil, err
 		}
@@ -181,7 +173,7 @@ func (v *VersionedDB) executeCommitter(committers []*committer) error {
 func (c *committer) commitUpdates() error {
 	tx := c.db.DB.Begin()
 	var err error
-	for _, update := range c.batchUpdateMap {
+	for key, update := range c.batchUpdateMap {
 		if update.Deleted {
 			if err = tx.Delete(update.Entity).Error; err != nil {
 				tx.Rollback()
@@ -191,6 +183,9 @@ func (c *committer) commitUpdates() error {
 			if err = tx.Save(update.Entity).Error; err != nil {
 				tx.Rollback()
 				break
+			}
+			if key == "EntityFieldDefinition" {
+				tx.CreateTable()
 			}
 		}
 	}

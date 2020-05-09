@@ -4,7 +4,7 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package msgs
+package statecouchdb
 
 import (
 	"encoding/base64"
@@ -14,7 +14,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 )
 
-func EncodeVersionAndMetadata(version *version.Height, metadata []byte) (string, error) {
+func encodeVersionAndMetadata(version *version.Height, metadata []byte) (string, error) {
 	msg := &msgs.VersionFieldProto{
 		VersionBytes: version.ToBytes(),
 		Metadata:     metadata,
@@ -26,7 +26,7 @@ func EncodeVersionAndMetadata(version *version.Height, metadata []byte) (string,
 	return base64.StdEncoding.EncodeToString(msgBytes), nil
 }
 
-func DecodeVersionAndMetadata(encodedstr string) (*version.Height, []byte, error) {
+func decodeVersionAndMetadata(encodedstr string) (*version.Height, []byte, error) {
 	versionFieldBytes, err := base64.StdEncoding.DecodeString(encodedstr)
 	if err != nil {
 		return nil, nil, err
