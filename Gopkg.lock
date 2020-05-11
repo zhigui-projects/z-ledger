@@ -732,7 +732,6 @@
   version = "v1.0.0-rc8"
 
 [[projects]]
-  branch = "archive-v2.0.0"
   digest = "1:67338c538475b9ebe38866d23f19ab10200fdfed896131edc2bdf95b194a9225"
   name = "github.com/pengisgood/hdfs"
   packages = [
@@ -743,7 +742,8 @@
     "internal/rpc",
   ]
   pruneopts = "NUT"
-  revision = "4b159052d2d83ccf169ba578098fb491d952422e"
+  revision = "1deca13b03e362226537771a54cad40dacaad833"
+  version = "v2.1.1-dep"
 
 [[projects]]
   digest = "1:1bf95fa61209ea03139b5708ea26a364209f99a4fb70990a2697070588c156ab"

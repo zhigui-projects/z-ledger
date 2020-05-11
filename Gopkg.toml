@@ -195,8 +195,8 @@ noverify = [
   version = "1.4.6"
 
 [[constraint]]
-  branch = "archive-v2.0.0"
   name = "github.com/pengisgood/hdfs"
+  version = "v2.1.1-dep"
 
 [[constraint]]
   name = "github.com/fsnotify/fsnotify"
