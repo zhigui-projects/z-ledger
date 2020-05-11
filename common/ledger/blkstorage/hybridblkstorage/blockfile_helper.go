@@ -92,7 +92,7 @@ func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo,
 	var lastSentFileNum int
 	var lastArchiveFileNum int
 	var err error
-	if lastSentFileNum, err = retrieveLastFileSuffixFromDfs(rootDir, client); err != nil {
+	if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, client); err != nil {
 		panic(fmt.Sprintf("Error in retrieve last file suffix from dfs: %s", err))
 	}
 	if lastSentFileNum == int(amInfo.LastSentFileSuffix) {
@@ -101,10 +101,10 @@ func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo,
 	}
 
 	//Scan the dfs to sync the archive meta info
-	if lastArchiveFileNum, err = retrieveFirstFileSuffix(rootDir); err != nil {
+	if lastArchiveFileNum, err = retrieveLastArchiveFileNum(rootDir); err != nil {
 		panic(fmt.Sprintf("Error in retrieve first file suffix from file system: %s", err))
 	}
-	amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum - 1)
+	amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum)
 	amInfo.LastSentFileSuffix = int32(lastSentFileNum)
 	//TODO：calculate checksum
 	//amInfo.FileProofs[]
@@ -121,19 +121,14 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Clie
 		FileProofs:            make(map[int32]string),
 	}
 
-	if lastArchiveFileNum, err = retrieveFirstFileSuffix(rootDir); err != nil {
+	if lastArchiveFileNum, err = retrieveLastArchiveFileNum(rootDir); err != nil {
 		return nil, err
 	}
-	if lastSentFileNum, err = retrieveLastFileSuffixFromDfs(rootDir, client); err != nil {
+	if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, client); err != nil {
 		return nil, err
 	}
 
-	if lastArchiveFileNum == math.MaxInt32 || lastSentFileNum == -1 {
-		logger.Warn("No block file found")
-		return amInfo, nil
-	}
-
-	amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum - 1)
+	amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum)
 	amInfo.LastSentFileSuffix = int32(lastSentFileNum)
 	//TODO：calculate checksum
 	//amInfo.FileProofs[]
@@ -141,12 +136,12 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Clie
 	return amInfo, nil
 }
 
-func retrieveFirstFileSuffix(rootDir string) (int, error) {
+func retrieveLastArchiveFileNum(rootDir string) (int, error) {
 	smallestFileNum := math.MaxInt32
 	filesInfo, err := ioutil.ReadDir(rootDir)
 	if err != nil {
-		logger.Errorf("retrieveFirstFileSuffix got error: %s", err)
-		return -1, errors.Wrapf(err, "retrieveFirstFileSuffix - error reading dir %s", rootDir)
+		logger.Errorf("retrieveLastArchiveFileNum got error: %s", err)
+		return -1, errors.Wrapf(err, "retrieveLastArchiveFileNum - error reading dir %s", rootDir)
 	}
 	for _, fileInfo := range filesInfo {
 		name := fileInfo.Name()
@@ -163,16 +158,20 @@ func retrieveFirstFileSuffix(rootDir string) (int, error) {
 			smallestFileNum = fileNum
 		}
 	}
-	logger.Infof("retrieveFirstFileSuffix() - smallestFileNum = %d", smallestFileNum)
+	if smallestFileNum == math.MaxInt32 {
+		logger.Warnf("retrieveLastArchiveFileNum - no block file found in the dir[%s]", rootDir)
+		return -1, nil
+	}
+	logger.Infof("retrieveLastArchiveFileNum() - smallestFileNum = %d", smallestFileNum)
 	return smallestFileNum, err
 }
 
-func retrieveLastFileSuffixFromDfs(rootDir string, client *hdfs.Client) (int, error) {
+func retrieveLastSentFileNumFromDfs(rootDir string, client *hdfs.Client) (int, error) {
 	biggestFileNum := -1
 	filesInfo, err := client.ReadDir(rootDir)
 	if err != nil {
-		logger.Errorf("retrieveLastFileSuffixFromDfs got error: %s", err)
-		return -1, errors.Wrapf(err, "retrieveLastFileSuffixFromDfs - error reading dir %s", rootDir)
+		logger.Errorf("retrieveLastSentFileNumFromDfs got error: %s", err)
+		return -1, errors.Wrapf(err, "retrieveLastSentFileNumFromDfs - error reading dir %s", rootDir)
 	}
 	for _, fileInfo := range filesInfo {
 		name := fileInfo.Name()
@@ -189,7 +188,10 @@ func retrieveLastFileSuffixFromDfs(rootDir string, client *hdfs.Client) (int, er
 			biggestFileNum = fileNum
 		}
 	}
-	logger.Infof("retrieveLastFileSuffixFromDfs() - biggestFileNum = %d", biggestFileNum)
+	if biggestFileNum == -1 {
+		logger.Warnf("retrieveLastSentFileNumFromDfs - no block file found in the dfs dir[%s]", rootDir)
+	}
+	logger.Infof("retrieveLastSentFileNumFromDfs() - biggestFileNum = %d", biggestFileNum)
 	return biggestFileNum, err
 }
 
