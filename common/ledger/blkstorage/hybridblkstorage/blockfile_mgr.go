@@ -13,7 +13,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/colinmarc/hdfs"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -25,6 +24,7 @@ import (
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
 	"github.com/hyperledger/fabric/core/ledger/archive/dfs"
 	"github.com/hyperledger/fabric/protoutil"
+	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
 )
 

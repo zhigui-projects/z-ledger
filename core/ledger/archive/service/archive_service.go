@@ -8,7 +8,6 @@ package service
 
 import (
 	"fmt"
-	"github.com/colinmarc/hdfs"
 	"github.com/fsnotify/fsnotify"
 	proto "github.com/hyperledger/fabric-protos-go/gossip"
 	"github.com/hyperledger/fabric/common/flogging"
@@ -18,6 +17,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/archive/dfs"
 	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
+	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
 	"path/filepath"
 	"sync"

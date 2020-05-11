@@ -14,10 +14,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/colinmarc/hdfs"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/archive"
+	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
 )
 

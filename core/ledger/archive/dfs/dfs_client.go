@@ -1,9 +1,9 @@
 package dfs
 
 import (
-	"github.com/colinmarc/hdfs"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
+	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
 )
 
@@ -23,8 +23,9 @@ func NewHDFSClient() (*hdfs.Client, error) {
 	}
 
 	options := hdfs.ClientOptions{
-		Addresses: ledgerconfig.GetHDFSNameNodes(),
-		User:      ledgerconfig.GetHDFSUser(),
+		Addresses:           ledgerconfig.GetHDFSNameNodes(),
+		User:                ledgerconfig.GetHDFSUser(),
+		UseDatanodeHostname: false,
 	}
 	client, err := hdfs.NewClient(options)
 
