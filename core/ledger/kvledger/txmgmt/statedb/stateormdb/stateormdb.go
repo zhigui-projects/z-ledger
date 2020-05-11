@@ -27,9 +27,9 @@ var logger = flogging.MustGetLogger("stateormdb")
 
 const savePointKey = "savepoint"
 
-type savePoint struct {
-	key    string
-	height string
+type SavePoint struct {
+	Key    string
+	Height string
 }
 
 // VersionedDBProvider implements interface VersionedDBProvider
@@ -95,20 +95,55 @@ func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, redoLog *
 		logger.Errorf("create meta database failed [%v]", err)
 		return nil, errors.WithMessage(err, "create meta database failed")
 	}
-	err = metadataDB.DB.CreateTable(&savePoint{}).Error
-	if err != nil {
-		logger.Errorf("create meta table failed [%v]", err)
-		return nil, errors.WithMessage(err, "create meta table failed")
+	savepoint := &SavePoint{}
+	if !metadataDB.DB.HasTable(savepoint) {
+		err = metadataDB.DB.CreateTable(savepoint).Error
+		if err != nil {
+			logger.Errorf("create meta table failed [%v]", err)
+			return nil, errors.WithMessage(err, "create meta table failed")
+		}
 	}
 	namespaceDBMap := make(map[string]*ormdb.ORMDatabase)
-	return &VersionedDB{
+	vdb := &VersionedDB{
 		ormDBInstance: ormDBInstance,
 		metadataDB:    metadataDB,
 		chainName:     chainName,
 		namespaceDBs:  namespaceDBMap,
 		redoLog:       redoLog,
 		cache:         cache,
-	}, nil
+	}
+
+	logger.Debugf("chain [%s]: checking for redolog record", chainName)
+	redologRecord, err := redoLog.load()
+	if err != nil {
+		logger.Errorf("redolog load failed [%v]", err)
+		return nil, errors.WithMessage(err, "redolog load failed")
+	}
+	latestSavepoint, err := vdb.GetLatestSavePoint()
+	if err != nil {
+		logger.Errorf("get latest savepoint failed [%v]", err)
+		return nil, errors.WithMessage(err, "get latest savepoint failed")
+	}
+
+	// in normal circumstances, redolog is expected to be either equal to the last block
+	// committed to the statedb or one ahead (in the event of a crash). However, either of
+	// these or both could be nil on first time start (fresh start/rebuild)
+	if redologRecord == nil || latestSavepoint == nil {
+		logger.Debugf("chain [%s]: No redo-record or save point present", chainName)
+		return vdb, nil
+	}
+
+	logger.Debugf("chain [%s]: save point = %#v, version of redolog record = %#v",
+		chainName, savepoint, redologRecord.version)
+
+	if redologRecord.version.BlockNum-latestSavepoint.BlockNum == 1 {
+		logger.Debugf("chain [%s]: Re-applying last batch", chainName)
+		if err := vdb.applyUpdates(redologRecord.updateBatch, redologRecord.version); err != nil {
+			return nil, err
+		}
+	}
+
+	return vdb, nil
 }
 
 // GetState implements method in VersionedDB interface
@@ -334,7 +369,7 @@ func (v *VersionedDB) recordSavepoint(height *version.Height) error {
 		return nil
 	}
 
-	savePoint := &savePoint{key: savePointKey, height: base64.StdEncoding.EncodeToString(height.ToBytes())}
+	savePoint := &SavePoint{Key: savePointKey, Height: base64.StdEncoding.EncodeToString(height.ToBytes())}
 	err := v.metadataDB.DB.Save(savePoint).Error
 	if err != nil {
 		logger.Errorf("Failed to save the savepoint to DB %s", err.Error())
@@ -345,14 +380,14 @@ func (v *VersionedDB) recordSavepoint(height *version.Height) error {
 }
 
 func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
-	sp := &savePoint{}
-	err := v.metadataDB.DB.Where(&savePoint{key: savePointKey}).Find(sp).Error
+	sp := &SavePoint{}
+	err := v.metadataDB.DB.Where(&SavePoint{Key: savePointKey}).Find(sp).Error
 	if err != nil {
 		logger.Errorf("Failed to read savepoint data %s", err.Error())
 		return nil, err
 	}
 
-	versionBytes, err := base64.StdEncoding.DecodeString(sp.height)
+	versionBytes, err := base64.StdEncoding.DecodeString(sp.Height)
 	if err != nil {
 		logger.Errorf("Failed to decode savepoint data %s", err.Error())
 		return nil, err
@@ -392,14 +427,57 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 	if db == nil {
 		db, err := ormdb.CreateORMDatabase(v.ormDBInstance, namespaceDBName)
 		if err != nil {
-			return nil, err
-		}
-		err = db.DB.CreateTable(&entitydefinition.EntityFieldDefinition{}).Error
-		if err != nil {
-			logger.Errorf("create entity definition table failed [%v]", err)
-			return nil, errors.WithMessage(err, "create entity definition table failed")
+			logger.Errorf("create orm database failed [%v]", err)
+			return nil, errors.WithMessage(err, "create orm database failed")
 		}
 		v.namespaceDBs[namespace] = db
+		edf := &entitydefinition.EntityFieldDefinition{}
+		if !db.DB.HasTable(edf) {
+			err = db.DB.CreateTable(edf).Error
+			if err != nil {
+				logger.Errorf("create entity definition table failed [%v]", err)
+				return nil, errors.WithMessage(err, "create entity definition table failed")
+			}
+		}
+
+		var entityFieldDefs []entitydefinition.EntityFieldDefinition
+		err = db.DB.Order("seq").Find(&entityFieldDefs).Error
+		if err != nil {
+			logger.Errorf("query entity definition table failed [%v]", err)
+			return nil, errors.WithMessage(err, "query entity definition table failed")
+		}
+
+		var currentEntity string
+		currentEfds := make([]*entitydefinition.EntityFieldDefinition, 0)
+		for i, efd := range entityFieldDefs {
+			if i == 0 {
+				currentEntity = efd.Owner
+				currentEfds = append(currentEfds, &efd)
+			} else {
+				if currentEntity != efd.Owner {
+					db.RWMutex.Lock()
+					ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(currentEfds, db.ModelTypes).Build()
+					db.ModelTypes[currentEntity] = ds
+					if !db.DB.HasTable(ds.Interface()) {
+						db.DB.CreateTable()
+					}
+					db.RWMutex.Unlock()
+					currentEntity = efd.Owner
+					currentEfds = make([]*entitydefinition.EntityFieldDefinition, 0)
+					currentEfds = append(currentEfds, &efd)
+				} else {
+					currentEfds = append(currentEfds, &efd)
+				}
+			}
+
+			if i == len(entityFieldDefs)-1 {
+				db.RWMutex.Lock()
+				ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(currentEfds, db.ModelTypes).Build()
+				db.ModelTypes[currentEntity] = ds
+				db.RWMutex.Unlock()
+			}
+		}
+
 	}
 	return db, nil
 }

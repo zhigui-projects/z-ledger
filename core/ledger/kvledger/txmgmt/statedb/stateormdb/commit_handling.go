@@ -7,6 +7,8 @@ package stateormdb
 
 import (
 	"encoding/json"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
+	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb"
 	"github.com/pkg/errors"
@@ -16,8 +18,10 @@ import (
 )
 
 type batchableEntity struct {
-	Entity  interface{}
-	Deleted bool
+	Entity                 interface{}
+	EntityName             string
+	EntityFieldDefinitions []*entitydefinition.EntityFieldDefinition
+	Deleted                bool
 }
 
 type committer struct {
@@ -97,31 +101,51 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 		}
 
 		entityName := keys[0]
-		entity := db.ModelTypes[entityName].Interface()
-		if vv.Value != nil {
-			err = json.Unmarshal(vv.Value, entity)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			id, exist := db.ModelTypes[entityName].FieldByName("ID")
-			if !exist {
-				return nil, errors.New("entity no ID field")
-			}
-			if id.Type.Kind() == reflect.String {
-				reflect.ValueOf(entity).Elem().FieldByName("ID").SetString(key)
-			} else {
-				return nil, errors.New("not supported entity ID field type")
-			}
-		}
-
+		entityKey := keys[1]
 		verAndMeta, err := encodeVersionAndMetadata(vv.Version, vv.Metadata)
 		if err != nil {
 			return nil, err
 		}
-		reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").SetString(verAndMeta)
+		if entityName == "EntityFieldDefinition" {
+			if vv.Value == nil {
+				return nil, errors.New("create table value cannot nil")
+			} else {
+				efds := make([]*entitydefinition.EntityFieldDefinition, 0)
+				err = json.Unmarshal(vv.Value, efds)
+				if err != nil {
+					return nil, err
+				}
 
-		committers[i].batchUpdateMap[key] = &batchableEntity{Entity: entity, Deleted: vv.Value == nil}
+				for _, efd := range efds {
+					efd.ID = util.GenerateUUID()
+					efd.VerAndMeta = verAndMeta
+				}
+
+				committers[i].batchUpdateMap[key] = &batchableEntity{EntityName: entityKey, EntityFieldDefinitions: efds, Deleted: false}
+			}
+		} else {
+			entity := db.ModelTypes[entityName].Interface()
+			if vv.Value != nil {
+				err = json.Unmarshal(vv.Value, entity)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				id, exist := db.ModelTypes[entityName].FieldByName("ID")
+				if !exist {
+					return nil, errors.New("entity no ID field")
+				}
+				if id.Type.Kind() == reflect.String {
+					reflect.ValueOf(entity).Elem().FieldByName("ID").SetString(entityKey)
+				} else {
+					return nil, errors.New("not supported entity ID field type")
+				}
+			}
+
+			reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").SetString(verAndMeta)
+			committers[i].batchUpdateMap[key] = &batchableEntity{Entity: entity, Deleted: vv.Value == nil}
+		}
+
 		committers[i].addToCacheUpdate(key, vv)
 	}
 	return committers, nil
@@ -171,24 +195,36 @@ func (v *VersionedDB) executeCommitter(committers []*committer) error {
 
 // commitUpdates commits the given updates to ormdb
 func (c *committer) commitUpdates() error {
-	tx := c.db.DB.Begin()
 	var err error
-	for key, update := range c.batchUpdateMap {
+	for _, update := range c.batchUpdateMap {
 		if update.Deleted {
-			if err = tx.Delete(update.Entity).Error; err != nil {
-				tx.Rollback()
-				break
+			if err = c.db.DB.Delete(update.Entity).Error; err != nil {
+				return err
 			}
 		} else {
-			if err = tx.Save(update.Entity).Error; err != nil {
-				tx.Rollback()
-				break
+			if update.Entity == nil {
+				for _, efd := range update.EntityFieldDefinitions {
+					if err = c.db.DB.Save(efd).Error; err != nil {
+						return err
+					}
+				}
+				c.db.RWMutex.Lock()
+				ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(update.EntityFieldDefinitions, c.db.ModelTypes).Build()
+				c.db.ModelTypes[update.EntityName] = ds
+				c.db.RWMutex.Unlock()
+				entity := ds.Interface()
+				if !c.db.DB.HasTable(entity) {
+					if err = c.db.DB.CreateTable(entity).Error; err != nil {
+						return err
+					}
+				}
+			} else {
+				if err = c.db.DB.Save(update.Entity).Error; err != nil {
+					return err
+				}
 			}
-			if key == "EntityFieldDefinition" {
-				tx.CreateTable()
-			}
+
 		}
 	}
-	tx.Commit()
 	return err
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/sqllite3"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var logger = flogging.MustGetLogger("ormdb")
@@ -28,6 +29,7 @@ type ORMDatabase struct {
 	DBName        string
 	DB            *gorm.DB
 	Type          string
+	RWMutex       sync.RWMutex
 	ModelTypes    map[string]entitydefinition.DynamicStruct
 }
 
@@ -51,7 +53,13 @@ func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string) (*ORMDatabas
 	default:
 		return nil, errors.New("not supported database type")
 	}
-	ormDBDatabase := &ORMDatabase{ORMDBInstance: ormDBInstance, DBName: dbName, DB: db, Type: ormDBInstance.Config.DBType}
+	ormDBDatabase := &ORMDatabase{
+		ORMDBInstance: ormDBInstance,
+		DBName:        dbName,
+		DB:            db,
+		Type:          ormDBInstance.Config.DBType,
+		ModelTypes:    make(map[string]entitydefinition.DynamicStruct),
+	}
 
 	return ormDBDatabase, nil
 }
