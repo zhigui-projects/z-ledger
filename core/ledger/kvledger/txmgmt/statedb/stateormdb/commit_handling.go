@@ -111,7 +111,7 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 				return nil, errors.New("create table value cannot nil")
 			} else {
 				efds := make([]entitydefinition.EntityFieldDefinition, 0)
-				err = json.Unmarshal(vv.Value, efds)
+				err = json.Unmarshal(vv.Value, &efds)
 				if err != nil {
 					return nil, err
 				}
