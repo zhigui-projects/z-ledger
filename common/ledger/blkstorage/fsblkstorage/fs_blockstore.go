@@ -58,6 +58,10 @@ func (store *fsBlockStore) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error
 	return nil, nil
 }
 
+func (store *fsBlockStore) UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo) {
+	//dummy implementation
+}
+
 // AddBlock adds a new block
 func (store *fsBlockStore) AddBlock(block *common.Block) error {
 	// track elapsed time to collect block commit time

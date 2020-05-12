@@ -46,6 +46,14 @@ func (store *hybridBlockStore) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, e
 	return store.fileMgr.loadArchiveMetaInfo()
 }
 
+func (store *hybridBlockStore) UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo) {
+	if err := store.fileMgr.saveArchiveMetaInfo(metaInfo); err != nil {
+		logger.Errorf("Saving archive meta info failed with error: %s", err)
+		return
+	}
+	store.fileMgr.updateArchiveMetaInfo(metaInfo)
+}
+
 // AddBlock adds a new block
 func (store *hybridBlockStore) AddBlock(block *common.Block) error {
 	// track elapsed time to collect block commit time

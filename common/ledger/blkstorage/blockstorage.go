@@ -64,6 +64,7 @@ type BlockStoreProvider interface {
 type BlockStore interface {
 	TransferBlockFiles() error
 	GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error)
+	UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo)
 	AddBlock(block *common.Block) error
 	GetBlockchainInfo() (*common.BlockchainInfo, error)
 	RetrieveBlocks(startNum uint64) (ledger.ResultsIterator, error)

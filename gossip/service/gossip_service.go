@@ -358,7 +358,8 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 
 	if g.archiveService[channelID] == nil {
 		logger.Infof("Initializing archive service instance for channel: %s", channelID)
-		g.archiveService[channelID], _ = archiveservice.New(g, g.ledgerMgr)
+		PKIid := g.mcs.GetPKIidOfCert(g.peerIdentity)
+		g.archiveService[channelID], _ = archiveservice.New(g, g.ledgerMgr, channelID, string(PKIid))
 	}
 
 	// Delivery service might be nil only if it was not able to get connected
@@ -461,7 +462,7 @@ func (g *GossipService) Stop() {
 		}
 
 		if g.deliveryService[chainID] != nil {
-			logger.Infof("Stopping the archive ledger file watcher for channel: %s", chainID)
+			logger.Infof("Stopping the archive service for channel: %s", chainID)
 			g.archiveService[chainID].Stop()
 		}
 	}

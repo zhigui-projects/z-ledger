@@ -8,6 +8,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/fsnotify/fsnotify"
 	proto "github.com/hyperledger/fabric-protos-go/gossip"
 	"github.com/hyperledger/fabric/common/flogging"
@@ -25,18 +26,14 @@ import (
 
 var logger = flogging.MustGetLogger("archive.service")
 
-type gossip interface {
-	// PeersOfChannel returns the NetworkMembers considered alive in a channel
-	//PeersOfChannel(channel common.ChannelID) []discovery.NetworkMember
+type ArchiveGossip interface {
+	// Accept returns a channel that emits messages
+	Accept() <-chan *proto.GossipMessage
 
-	// Accept returns a dedicated read-only channel for messages sent by other nodes that match a certain predicate.
-	// If passThrough is false, the messages are processed by the gossip layer beforehand.
-	// If passThrough is true, the gossip layer doesn't intervene and the messages
-	// can be used to send a reply back to the sender
-	//Accept(acceptor common.MessageAcceptor, passThrough bool) (<-chan *proto.GossipMessage, <-chan protoext.ReceivedMessage)
-
-	// Gossip sends a message to other peers to the network
+	// Gossip gossips a message to other peers
 	Gossip(msg *proto.GossipMessage)
+
+	Stop()
 }
 
 type archiveSvc interface {
@@ -51,30 +48,37 @@ type archiveSvc interface {
 }
 
 type ArchiveService struct {
-	gossip
 	archiveSvc
+	gossip    ArchiveGossip
+	peerId    string
 	ledgerMgr *ledgermgmt.LedgerMgr
 	dfsClient *hdfs.Client
 	watchers  map[string]*fsnotify.Watcher
 	lock      sync.RWMutex
+	stopCh    chan struct{}
 }
 
 // New construction function to create and initialize
 // archive service instance. It tries to establish connection to
 // the specified dfs name node, in case it fails to dial to it, return nil
-func New(g gossip, ledgerMgr *ledgermgmt.LedgerMgr) (*ArchiveService, error) {
+func New(g gossip, ledgerMgr *ledgermgmt.LedgerMgr, channel string, peerId string) (*ArchiveService, error) {
 	client, err := dfs.NewHDFSClient()
 	if err != nil {
 		logger.Errorf("Archive service can't connect to HDFS, due to %+v", err)
 		return nil, err
 	}
 
-	return &ArchiveService{
-		gossip:    g,
+	a := &ArchiveService{
+		gossip:    NewGossipImpl(g, channel),
+		peerId:    peerId,
 		ledgerMgr: ledgerMgr,
 		dfsClient: client,
 		watchers:  make(map[string]*fsnotify.Watcher),
-	}, nil
+		stopCh:    make(chan struct{}),
+	}
+	go a.handleMessages()
+
+	return a, nil
 }
 
 // StartWatcherForChannel starts ledger watcher for channel
@@ -159,7 +163,6 @@ func (a *ArchiveService) broadcastMetaInfo(chainID string) {
 		return
 	}
 
-	// Use payload to create gossip message
 	gossipMsg := &proto.GossipMessage{
 		Nonce:   0,
 		Tag:     proto.GossipMessage_CHAN_ONLY,
@@ -174,6 +177,36 @@ func (a *ArchiveService) broadcastMetaInfo(chainID string) {
 	// Gossip messages with other nodes
 	logger.Infof("Archive service - gossiping archive meta info: %+v", metaInfo)
 	a.gossip.Gossip(gossipMsg)
+}
+
+func (a *ArchiveService) handleMessages() {
+	logger.Infof("Archive service - handle gossip msg for peer %s: Entering", a.peerId)
+	defer logger.Infof("Archive service - handle gossip msg for peer %s: Exiting", a.peerId)
+	msgChan := a.gossip.Accept()
+	for {
+		select {
+		case <-a.stopCh:
+			return
+		case msg := <-msgChan:
+			a.handleMessage(msg)
+		}
+	}
+}
+
+func (a *ArchiveService) handleMessage(msg *proto.GossipMessage) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	chainID := string(msg.Channel)
+	ledger, err := a.getLedger(chainID)
+	if err != nil {
+		logger.Errorf("Archive service - get ledger for chain: %s failed with error: %s", chainID, err)
+		return
+	}
+
+	metaInfo := msg.GetArchiveMsg().ArchiveMetaInfo
+	logger.Infof("Archive service - updating meta info[%s] for channel: %s", spew.Sdump(metaInfo), chainID)
+	ledger.UpdateArchiveMetaInfo(metaInfo)
 }
 
 func (a *ArchiveService) getLedger(chainID string) (le.PeerLedger, error) {
@@ -209,9 +242,20 @@ func (a *ArchiveService) StopWatcherForChannel(chainID string) error {
 	return nil
 }
 
-func (a *ArchiveService) Stop() error {
-	//TODO
-	return nil
+func (a *ArchiveService) Stop() {
+	a.gossip.Stop()
+	close(a.stopCh)
+
+	for _, w := range a.watchers {
+		if err := w.Close(); err != nil {
+			logger.Warnf("Stop watcher[%s] got error: %s", spew.Sdump(w), err)
+			continue
+		}
+	}
+
+	if err := a.dfsClient.Close(); err != nil {
+		logger.Warnf("Stop dfs client[%s] got error: %s", spew.Sdump(a.dfsClient), err)
+	}
 }
 
 func getLedgerDir(chainID string) string {

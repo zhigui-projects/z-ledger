@@ -330,6 +330,10 @@ func (l *kvLedger) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
 	return l.blockStore.GetArchiveMetaInfo()
 }
 
+func (l *kvLedger) UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo) {
+	l.blockStore.UpdateArchiveMetaInfo(metaInfo)
+}
+
 // GetTransactionByID retrieves a transaction by id
 func (l *kvLedger) GetTransactionByID(txID string) (*peer.ProcessedTransaction, error) {
 	tranEnv, err := l.blockStore.RetrieveTxByID(txID)

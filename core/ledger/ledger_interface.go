@@ -103,6 +103,7 @@ type PeerLedger interface {
 	commonledger.Ledger
 	TransferBlockFiles() error
 	GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error)
+	UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo)
 	// GetTransactionByID retrieves a transaction by id
 	GetTransactionByID(txID string) (*peer.ProcessedTransaction, error)
 	// GetBlockByHash returns a block given it's hash
