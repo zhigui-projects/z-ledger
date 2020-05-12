@@ -20,7 +20,7 @@ import (
 type batchableEntity struct {
 	Entity                 interface{}
 	EntityName             string
-	EntityFieldDefinitions []*entitydefinition.EntityFieldDefinition
+	EntityFieldDefinitions []entitydefinition.EntityFieldDefinition
 	Deleted                bool
 }
 
@@ -110,7 +110,7 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 			if vv.Value == nil {
 				return nil, errors.New("create table value cannot nil")
 			} else {
-				efds := make([]*entitydefinition.EntityFieldDefinition, 0)
+				efds := make([]entitydefinition.EntityFieldDefinition, 0)
 				err = json.Unmarshal(vv.Value, efds)
 				if err != nil {
 					return nil, err

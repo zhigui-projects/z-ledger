@@ -448,11 +448,11 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 		}
 
 		var currentEntity string
-		currentEfds := make([]*entitydefinition.EntityFieldDefinition, 0)
+		currentEfds := make([]entitydefinition.EntityFieldDefinition, 0)
 		for i, efd := range entityFieldDefs {
 			if i == 0 {
 				currentEntity = efd.Owner
-				currentEfds = append(currentEfds, &efd)
+				currentEfds = append(currentEfds, efd)
 			} else {
 				if currentEntity != efd.Owner {
 					db.RWMutex.Lock()
@@ -463,10 +463,10 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 					}
 					db.RWMutex.Unlock()
 					currentEntity = efd.Owner
-					currentEfds = make([]*entitydefinition.EntityFieldDefinition, 0)
-					currentEfds = append(currentEfds, &efd)
+					currentEfds = make([]entitydefinition.EntityFieldDefinition, 0)
+					currentEfds = append(currentEfds, efd)
 				} else {
-					currentEfds = append(currentEfds, &efd)
+					currentEfds = append(currentEfds, efd)
 				}
 			}
 
