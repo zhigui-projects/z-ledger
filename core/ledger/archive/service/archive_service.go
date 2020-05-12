@@ -47,10 +47,12 @@ type archiveSvc interface {
 	Stop()
 }
 
+type peerID []byte
+
 type ArchiveService struct {
 	archiveSvc
 	gossip    ArchiveGossip
-	peerId    string
+	id        peerID
 	ledgerMgr *ledgermgmt.LedgerMgr
 	dfsClient *hdfs.Client
 	watchers  map[string]*fsnotify.Watcher
@@ -70,7 +72,7 @@ func New(g gossip, ledgerMgr *ledgermgmt.LedgerMgr, channel string, peerId strin
 
 	a := &ArchiveService{
 		gossip:    NewGossipImpl(g, channel),
-		peerId:    peerId,
+		id:        peerID(peerId),
 		ledgerMgr: ledgerMgr,
 		dfsClient: client,
 		watchers:  make(map[string]*fsnotify.Watcher),
@@ -180,8 +182,8 @@ func (a *ArchiveService) broadcastMetaInfo(chainID string) {
 }
 
 func (a *ArchiveService) handleMessages() {
-	logger.Infof("Archive service - handle gossip msg for peer %s: Entering", a.peerId)
-	defer logger.Infof("Archive service - handle gossip msg for peer %s: Exiting", a.peerId)
+	logger.Infof("Archive service - handle gossip msg for peer[%s]: Entering", string(a.id))
+	defer logger.Infof("Archive service - handle gossip msg for peer[%s]: Exiting", string(a.id))
 	msgChan := a.gossip.Accept()
 	for {
 		select {
