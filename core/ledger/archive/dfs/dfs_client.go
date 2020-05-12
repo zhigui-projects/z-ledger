@@ -31,7 +31,7 @@ func NewHDFSClient() (*hdfs.Client, error) {
 	options := hdfs.ClientOptions{
 		Addresses:           ledgerconfig.GetHDFSNameNodes(),
 		User:                ledgerconfig.GetHDFSUser(),
-		UseDatanodeHostname: false,
+		UseDatanodeHostname: ledgerconfig.UseDatanodeHostname(),
 	}
 	client, err := hdfs.NewClient(options)
 
