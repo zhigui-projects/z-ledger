@@ -584,7 +584,13 @@ func (mgr *hybridBlockfileMgr) fetchTransactionEnvelope(lp *fileLocPointer) (*co
 }
 
 func (mgr *hybridBlockfileMgr) fetchBlockBytes(lp *fileLocPointer) ([]byte, error) {
-	stream, err := newBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset))
+	var err error
+	var stream fileStream
+	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
+		stream, err = newDfsBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), mgr.dfsClient)
+	} else {
+		stream, err = newBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +603,7 @@ func (mgr *hybridBlockfileMgr) fetchBlockBytes(lp *fileLocPointer) ([]byte, erro
 }
 
 func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error) {
-	var reader FileReader
+	var reader fileReader
 	var err error
 	filePath := deriveBlockfilePath(mgr.rootDir, lp.fileSuffixNum)
 	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
@@ -608,8 +614,8 @@ func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	defer reader.Close()
-	b, err := reader.ReadAt(lp.offset, lp.bytesLength)
+	defer reader.close()
+	b, err := reader.readAt(lp.offset, lp.bytesLength)
 	if err != nil {
 		return nil, err
 	}

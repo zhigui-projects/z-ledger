@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-type FileReader interface {
-	ReadAt(offset int, length int) ([]byte, error)
-	Close() error
+type fileReader interface {
+	readAt(offset int, length int) ([]byte, error)
+	close() error
 }
 
 ////  DFS READER ////
@@ -32,7 +32,7 @@ func newDfsBlockfileReader(filePath string, dfsClient *hdfs.Client) (*dfsBlockfi
 	return &dfsBlockfileReader{reader}, nil
 }
 
-func (r *dfsBlockfileReader) ReadAt(offset int, length int) ([]byte, error) {
+func (r *dfsBlockfileReader) readAt(offset int, length int) ([]byte, error) {
 	b := make([]byte, length)
 	_, err := r.reader.ReadAt(b, int64(offset))
 	if err != nil {
@@ -41,6 +41,6 @@ func (r *dfsBlockfileReader) ReadAt(offset int, length int) ([]byte, error) {
 	return b, nil
 }
 
-func (r *dfsBlockfileReader) Close() error {
+func (r *dfsBlockfileReader) close() error {
 	return errors.WithStack(r.reader.Close())
 }
