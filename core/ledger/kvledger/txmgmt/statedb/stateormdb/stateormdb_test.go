@@ -105,6 +105,12 @@ func TestVersionedDBProvider_GetDBHandle(t *testing.T) {
 }
 
 func TestVersionedDB_ApplyUpdates(t *testing.T) {
+	//batchUpdate := statedb.NewUpdateBatch()
+	//key, testSubEfds, err := entitydefinition.RegisterEntity(&TestSubModel{})
+	//assert.NoError(t, err)
+	//testSubEfdsBytes, err := json.Marshal(testSubEfds)
+	//assert.NoError(t, err)
+	//batchUpdate.Put("mycc", "EntityFieldDefinition$#$TestSubModel", )
 	//nsUpdates := make(map[string]*statedb.VersionedValue)
 	//statedb.VersionedValue{}
 	//updates := &statedb.UpdateBatch{}
