@@ -12,21 +12,27 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb"
 	"github.com/pkg/errors"
-	"math"
 	"reflect"
+	"sort"
+	"strings"
 	"sync"
 )
 
 type batchableEntity struct {
-	Entity                 interface{}
+	Entity  interface{}
+	Deleted bool
+}
+
+type batchableEntityFieldDefinition struct {
 	EntityName             string
+	Seq                    int
 	EntityFieldDefinitions []entitydefinition.EntityFieldDefinition
-	Deleted                bool
 }
 
 type committer struct {
 	db             *ormdb.ORMDatabase
-	batchUpdateMap map[string]*batchableEntity
+	batchUpdateMap []*batchableEntity
+	efdMap         []*batchableEntityFieldDefinition
 	namespace      string
 	cacheKVs       statedb.CacheKVs
 	cacheEnabled   bool
@@ -36,7 +42,7 @@ func (v *VersionedDB) buildCommitters(updates *statedb.UpdateBatch) ([]*committe
 	namespaces := updates.GetUpdatedNamespaces()
 
 	var wg sync.WaitGroup
-	nsCommittersChan := make(chan []*committer, len(namespaces))
+	nsCommittersChan := make(chan *committer, len(namespaces))
 	defer close(nsCommittersChan)
 	errsChan := make(chan error, len(namespaces))
 	defer close(errsChan)
@@ -46,12 +52,12 @@ func (v *VersionedDB) buildCommitters(updates *statedb.UpdateBatch) ([]*committe
 		wg.Add(1)
 		go func(ns string) {
 			defer wg.Done()
-			committers, err := v.buildCommittersForNs(ns, nsUpdates)
+			committer, err := v.buildCommittersForNs(ns, nsUpdates)
 			if err != nil {
 				errsChan <- err
 				return
 			}
-			nsCommittersChan <- committers
+			nsCommittersChan <- committer
 		}(ns)
 	}
 	wg.Wait()
@@ -62,38 +68,29 @@ func (v *VersionedDB) buildCommitters(updates *statedb.UpdateBatch) ([]*committe
 		return nil, err
 	default:
 		for i := 0; i < len(namespaces); i++ {
-			allCommitters = append(allCommitters, <-nsCommittersChan...)
+			allCommitters = append(allCommitters, <-nsCommittersChan)
 		}
 	}
 
 	return allCommitters, nil
 }
 
-func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*statedb.VersionedValue) ([]*committer, error) {
+func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*statedb.VersionedValue) (*committer, error) {
 	db, err := v.getNamespaceDBHandle(ns)
 	if err != nil {
 		return nil, err
 	}
-	// for each namespace, build mutiple committers based on the maxBatchSize
-	maxBatchSize := db.ORMDBInstance.Config.MaxBatchUpdateSize
-	numCommitters := 1
-	if maxBatchSize > 0 {
-		numCommitters = int(math.Ceil(float64(len(nsUpdates)) / float64(maxBatchSize)))
-	}
-	committers := make([]*committer, numCommitters)
 	cacheEnabled := v.cache.Enabled(ns)
 
-	for i := 0; i < numCommitters; i++ {
-		committers[i] = &committer{
-			db:             db,
-			batchUpdateMap: make(map[string]*batchableEntity),
-			namespace:      ns,
-			cacheKVs:       make(statedb.CacheKVs),
-			cacheEnabled:   cacheEnabled,
-		}
+	committer := &committer{
+		db:             db,
+		batchUpdateMap: make([]*batchableEntity, 0),
+		efdMap:         make([]*batchableEntityFieldDefinition, 0),
+		namespace:      ns,
+		cacheKVs:       make(statedb.CacheKVs),
+		cacheEnabled:   cacheEnabled,
 	}
 
-	i := 0
 	for key, vv := range nsUpdates {
 		keys, err := parseKey(key)
 		if err != nil {
@@ -116,25 +113,36 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 					return nil, err
 				}
 
-				for _, efd := range efds {
-					efd.ID = util.GenerateUUID()
+				var seq int
+				for i, efd := range efds {
+					if i == 0 {
+						seq = efd.Seq
+					}
+					efd.ID = strings.ReplaceAll(util.GenerateUUID(), "-", "")
 					efd.VerAndMeta = verAndMeta
 				}
 
-				committers[i].batchUpdateMap[key] = &batchableEntity{EntityName: entityKey, EntityFieldDefinitions: efds, Deleted: false}
+				committer.efdMap = append(committer.efdMap, &batchableEntityFieldDefinition{EntityName: entityKey, EntityFieldDefinitions: efds, Seq: seq})
 			}
 		} else {
+			db.RWMutex.RLock()
 			entity := db.ModelTypes[entityName].Interface()
+			id, exist := db.ModelTypes[entityName].FieldByName("ID")
+			if !exist {
+				return nil, errors.New("entity no ID field")
+			}
+			_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
+			if !exist {
+				return nil, errors.New("entity no VerAndMeta field")
+			}
+			db.RWMutex.RUnlock()
+
 			if vv.Value != nil {
 				err = json.Unmarshal(vv.Value, entity)
 				if err != nil {
 					return nil, err
 				}
 			} else {
-				id, exist := db.ModelTypes[entityName].FieldByName("ID")
-				if !exist {
-					return nil, errors.New("entity no ID field")
-				}
 				if id.Type.Kind() == reflect.String {
 					reflect.ValueOf(entity).Elem().FieldByName("ID").SetString(entityKey)
 				} else {
@@ -143,12 +151,12 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 			}
 
 			reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").SetString(verAndMeta)
-			committers[i].batchUpdateMap[key] = &batchableEntity{Entity: entity, Deleted: vv.Value == nil}
+			committer.batchUpdateMap = append(committer.batchUpdateMap, &batchableEntity{Entity: entity, Deleted: vv.Value == nil})
 		}
 
-		committers[i].addToCacheUpdate(key, vv)
+		committer.addToCacheUpdate(key, vv)
 	}
-	return committers, nil
+	return committer, nil
 }
 
 func (c *committer) addToCacheUpdate(key string, vv *statedb.VersionedValue) {
@@ -196,34 +204,37 @@ func (v *VersionedDB) executeCommitter(committers []*committer) error {
 // commitUpdates commits the given updates to ormdb
 func (c *committer) commitUpdates() error {
 	var err error
+	sort.SliceStable(c.efdMap, func(i, j int) bool {
+		return c.efdMap[i].Seq < c.efdMap[j].Seq
+	})
+
+	for _, update := range c.efdMap {
+		for _, efd := range update.EntityFieldDefinitions {
+			if err = c.db.DB.Save(efd).Error; err != nil {
+				return err
+			}
+		}
+		c.db.RWMutex.Lock()
+		ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(update.EntityFieldDefinitions, c.db.ModelTypes).Build()
+		c.db.ModelTypes[update.EntityName] = ds
+		c.db.RWMutex.Unlock()
+		entity := ds.Interface()
+		if !c.db.DB.HasTable(entity) {
+			if err = c.db.DB.CreateTable(entity).Error; err != nil {
+				return err
+			}
+		}
+	}
+
 	for _, update := range c.batchUpdateMap {
 		if update.Deleted {
 			if err = c.db.DB.Delete(update.Entity).Error; err != nil {
 				return err
 			}
 		} else {
-			if update.Entity == nil {
-				for _, efd := range update.EntityFieldDefinitions {
-					if err = c.db.DB.Save(efd).Error; err != nil {
-						return err
-					}
-				}
-				c.db.RWMutex.Lock()
-				ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(update.EntityFieldDefinitions, c.db.ModelTypes).Build()
-				c.db.ModelTypes[update.EntityName] = ds
-				c.db.RWMutex.Unlock()
-				entity := ds.Interface()
-				if !c.db.DB.HasTable(entity) {
-					if err = c.db.DB.CreateTable(entity).Error; err != nil {
-						return err
-					}
-				}
-			} else {
-				if err = c.db.DB.Save(update.Entity).Error; err != nil {
-					return err
-				}
+			if err = c.db.DB.Save(update.Entity).Error; err != nil {
+				return err
 			}
-
 		}
 	}
 	return err

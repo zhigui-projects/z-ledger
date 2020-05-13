@@ -65,13 +65,13 @@ func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string) (*ORMDatabas
 }
 
 // DeleteORMDatabase deletes a ORM database object, as well as the underlying database if it exists
-func DeleteORMDatabase(ormDatabase *ORMDatabase, dbName string) error {
+func DeleteORMDatabase(ormDatabase *ORMDatabase) error {
 	var err error
 	switch ormDatabase.Type {
 	case "sqlite3":
-		err = sqllite3.DropAndDelete(ormDatabase.DB, ormDatabase.ORMDBInstance.Config, dbName)
+		err = sqllite3.DropAndDelete(ormDatabase.DB, ormDatabase.ORMDBInstance.Config, ormDatabase.DBName)
 		if err != nil {
-			logger.Errorf("delete sqlite3 database with dbname [%s] failed", dbName)
+			logger.Errorf("delete sqlite3 database with dbname [%s] failed", ormDatabase.DBName)
 			return errors.WithMessage(err, "delete sqlite3 database failed")
 		}
 	default:

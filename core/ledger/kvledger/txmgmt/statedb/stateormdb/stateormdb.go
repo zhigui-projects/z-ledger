@@ -85,6 +85,11 @@ func (provider *VersionedDBProvider) GetDBHandle(dbName string) (statedb.Version
 	return vdb, nil
 }
 
+// Close closes the underlying db instance
+func (provider *VersionedDBProvider) Close() {
+	provider.redoLoggerProvider.close()
+}
+
 // newVersionedDB constructs an instance of VersionedDB
 func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, redoLog *redoLogger, cache *statedb.Cache) (*VersionedDB, error) {
 	chainName := dbName
@@ -205,11 +210,19 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 
 	entityName := keys[0]
 	entityId := keys[1]
+
+	db.RWMutex.RLock()
 	entity := db.ModelTypes[entityName].Interface()
 	id, exist := db.ModelTypes[entityName].FieldByName("ID")
 	if !exist {
 		return nil, errors.New("entity no ID field")
 	}
+	_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
+	if !exist {
+		return nil, errors.New("entity no VerAndMeta field")
+	}
+	db.RWMutex.RUnlock()
+
 	if id.Type.Kind() == reflect.String {
 		db.DB.Where("id = ?", entityId).Find(entity)
 	} else {
@@ -220,10 +233,6 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 		return nil, nil
 	}
 
-	_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
-	if !exist {
-		return nil, errors.New("entity no VerAndMeta field")
-	}
 	verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
 	returnVersion, returnMetadata, err := decodeVersionAndMetadata(verAndMeta)
 
@@ -383,8 +392,12 @@ func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
 	sp := &SavePoint{}
 	err := v.metadataDB.DB.Where(&SavePoint{Key: savePointKey}).Find(sp).Error
 	if err != nil {
-		logger.Errorf("Failed to read savepoint data %s", err.Error())
-		return nil, err
+		if err.Error() == "record not found" {
+			return nil, nil
+		} else {
+			logger.Errorf("Failed to read savepoint data %s", err.Error())
+			return nil, err
+		}
 	}
 
 	versionBytes, err := base64.StdEncoding.DecodeString(sp.Height)
@@ -458,10 +471,10 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 					db.RWMutex.Lock()
 					ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(currentEfds, db.ModelTypes).Build()
 					db.ModelTypes[currentEntity] = ds
+					db.RWMutex.Unlock()
 					if !db.DB.HasTable(ds.Interface()) {
 						db.DB.CreateTable()
 					}
-					db.RWMutex.Unlock()
 					currentEntity = efd.Owner
 					currentEfds = make([]entitydefinition.EntityFieldDefinition, 0)
 					currentEfds = append(currentEfds, efd)
@@ -505,7 +518,7 @@ func constructCacheValue(v *statedb.VersionedValue) *statedb.CacheValue {
 
 func parseKey(key string) ([]string, error) {
 	keys := strings.Split(key, entitydefinition.ORMDB_SEPERATOR)
-	if len(keys) != 2 {
+	if len(keys) < 2 {
 		logger.Errorf("wrong ormdb key [%s]", key)
 		return nil, errors.New("wrong ormdb key")
 	}
