@@ -17,7 +17,7 @@ type blocksItr struct {
 	mgr                  *hybridBlockfileMgr
 	maxBlockNumAvailable uint64
 	blockNumToRetrieve   uint64
-	stream               *blockStream
+	stream               hybridBlockStream
 	closeMarker          bool
 	closeMarkerLock      *sync.Mutex
 }
@@ -46,7 +46,12 @@ func (itr *blocksItr) initStream() error {
 	if lp, err = itr.mgr.index.getBlockLocByBlockNum(itr.blockNumToRetrieve); err != nil {
 		return err
 	}
-	if itr.stream, err = newBlockStream(itr.mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), -1); err != nil {
+	if int32(lp.fileSuffixNum) <= itr.mgr.amInfo.LastArchiveFileSuffix {
+		itr.stream, err = newDfsBlockStream(itr.mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), -1, itr.mgr.dfsClient)
+	} else {
+		itr.stream, err = newBlockStream(itr.mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), -1)
+	}
+	if err != nil {
 		return err
 	}
 	return nil

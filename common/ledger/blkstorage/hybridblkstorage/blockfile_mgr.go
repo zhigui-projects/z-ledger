@@ -585,7 +585,7 @@ func (mgr *hybridBlockfileMgr) fetchTransactionEnvelope(lp *fileLocPointer) (*co
 
 func (mgr *hybridBlockfileMgr) fetchBlockBytes(lp *fileLocPointer) ([]byte, error) {
 	var err error
-	var stream fileStream
+	var stream hybridBlockStream
 	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
 		stream, err = newDfsBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), mgr.dfsClient)
 	} else {

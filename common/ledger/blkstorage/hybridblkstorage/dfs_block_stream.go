@@ -22,7 +22,7 @@ import (
 // get written towards the end of the file
 var ErrUnexpectedEndOfDfsBlockfile = errors.New("unexpected end of dfs blockfile")
 
-type fileStream interface {
+type hybridBlockStream interface {
 	nextBlockBytes() ([]byte, error)
 	close() error
 }
@@ -32,7 +32,18 @@ type fileStream interface {
 type dfsBlockfileStream struct {
 	fileNum       int
 	reader        *hdfs.FileReader
+	client        *hdfs.Client
 	currentOffset int64
+}
+
+// dfsBlockStream reads blocks sequentially from multiple files.
+// it starts from a given file offset and continues with the next
+// file segment until the end of the last segment (`endFileNum`)
+type dfsBlockStream struct {
+	rootDir           string
+	currentFileNum    int
+	endFileNum        int
+	currentFileStream *dfsBlockfileStream
 }
 
 ///////////////////////////////////
@@ -56,7 +67,7 @@ func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, clien
 			filePath, startOffset, newPosition))
 	}
 
-	s := &dfsBlockfileStream{fileNum, reader, startOffset}
+	s := &dfsBlockfileStream{fileNum, reader, client, startOffset}
 	return s, nil
 }
 
@@ -128,4 +139,55 @@ func (s *dfsBlockfileStream) nextBlockBytesAndPlacementInfo() ([]byte, *blockPla
 
 func (s *dfsBlockfileStream) close() error {
 	return errors.WithStack(s.reader.Close())
+}
+
+///////////////////////////////////
+// dfsBlockStream functions
+////////////////////////////////////
+func newDfsBlockStream(rootDir string, startFileNum int, startOffset int64, endFileNum int, client *hdfs.Client) (*dfsBlockStream, error) {
+	startFileStream, err := newDfsBlockfileStream(rootDir, startFileNum, startOffset, client)
+	if err != nil {
+		return nil, err
+	}
+	return &dfsBlockStream{rootDir, startFileNum, endFileNum, startFileStream}, nil
+}
+
+func (s *dfsBlockStream) moveToNextBlockfileStream() error {
+	var err error
+	if err = s.currentFileStream.close(); err != nil {
+		return err
+	}
+	s.currentFileNum++
+	if s.currentFileStream, err = newDfsBlockfileStream(s.rootDir, s.currentFileNum, 0, s.currentFileStream.client); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *dfsBlockStream) nextBlockBytes() ([]byte, error) {
+	blockBytes, _, err := s.nextBlockBytesAndPlacementInfo()
+	return blockBytes, err
+}
+
+func (s *dfsBlockStream) nextBlockBytesAndPlacementInfo() ([]byte, *blockPlacementInfo, error) {
+	var blockBytes []byte
+	var blockPlacementInfo *blockPlacementInfo
+	var err error
+	if blockBytes, blockPlacementInfo, err = s.currentFileStream.nextBlockBytesAndPlacementInfo(); err != nil {
+		logger.Errorf("Error reading next dfs block bytes from file number [%d]: %s", s.currentFileNum, err)
+		return nil, nil, err
+	}
+	logger.Debugf("blockbytes [%d] read from dfs block file [%d]", len(blockBytes), s.currentFileNum)
+	if blockBytes == nil && (s.currentFileNum < s.endFileNum || s.endFileNum < 0) {
+		logger.Debugf("current file [%d] exhausted. Moving to next dfs block file", s.currentFileNum)
+		if err = s.moveToNextBlockfileStream(); err != nil {
+			return nil, nil, err
+		}
+		return s.nextBlockBytesAndPlacementInfo()
+	}
+	return blockBytes, blockPlacementInfo, nil
+}
+
+func (s *dfsBlockStream) close() error {
+	return s.currentFileStream.close()
 }
