@@ -72,7 +72,7 @@ func newBlockfileReader(filePath string) (*blockfileReader, error) {
 	return reader, nil
 }
 
-func (r *blockfileReader) read(offset int, length int) ([]byte, error) {
+func (r *blockfileReader) ReadAt(offset int, length int) ([]byte, error) {
 	b := make([]byte, length)
 	_, err := r.file.ReadAt(b, int64(offset))
 	if err != nil {
@@ -81,6 +81,6 @@ func (r *blockfileReader) read(offset int, length int) ([]byte, error) {
 	return b, nil
 }
 
-func (r *blockfileReader) close() error {
+func (r *blockfileReader) Close() error {
 	return errors.WithStack(r.file.Close())
 }

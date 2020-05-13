@@ -597,13 +597,19 @@ func (mgr *hybridBlockfileMgr) fetchBlockBytes(lp *fileLocPointer) ([]byte, erro
 }
 
 func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error) {
+	var reader FileReader
+	var err error
 	filePath := deriveBlockfilePath(mgr.rootDir, lp.fileSuffixNum)
-	reader, err := newBlockfileReader(filePath)
+	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
+		reader, err = newDfsBlockfileReader(filePath, mgr.dfsClient)
+	} else {
+		reader, err = newBlockfileReader(filePath)
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer reader.close()
-	b, err := reader.read(lp.offset, lp.bytesLength)
+	defer reader.Close()
+	b, err := reader.ReadAt(lp.offset, lp.bytesLength)
 	if err != nil {
 		return nil, err
 	}
