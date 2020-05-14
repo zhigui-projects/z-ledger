@@ -114,15 +114,18 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 				}
 
 				var seq int
+				var aefds []entitydefinition.EntityFieldDefinition
 				for i, efd := range efds {
+					efdr := &efd
 					if i == 0 {
 						seq = efd.Seq
 					}
-					efd.ID = strings.ReplaceAll(util.GenerateUUID(), "-", "")
-					efd.VerAndMeta = verAndMeta
+					efdr.ID = strings.ReplaceAll(util.GenerateUUID(), "-", "")
+					efdr.VerAndMeta = verAndMeta
+					aefds = append(aefds, *efdr)
 				}
 
-				committer.efdMap = append(committer.efdMap, &batchableEntityFieldDefinition{EntityName: entityKey, EntityFieldDefinitions: efds, Seq: seq})
+				committer.efdMap = append(committer.efdMap, &batchableEntityFieldDefinition{EntityName: entityKey, EntityFieldDefinitions: aefds, Seq: seq})
 			}
 		} else {
 			db.RWMutex.RLock()

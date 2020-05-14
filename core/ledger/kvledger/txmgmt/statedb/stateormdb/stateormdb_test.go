@@ -3,7 +3,10 @@ package stateormdb
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb"
 	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 	"github.com/mitchellh/mapstructure"
@@ -105,13 +108,46 @@ func TestVersionedDBProvider_GetDBHandle(t *testing.T) {
 }
 
 func TestVersionedDB_ApplyUpdates(t *testing.T) {
-	//batchUpdate := statedb.NewUpdateBatch()
-	//key, testSubEfds, err := entitydefinition.RegisterEntity(&TestSubModel{})
-	//assert.NoError(t, err)
-	//testSubEfdsBytes, err := json.Marshal(testSubEfds)
-	//assert.NoError(t, err)
-	//batchUpdate.Put("mycc", "EntityFieldDefinition$#$TestSubModel", )
-	//nsUpdates := make(map[string]*statedb.VersionedValue)
-	//statedb.VersionedValue{}
-	//updates := &statedb.UpdateBatch{}
+	batchUpdate := statedb.NewUpdateBatch()
+	key, testSubEfds, err := entitydefinition.RegisterEntity(&TestSubModel{}, 1)
+	assert.NoError(t, err)
+	testSubEfdsBytes, err := json.Marshal(testSubEfds)
+	assert.NoError(t, err)
+	batchUpdate.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key, testSubEfdsBytes, &version.Height{BlockNum: 1, TxNum: 1})
+
+	yaml := "---\n" +
+		"ledger:\n" +
+		"  state:\n" +
+		"    ormDBConfig:\n" +
+		"      username: test\n" +
+		"      dbtype: sqlite3\n" +
+		"      redoLogPath: /tmp/ormdbredolog\n" +
+		"      maxBatchUpdateSize: 50\n" +
+		"      userCacheSizeMBs: 64\n" +
+		"      sqlite3Config:\n" +
+		"        path: /tmp/ormdb\n"
+
+	defer viper.Reset()
+	viper.SetConfigType("yaml")
+
+	if err := viper.ReadConfig(bytes.NewReader([]byte(yaml))); err != nil {
+		t.Fatalf("Error reading config: %s", err)
+	}
+
+	config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
+	_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
+
+	provider, err := NewVersionedDBProvider(config, nil, statedb.NewCache(config.UserCacheSizeMBs, []string{"lscc"}))
+	assert.NoError(t, err)
+	assert.Equal(t, 64, provider.ormDBInstance.Config.UserCacheSizeMBs)
+
+	_, err = provider.GetDBHandle("mychannel")
+	assert.NoError(t, err)
+	vdb := provider.databases["mychannel"]
+
+	err = vdb.ApplyUpdates(batchUpdate, &version.Height{BlockNum: 1, TxNum: 1})
+	assert.NoError(t, err)
+	ormdb.DeleteORMDatabase(vdb.metadataDB)
+	provider.Close()
+	os.RemoveAll(config.RedoLogPath)
 }

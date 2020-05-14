@@ -438,7 +438,8 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 	defer v.mux.Unlock()
 	db = v.namespaceDBs[namespace]
 	if db == nil {
-		db, err := ormdb.CreateORMDatabase(v.ormDBInstance, namespaceDBName)
+		var err error
+		db, err = ormdb.CreateORMDatabase(v.ormDBInstance, namespaceDBName)
 		if err != nil {
 			logger.Errorf("create orm database failed [%v]", err)
 			return nil, errors.WithMessage(err, "create orm database failed")
