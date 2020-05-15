@@ -22,7 +22,7 @@ func CreateIfNotExistAndOpen(config *config.ORMDBConfig, dbName string) (db *gor
 	if err != nil {
 		panic(fmt.Sprintf("error creating sqlite3 db dir if missing: %s", err))
 	}
-	file := fmt.Sprintf("%s%d%s.db", config.Sqlite3Config.Path, filepath.Separator, dbName)
+	file := fmt.Sprintf("%s%c%s.db", config.Sqlite3Config.Path, filepath.Separator, dbName)
 	db, err = gorm.Open("sqlite3", file)
 	return
 }
@@ -33,7 +33,7 @@ func DropAndDelete(db *gorm.DB, config *config.ORMDBConfig, dbName string) error
 	if err != nil {
 		return errors.WithMessage(err, "error closing sqlite3 db")
 	}
-	file := fmt.Sprintf("%s%d%s.db", config.Sqlite3Config.Path, filepath.Separator, dbName)
+	file := fmt.Sprintf("%s%c%s.db", config.Sqlite3Config.Path, filepath.Separator, dbName)
 	err = os.RemoveAll(file)
 	if err != nil {
 		return errors.WithMessage(err, "error removing sqlite3 db file")

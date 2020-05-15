@@ -19,8 +19,11 @@ import (
 )
 
 type batchableEntity struct {
-	Entity  interface{}
-	Deleted bool
+	EntityName string
+	EntityKey  string
+	VerAndMeta string
+	Value      []byte
+	Deleted    bool
 }
 
 type batchableEntityFieldDefinition struct {
@@ -128,33 +131,7 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 				committer.efdMap = append(committer.efdMap, &batchableEntityFieldDefinition{EntityName: entityKey, EntityFieldDefinitions: aefds, Seq: seq})
 			}
 		} else {
-			db.RWMutex.RLock()
-			entity := db.ModelTypes[entityName].Interface()
-			id, exist := db.ModelTypes[entityName].FieldByName("ID")
-			if !exist {
-				return nil, errors.New("entity no ID field")
-			}
-			_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
-			if !exist {
-				return nil, errors.New("entity no VerAndMeta field")
-			}
-			db.RWMutex.RUnlock()
-
-			if vv.Value != nil {
-				err = json.Unmarshal(vv.Value, entity)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				if id.Type.Kind() == reflect.String {
-					reflect.ValueOf(entity).Elem().FieldByName("ID").SetString(entityKey)
-				} else {
-					return nil, errors.New("not supported entity ID field type")
-				}
-			}
-
-			reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").SetString(verAndMeta)
-			committer.batchUpdateMap = append(committer.batchUpdateMap, &batchableEntity{Entity: entity, Deleted: vv.Value == nil})
+			committer.batchUpdateMap = append(committer.batchUpdateMap, &batchableEntity{EntityName: entityName, Value: vv.Value, EntityKey: entityKey, VerAndMeta: verAndMeta, Deleted: vv.Value == nil})
 		}
 
 		committer.addToCacheUpdate(key, vv)
@@ -222,20 +199,44 @@ func (c *committer) commitUpdates() error {
 		c.db.ModelTypes[update.EntityName] = ds
 		c.db.RWMutex.Unlock()
 		entity := ds.Interface()
-		if !c.db.DB.HasTable(entity) {
-			if err = c.db.DB.CreateTable(entity).Error; err != nil {
+		tableName := ormdb.ToTableName(update.EntityName)
+		if !c.db.DB.HasTable(tableName) {
+			if err = c.db.DB.Table(tableName).CreateTable(entity).Error; err != nil {
 				return err
 			}
 		}
 	}
 
 	for _, update := range c.batchUpdateMap {
+		c.db.RWMutex.RLock()
+		entity := reflect.New(c.db.ModelTypes[update.EntityName].StructType()).Interface()
+		id, exist := c.db.ModelTypes[update.EntityName].FieldByName("ID")
+		if !exist {
+			return errors.New("entity no ID field")
+		}
+		_, exist = c.db.ModelTypes[update.EntityName].FieldByName("VerAndMeta")
+		if !exist {
+			return errors.New("entity no VerAndMeta field")
+		}
+		c.db.RWMutex.RUnlock()
+
 		if update.Deleted {
-			if err = c.db.DB.Delete(update.Entity).Error; err != nil {
+			if id.Type.Kind() == reflect.String {
+				reflect.ValueOf(entity).Elem().FieldByName("ID").SetString(update.EntityKey)
+			} else {
+				return errors.New("not supported entity ID field type")
+			}
+			reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").SetString(update.VerAndMeta)
+			if err = c.db.DB.Table(ormdb.ToTableName(update.EntityName)).Delete(entity).Error; err != nil {
 				return err
 			}
 		} else {
-			if err = c.db.DB.Save(update.Entity).Error; err != nil {
+			err = json.Unmarshal(update.Value, entity)
+			if err != nil {
+				return err
+			}
+			reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").SetString(update.VerAndMeta)
+			if err = c.db.DB.Set("gorm:save_associations", false).Table(ormdb.ToTableName(update.EntityName)).Save(entity).Error; err != nil {
 				return err
 			}
 		}

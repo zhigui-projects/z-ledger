@@ -13,7 +13,6 @@ type ORMDBConfig struct {
 	Host               string
 	Port               int
 	RedoLogPath        string
-	MaxBatchUpdateSize int
 	UserCacheSizeMBs   int
 	Sqlite3Config      *Sqlite3Config
 }

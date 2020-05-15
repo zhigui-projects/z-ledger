@@ -212,7 +212,7 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 	entityId := keys[1]
 
 	db.RWMutex.RLock()
-	entity := db.ModelTypes[entityName].Interface()
+	entity := reflect.New(db.ModelTypes[entityName].StructType()).Interface()
 	id, exist := db.ModelTypes[entityName].FieldByName("ID")
 	if !exist {
 		return nil, errors.New("entity no ID field")
@@ -224,7 +224,7 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 	db.RWMutex.RUnlock()
 
 	if id.Type.Kind() == reflect.String {
-		db.DB.Where("id = ?", entityId).Find(entity)
+		db.DB.Table(ormdb.ToTableName(entityName)).Where("id = ?", entityId).Find(entity)
 	} else {
 		return nil, errors.New("not supported entity ID field type")
 	}
@@ -473,8 +473,10 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 					ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(currentEfds, db.ModelTypes).Build()
 					db.ModelTypes[currentEntity] = ds
 					db.RWMutex.Unlock()
-					if !db.DB.HasTable(ds.Interface()) {
-						db.DB.CreateTable()
+					entity := ds.Interface()
+					tableName := ormdb.ToTableName(currentEntity)
+					if !db.DB.HasTable(tableName) {
+						db.DB.Table(tableName).CreateTable(entity)
 					}
 					currentEntity = efd.Owner
 					currentEfds = make([]entitydefinition.EntityFieldDefinition, 0)

@@ -79,3 +79,7 @@ func DeleteORMDatabase(ormDatabase *ORMDatabase) error {
 	}
 	return nil
 }
+
+func ToTableName(entityName string) string {
+	return gorm.ToTableName(entityName)
+}
