@@ -212,7 +212,7 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 	entityId := keys[1]
 
 	db.RWMutex.RLock()
-	entity := reflect.New(db.ModelTypes[entityName].StructType()).Interface()
+	entity := db.ModelTypes[entityName].Interface()
 	id, exist := db.ModelTypes[entityName].FieldByName("ID")
 	if !exist {
 		return nil, errors.New("entity no ID field")

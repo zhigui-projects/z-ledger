@@ -209,7 +209,7 @@ func (c *committer) commitUpdates() error {
 
 	for _, update := range c.batchUpdateMap {
 		c.db.RWMutex.RLock()
-		entity := reflect.New(c.db.ModelTypes[update.EntityName].StructType()).Interface()
+		entity := c.db.ModelTypes[update.EntityName].Interface()
 		id, exist := c.db.ModelTypes[update.EntityName].FieldByName("ID")
 		if !exist {
 			return errors.New("entity no ID field")
