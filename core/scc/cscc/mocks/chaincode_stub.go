@@ -24,10 +24,11 @@ type ChaincodeStub struct {
 		result1 string
 		result2 error
 	}
-	CreateTableStub        func(interface{}) error
+	CreateTableStub        func(interface{}, int) error
 	createTableMutex       sync.RWMutex
 	createTableArgsForCall []struct {
 		arg1 interface{}
+		arg2 int
 	}
 	createTableReturns struct {
 		result1 error
@@ -574,16 +575,17 @@ func (fake *ChaincodeStub) CreateCompositeKeyReturnsOnCall(i int, result1 string
 	}{result1, result2}
 }
 
-func (fake *ChaincodeStub) CreateTable(arg1 interface{}) error {
+func (fake *ChaincodeStub) CreateTable(arg1 interface{}, arg2 int) error {
 	fake.createTableMutex.Lock()
 	ret, specificReturn := fake.createTableReturnsOnCall[len(fake.createTableArgsForCall)]
 	fake.createTableArgsForCall = append(fake.createTableArgsForCall, struct {
 		arg1 interface{}
-	}{arg1})
-	fake.recordInvocation("CreateTable", []interface{}{arg1})
+		arg2 int
+	}{arg1, arg2})
+	fake.recordInvocation("CreateTable", []interface{}{arg1, arg2})
 	fake.createTableMutex.Unlock()
 	if fake.CreateTableStub != nil {
-		return fake.CreateTableStub(arg1)
+		return fake.CreateTableStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -598,17 +600,17 @@ func (fake *ChaincodeStub) CreateTableCallCount() int {
 	return len(fake.createTableArgsForCall)
 }
 
-func (fake *ChaincodeStub) CreateTableCalls(stub func(interface{}) error) {
+func (fake *ChaincodeStub) CreateTableCalls(stub func(interface{}, int) error) {
 	fake.createTableMutex.Lock()
 	defer fake.createTableMutex.Unlock()
 	fake.CreateTableStub = stub
 }
 
-func (fake *ChaincodeStub) CreateTableArgsForCall(i int) interface{} {
+func (fake *ChaincodeStub) CreateTableArgsForCall(i int) (interface{}, int) {
 	fake.createTableMutex.RLock()
 	defer fake.createTableMutex.RUnlock()
 	argsForCall := fake.createTableArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *ChaincodeStub) CreateTableReturns(result1 error) {

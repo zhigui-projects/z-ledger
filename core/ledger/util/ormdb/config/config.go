@@ -7,14 +7,14 @@ package config
 
 // ORMDBConfig
 type ORMDBConfig struct {
-	DBType             string
-	Username           string
-	Password           string
-	Host               string
-	Port               int
-	RedoLogPath        string
-	UserCacheSizeMBs   int
-	Sqlite3Config      *Sqlite3Config
+	DBType           string
+	Username         string
+	Password         string
+	Host             string
+	Port             int
+	RedoLogPath      string
+	UserCacheSizeMBs int
+	Sqlite3Config    *Sqlite3Config
 }
 
 // Sqlite3Config
