@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package service
 
 import (
+	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
 	"sync"
 
 	gproto "github.com/hyperledger/fabric-protos-go/gossip"
@@ -356,7 +357,7 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 		g.deliveryService[channelID] = g.deliveryFactory.Service(g, ordererSource, g.mcs, g.serviceConfig.OrgLeader)
 	}
 
-	if g.archiveService[channelID] == nil {
+	if g.archiveService[channelID] == nil && ledgerconfig.IsArchiveEnabled() {
 		logger.Infof("Initializing archive service instance for channel: %s", channelID)
 		PKIid := g.mcs.GetPKIidOfCert(g.peerIdentity)
 		g.archiveService[channelID], _ = archiveservice.New(g, g.ledgerMgr, channelID, string(PKIid))
@@ -386,8 +387,10 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 			logger.Debug("This peer is configured to connect to ordering service for blocks delivery, channel", channelID)
 			g.deliveryService[channelID].StartDeliverForChannel(channelID, support.Committer, func() {})
 
-			logger.Info("This peer is configured to start a ledger watcher for channel", channelID)
-			g.archiveService[channelID].StartWatcherForChannel(channelID)
+			if g.archiveService[channelID] != nil {
+				logger.Info("This peer is configured to start a ledger watcher for channel", channelID)
+				g.archiveService[channelID].StartWatcherForChannel(channelID)
+			}
 		} else {
 			logger.Debug("This peer is not configured to connect to ordering service for blocks delivery, channel", channelID)
 		}
@@ -461,7 +464,7 @@ func (g *GossipService) Stop() {
 			g.deliveryService[chainID].Stop()
 		}
 
-		if g.deliveryService[chainID] != nil {
+		if g.archiveService[chainID] != nil {
 			logger.Infof("Stopping the archive service for channel: %s", chainID)
 			g.archiveService[chainID].Stop()
 		}
@@ -505,9 +508,11 @@ func (g *GossipService) onStatusChangeFactory(channelID string, committer blocks
 				logger.Errorf("Delivery service is not able to start blocks delivery for chain, due to %+v", err)
 			}
 
-			logger.Info("Elected as a leader, starting archive service ledger watcher for channel", channelID)
-			if err := g.archiveService[channelID].StartWatcherForChannel(channelID); err != nil {
-				logger.Errorf("Archive service watcher is not able to start for chain, due to %+v", err)
+			if g.archiveService[channelID] != nil {
+				logger.Info("Elected as a leader, starting archive service ledger watcher for channel", channelID)
+				if err := g.archiveService[channelID].StartWatcherForChannel(channelID); err != nil {
+					logger.Errorf("Archive service watcher is not able to start for chain, due to %+v", err)
+				}
 			}
 		} else {
 			logger.Info("Renounced leadership, stopping delivery service for channel", channelID)
@@ -515,9 +520,11 @@ func (g *GossipService) onStatusChangeFactory(channelID string, committer blocks
 				logger.Errorf("Delivery service is not able to stop blocks delivery for chain, due to %+v", err)
 			}
 
-			logger.Info("Renounced leadership, stopping archive service ledger watcher for channel", channelID)
-			if err := g.archiveService[channelID].StopWatcherForChannel(channelID); err != nil {
-				logger.Errorf("Archive service watcher is not able to stop for chain, due to %+v", err)
+			if g.archiveService[channelID] != nil {
+				logger.Info("Renounced leadership, stopping archive service ledger watcher for channel", channelID)
+				if err := g.archiveService[channelID].StopWatcherForChannel(channelID); err != nil {
+					logger.Errorf("Archive service watcher is not able to stop for chain, due to %+v", err)
+				}
 			}
 		}
 	}

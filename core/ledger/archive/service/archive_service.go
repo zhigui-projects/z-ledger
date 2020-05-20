@@ -136,6 +136,42 @@ func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
 	return nil
 }
 
+func (a *ArchiveService) StopWatcherForChannel(chainID string) error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	watcher, exist := a.watchers[chainID]
+	if !exist {
+		errMsg := fmt.Sprintf("Archive service - ledger watcher does not exists for %s found", chainID)
+		logger.Warn(errMsg)
+		return errors.New(errMsg)
+	}
+
+	if err := watcher.Close(); err != nil {
+		errMsg := fmt.Sprintf("Archive service - close watcher failed for channel: %s, due to %+v", chainID, err)
+		logger.Error(errMsg)
+		return errors.New(errMsg)
+	}
+
+	return nil
+}
+
+func (a *ArchiveService) Stop() {
+	a.gossip.Stop()
+	close(a.stopCh)
+
+	for _, w := range a.watchers {
+		if err := w.Close(); err != nil {
+			logger.Warnf("Stop watcher[%s] got error: %s", spew.Sdump(w), err)
+			continue
+		}
+	}
+
+	if err := a.dfsClient.Close(); err != nil {
+		logger.Warnf("Stop dfs client[%s] got error: %s", spew.Sdump(a.dfsClient), err)
+	}
+}
+
 func (a *ArchiveService) transferBlockFiles(chainID string) {
 	ledger, err := a.getLedger(chainID)
 	if err != nil {
@@ -222,42 +258,6 @@ func (a *ArchiveService) getLedger(chainID string) (le.PeerLedger, error) {
 		}
 	}
 	return ledger, err
-}
-
-func (a *ArchiveService) StopWatcherForChannel(chainID string) error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
-	watcher, exist := a.watchers[chainID]
-	if !exist {
-		errMsg := fmt.Sprintf("Archive service - ledger watcher does not exists for %s found", chainID)
-		logger.Warn(errMsg)
-		return errors.New(errMsg)
-	}
-
-	if err := watcher.Close(); err != nil {
-		errMsg := fmt.Sprintf("Archive service - close watcher failed for channel: %s, due to %+v", chainID, err)
-		logger.Error(errMsg)
-		return errors.New(errMsg)
-	}
-
-	return nil
-}
-
-func (a *ArchiveService) Stop() {
-	a.gossip.Stop()
-	close(a.stopCh)
-
-	for _, w := range a.watchers {
-		if err := w.Close(); err != nil {
-			logger.Warnf("Stop watcher[%s] got error: %s", spew.Sdump(w), err)
-			continue
-		}
-	}
-
-	if err := a.dfsClient.Close(); err != nil {
-		logger.Warnf("Stop dfs client[%s] got error: %s", spew.Sdump(a.dfsClient), err)
-	}
 }
 
 func getLedgerDir(chainID string) string {
