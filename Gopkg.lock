@@ -118,6 +118,14 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
+  branch = "master"
+  digest = "1:596f2c77ec02df6755d5983073dcce743d77b3dd933288b6b4b14aa6b5d21c35"
+  name = "github.com/asaskevich/EventBus"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "4fc0642a29f392d9caa94cdb7503d2b676e3f442"
+
+[[projects]]
   digest = "1:707ebe952a8b3d00b343c01536c79c73771d100f63ec6babeaed5c79e2b8a8dd"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
@@ -1317,6 +1325,7 @@
     "github.com/Shopify/sarama",
     "github.com/Shopify/sarama/mocks",
     "github.com/VictoriaMetrics/fastcache",
+    "github.com/asaskevich/EventBus",
     "github.com/davecgh/go-spew/spew",
     "github.com/fsnotify/fsnotify",
     "github.com/fsouza/go-dockerclient",

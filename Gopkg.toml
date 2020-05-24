@@ -201,3 +201,7 @@ noverify = [
 [[constraint]]
   name = "github.com/fsnotify/fsnotify"
   version = "1.4.9"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/asaskevich/EventBus"
