@@ -519,7 +519,7 @@
 
 [[projects]]
   branch = "archive-v2.0.0"
-  digest = "1:914630778c2d6eaea199bbffa0d45bf342cb280085a15b5b91efba37780476b3"
+  digest = "1:9799120d75597ced2a212e9c6888698a7a81a11a908792ee25480b82a9104b05"
   name = "github.com/hyperledger/fabric-protos-go"
   packages = [
     "common",
@@ -537,7 +537,7 @@
     "transientstore",
   ]
   pruneopts = "NUT"
-  revision = "c81f3a2aa9dfd8ee3d7020dd308fd60dd6a47d49"
+  revision = "2b830642091e409467f8660c4ba87b7e6d919726"
   source = "github.com/zhigui-projects/fabric-protos-go"
 
 [[projects]]
