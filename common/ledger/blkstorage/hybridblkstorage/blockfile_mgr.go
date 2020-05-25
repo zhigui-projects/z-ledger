@@ -9,10 +9,7 @@ package hybridblkstorage
 import (
 	"bytes"
 	"fmt"
-	"math"
-	"sync"
-	"sync/atomic"
-
+	"github.com/asaskevich/EventBus"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -26,6 +23,13 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"math"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"sync/atomic"
 )
 
 var logger = flogging.MustGetLogger("hybridblkstorage")
@@ -52,6 +56,7 @@ type hybridBlockfileMgr struct {
 	amInfoCond        *sync.Cond
 	dfsClient         *hdfs.Client
 	lock              sync.RWMutex
+	bus               *EventBus.Bus
 }
 
 /*
@@ -95,7 +100,7 @@ At start up a new manager:
 		-- If index and file system are not in sync, syncs index from the FS
   *)  Updates blockchain info used by the APIs
 */
-func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig, indexStore *leveldbhelper.DBHandle) *hybridBlockfileMgr {
+func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig, indexStore *leveldbhelper.DBHandle, bus *EventBus.Bus) *hybridBlockfileMgr {
 	logger.Debugf("newBlockfileMgr() initializing hybrid-file-based block storage for ledger: %s ", id)
 	//Determine the root directory for the blockfile storage, if it does not exist create it
 	rootDir := conf.getLedgerBlockDir(id)
@@ -124,11 +129,17 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 		logger.Info("Syncing archive meta info from dfs (if needed)")
 		syncArchiveMetaInfoFromDfs(rootDir, amInfo, client)
 	}
+	amInfo.ChannelId = id
 	mgr.amInfo = amInfo
 	mgr.amInfoCond = sync.NewCond(&sync.Mutex{})
 	if err := mgr.saveArchiveMetaInfo(amInfo); err != nil {
 		panic(fmt.Sprintf("Could not save archive meta info to db: %s", err))
 	}
+
+	if err := (*bus).Subscribe("archive-by-date", mgr.archiveFn); err != nil {
+		logger.Errorf("Could not subscribe to archive event for chain[id=%s]", id)
+	}
+	mgr.bus = bus
 
 	// cp = checkpointInfo, retrieve from the database the file suffix or number of where blocks were stored.
 	// It also retrieves the current size of that file and the last block number that was written to that file.
@@ -684,6 +695,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 				LastSentFileSuffix:    int32(lastSentFileNum + 1),
 				LastArchiveFileSuffix: mgr.amInfo.LastArchiveFileSuffix,
 				FileProofs:            mgr.amInfo.FileProofs,
+				ChannelId:             mgr.amInfo.ChannelId,
 			}
 			//TODO: update file proofs
 			if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
@@ -693,6 +705,66 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 		}
 	}
 	return nil
+}
+
+func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
+	mgr.lock.Lock()
+	defer mgr.lock.Unlock()
+
+	logger.Infof("Archiving block files which contains tx before date[%s]", dateStr)
+	lastSentFileNum := int(mgr.amInfo.LastSentFileSuffix)
+	lastArchiveFileNum := int(mgr.amInfo.LastArchiveFileSuffix)
+
+	//todo: need to find out the block file num which contains the tx of given date
+	//      and convert date str to date
+	var fileNum int
+	if fileNum > lastSentFileNum {
+		logger.Errorf("The block files of given date[%s] has not been transferred to dfs yet", dateStr)
+		return
+	}
+	if fileNum <= lastArchiveFileNum {
+		logger.Warnf("The block files of given date[%s] has been archived already", dateStr)
+		return
+	}
+
+	filesInfo, err := ioutil.ReadDir(mgr.conf.getLedgerBlockDir(channelId))
+	if err != nil {
+		logger.Errorf("archiveFn read dir got error: %s", err)
+		return
+	}
+	for _, fileInfo := range filesInfo {
+		name := fileInfo.Name()
+		if fileInfo.IsDir() || !isBlockFileName(name) {
+			logger.Infof("archiveFn skipping File name = %s", name)
+			continue
+		}
+		fileSuffix := strings.TrimPrefix(name, blockfilePrefix)
+		suffix, err := strconv.Atoi(fileSuffix)
+		if err != nil {
+			logger.Errorf("archiveFn convert file suffix[%s] to number got error: %s", fileSuffix, err)
+			continue
+		}
+		if suffix < fileNum {
+			// delete the block file
+			if err := os.Remove(name); err != nil {
+				logger.Errorf("archiveFn remove blockfile[%s] got error: %s", name, err)
+				continue
+			}
+		}
+	}
+
+	// update archive meta info
+	newAmInfo := &archive.ArchiveMetaInfo{
+		LastSentFileSuffix:    mgr.amInfo.LastSentFileSuffix,
+		LastArchiveFileSuffix: int32(fileNum),
+		FileProofs:            mgr.amInfo.FileProofs,
+		ChannelId:             mgr.amInfo.ChannelId,
+	}
+	if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
+		logger.Errorf("Could not save archive meta info: %s to db: %+v", spew.Sdump(newAmInfo), err)
+		return
+	}
+	mgr.updateArchiveMetaInfo(newAmInfo)
 }
 
 //Get the current checkpoint information that is stored in the database

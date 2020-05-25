@@ -7,10 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 package hybridblkstorage
 
 import (
-	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"time"
 
+	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/ledger"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage"
@@ -27,8 +28,8 @@ type hybridBlockStore struct {
 
 // NewHybridBlockStore constructs a `HybridBlockStore`
 func newHybridBlockStore(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
-	dbHandle *leveldbhelper.DBHandle, stats *stats) *hybridBlockStore {
-	fileMgr := newBlockfileMgr(id, conf, indexConfig, dbHandle)
+	dbHandle *leveldbhelper.DBHandle, stats *stats, bus *EventBus.Bus) *hybridBlockStore {
+	fileMgr := newBlockfileMgr(id, conf, indexConfig, dbHandle, bus)
 
 	// create ledgerStats and initialize blockchain_height stat
 	ledgerStats := stats.ledgerStats(id)

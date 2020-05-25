@@ -8,7 +8,7 @@ package stateleveldb
 
 import (
 	"bytes"
-
+	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
@@ -172,7 +172,7 @@ func (vdb *versionedDB) ExecuteQueryWithMetadata(namespace, query string, metada
 }
 
 // ApplyUpdates implements method in VersionedDB interface
-func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height) error {
+func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height, bus *EventBus.Bus) error {
 	dbBatch := leveldbhelper.NewUpdateBatch()
 	namespaces := batch.GetUpdatedNamespaces()
 	for _, ns := range namespaces {
@@ -189,6 +189,11 @@ func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version
 					return err
 				}
 				dbBatch.Put(dataKey, encodedVal)
+
+				if ns == "archive" && k == "by-date" {
+					logger.Infof("Publishing event[archive-by-date] with channel[%s] date[%s]", vdb.dbName, string(vv.Value))
+					(*bus).Publish("archive-by-date", vdb.dbName, string(vv.Value))
+				}
 			}
 		}
 	}

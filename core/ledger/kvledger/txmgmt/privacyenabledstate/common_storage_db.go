@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"strings"
 
+	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric-lib-go/healthz"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/metrics"
@@ -235,18 +236,18 @@ func (s CommonStorageDB) ExecuteQueryOnPrivateData(namespace, collection, query 
 
 // ApplyUpdates overrides the function in statedb.VersionedDB and throws appropriate error message
 // Otherwise, somewhere in the code, usage of this function could lead to updating only public data.
-func (s *CommonStorageDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height) error {
+func (s *CommonStorageDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height, bus *EventBus.Bus) error {
 	return errors.New("this function should not be invoked on this type. Please invoke function ApplyPrivacyAwareUpdates")
 }
 
 // ApplyPrivacyAwareUpdates implements corresponding function in interface DB
-func (s *CommonStorageDB) ApplyPrivacyAwareUpdates(updates *UpdateBatch, height *version.Height) error {
+func (s *CommonStorageDB) ApplyPrivacyAwareUpdates(updates *UpdateBatch, height *version.Height, bus *EventBus.Bus) error {
 	// combinedUpdates includes both updates to public db and private db, which are partitioned by a separate namespace
 	combinedUpdates := updates.PubUpdates
 	addPvtUpdates(combinedUpdates, updates.PvtUpdates)
 	addHashedUpdates(combinedUpdates, updates.HashUpdates, !s.BytesKeySupported())
 	s.metadataHint.setMetadataUsedFlag(updates)
-	return s.VersionedDB.ApplyUpdates(combinedUpdates.UpdateBatch, height)
+	return s.VersionedDB.ApplyUpdates(combinedUpdates.UpdateBatch, height, bus)
 }
 
 // GetStateMetadata implements corresponding function in interface DB. This implementation provides
