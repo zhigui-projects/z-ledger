@@ -7,11 +7,13 @@ SPDX-License-Identifier: Apache-2.0
 package v20
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	commonerrors "github.com/hyperledger/fabric/common/errors"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/common/validation/statebased"
@@ -104,6 +106,7 @@ type validationArtifacts struct {
 	env          *common.Envelope
 	payl         *common.Payload
 	cap          *peer.ChaincodeActionPayload
+	vrf          []*utils.VrfEndorsement
 }
 
 func (vscc *Validator) extractValidationArtifacts(
@@ -165,14 +168,22 @@ func (vscc *Validator) extractValidationArtifacts(
 		return nil, err
 	}
 
+	// Impl by zig
+	crp := &utils.ChaincodeResponsePayload{}
+	if err := json.Unmarshal(cap.Action.ProposalResponsePayload, crp); err != nil {
+		return nil, err
+	}
+	logger.Infof("VSCC extract vrf endorsements num: %d", len(crp.VrfEndorsements))
+
 	return &validationArtifacts{
 		rwset:        respPayload.Results,
-		prp:          cap.Action.ProposalResponsePayload,
+		prp:          crp.Payload,
 		endorsements: cap.Action.Endorsements,
 		chdr:         chdr,
 		env:          env,
 		payl:         payl,
 		cap:          cap,
+		vrf:          crp.VrfEndorsements,
 	}, nil
 }
 
@@ -189,6 +200,7 @@ func (vscc *Validator) Validate(
 	actionPosition int,
 	policyBytes []byte,
 ) commonerrors.TxValidationError {
+	logger.Infof("VSCC validate policy: %s", string(policyBytes[:]))
 	vscc.stateBasedValidator.PreValidate(uint64(txPosition), block)
 
 	va, err := vscc.extractValidationArtifacts(block, txPosition, actionPosition)
@@ -205,6 +217,7 @@ func (vscc *Validator) Validate(
 		va.prp,
 		policyBytes,
 		va.endorsements,
+		va.vrf,
 	)
 	if txverr != nil {
 		logger.Errorf("VSCC error: stateBasedValidator.Validate failed, err %s", txverr)

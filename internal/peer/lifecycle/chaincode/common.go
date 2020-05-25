@@ -37,6 +37,8 @@ type PeerDeliverClient interface {
 type Signer interface {
 	Sign(msg []byte) ([]byte, error)
 	Serialize() ([]byte, error)
+	// Impl by zig
+	Vrf(message []byte) (rand, proof []byte, err error)
 }
 
 // Writer defines the interface needed for writing a file
@@ -71,6 +73,16 @@ func signProposal(proposal *pb.Proposal, signer Signer) (*pb.SignedProposal, err
 }
 
 func createPolicyBytes(signaturePolicy, channelConfigPolicy string) ([]byte, error) {
+	if vrfEnabled {
+		// The endorsement policy associated to this chaincode specified as a vrf random select policy
+		policy := &pb.ApplicationPolicy{
+			Type: &pb.ApplicationPolicy_ChannelConfigPolicyReference{
+				ChannelConfigPolicyReference: "vrf-policy",
+			},
+		}
+		return protoutil.MarshalOrPanic(policy), nil
+	}
+
 	if signaturePolicy == "" && channelConfigPolicy == "" {
 		// no policy, no problem
 		return nil, nil

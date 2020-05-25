@@ -104,6 +104,21 @@ func (s *SupportImpl) GetLedgerHeight(channelID string) (uint64, error) {
 	return info.Height, nil
 }
 
+// GetCurrentBlockHash returns ledger current block Hash for given channelID
+func (s *SupportImpl) GetCurrentBlockHash(channelID string) ([]byte, error) {
+	lgr := s.Peer.GetLedger(channelID)
+	if lgr == nil {
+		return nil, errors.Errorf("failed to look up the ledger for Channel %s", channelID)
+	}
+
+	info, err := lgr.GetBlockchainInfo()
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to obtain information for Channel %s", channelID))
+	}
+
+	return info.CurrentBlockHash, nil
+}
+
 // IsSysCC returns true if the name matches a system chaincode's
 // system chaincode names are system, chain wide
 func (s *SupportImpl) IsSysCC(name string) bool {

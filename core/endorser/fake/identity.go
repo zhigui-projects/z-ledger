@@ -105,6 +105,19 @@ type Identity struct {
 	verifyReturnsOnCall map[int]struct {
 		result1 error
 	}
+	VrfVerifyStub        func([]byte, []byte, []byte) bool
+	vrfVerifyMutex       sync.RWMutex
+	vrfVerifyArgsForCall []struct {
+		arg1 []byte
+		arg2 []byte
+		arg3 []byte
+	}
+	vrfVerifyReturns struct {
+		result1 bool
+	}
+	vrfVerifyReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -607,6 +620,83 @@ func (fake *Identity) VerifyReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *Identity) VrfVerify(arg1 []byte, arg2 []byte, arg3 []byte) bool {
+	var arg1Copy []byte
+	if arg1 != nil {
+		arg1Copy = make([]byte, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	var arg2Copy []byte
+	if arg2 != nil {
+		arg2Copy = make([]byte, len(arg2))
+		copy(arg2Copy, arg2)
+	}
+	var arg3Copy []byte
+	if arg3 != nil {
+		arg3Copy = make([]byte, len(arg3))
+		copy(arg3Copy, arg3)
+	}
+	fake.vrfVerifyMutex.Lock()
+	ret, specificReturn := fake.vrfVerifyReturnsOnCall[len(fake.vrfVerifyArgsForCall)]
+	fake.vrfVerifyArgsForCall = append(fake.vrfVerifyArgsForCall, struct {
+		arg1 []byte
+		arg2 []byte
+		arg3 []byte
+	}{arg1Copy, arg2Copy, arg3Copy})
+	fake.recordInvocation("VrfVerify", []interface{}{arg1Copy, arg2Copy, arg3Copy})
+	fake.vrfVerifyMutex.Unlock()
+	if fake.VrfVerifyStub != nil {
+		return fake.VrfVerifyStub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.vrfVerifyReturns
+	return fakeReturns.result1
+}
+
+func (fake *Identity) VrfVerifyCallCount() int {
+	fake.vrfVerifyMutex.RLock()
+	defer fake.vrfVerifyMutex.RUnlock()
+	return len(fake.vrfVerifyArgsForCall)
+}
+
+func (fake *Identity) VrfVerifyCalls(stub func([]byte, []byte, []byte) bool) {
+	fake.vrfVerifyMutex.Lock()
+	defer fake.vrfVerifyMutex.Unlock()
+	fake.VrfVerifyStub = stub
+}
+
+func (fake *Identity) VrfVerifyArgsForCall(i int) ([]byte, []byte, []byte) {
+	fake.vrfVerifyMutex.RLock()
+	defer fake.vrfVerifyMutex.RUnlock()
+	argsForCall := fake.vrfVerifyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *Identity) VrfVerifyReturns(result1 bool) {
+	fake.vrfVerifyMutex.Lock()
+	defer fake.vrfVerifyMutex.Unlock()
+	fake.VrfVerifyStub = nil
+	fake.vrfVerifyReturns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *Identity) VrfVerifyReturnsOnCall(i int, result1 bool) {
+	fake.vrfVerifyMutex.Lock()
+	defer fake.vrfVerifyMutex.Unlock()
+	fake.VrfVerifyStub = nil
+	if fake.vrfVerifyReturnsOnCall == nil {
+		fake.vrfVerifyReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.vrfVerifyReturnsOnCall[i] = struct {
+		result1 bool
+	}{result1}
+}
+
 func (fake *Identity) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -628,6 +718,8 @@ func (fake *Identity) Invocations() map[string][][]interface{} {
 	defer fake.validateMutex.RUnlock()
 	fake.verifyMutex.RLock()
 	defer fake.verifyMutex.RUnlock()
+	fake.vrfVerifyMutex.RLock()
+	defer fake.vrfVerifyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

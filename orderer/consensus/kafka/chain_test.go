@@ -3692,6 +3692,10 @@ type mockConsenterSupport struct {
 	mock.Mock
 }
 
+func (c *mockConsenterSupport) Vrf(message []byte) (rand, proof []byte, err error) {
+	panic("implement me")
+}
+
 func (c *mockConsenterSupport) Block(seq uint64) *cb.Block {
 	return nil
 }

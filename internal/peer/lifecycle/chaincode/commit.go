@@ -143,6 +143,7 @@ func CommitCmd(c *Committer, cryptoProvider bccsp.BCCSP) *cobra.Command {
 		"connectionProfile",
 		"waitForEvent",
 		"waitForEventTimeout",
+		"vrfEnabled",
 	}
 	attachFlags(chaincodeCommitCmd, flagList)
 

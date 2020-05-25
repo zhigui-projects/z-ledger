@@ -9,10 +9,13 @@ package protoutil
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/json"
+	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/pkg/errors"
 )
 
@@ -169,30 +172,65 @@ func CreateSignedTx(
 	}
 
 	// ensure that all actions are bitwise equal and that they are successful
-	var a1 []byte
-	for n, r := range resps {
+	var a1, b1 []byte
+	endorsements := make([]*peer.Endorsement, 0)
+	vrfEndorsements := make([]*utils.VrfEndorsement, 0)
+	for _, r := range resps {
 		if r.Response.Status < 200 || r.Response.Status >= 400 {
 			return nil, errors.Errorf("proposal response was not successful, error code %d, msg %s", r.Response.Status, r.Response.Message)
 		}
 
-		if n == 0 {
-			a1 = r.Payload
+		vp := &utils.VrfPayload{}
+		if err := json.Unmarshal(r.Payload, vp); err != nil {
+			return nil, err
+		}
+
+		if vp.VrfResult != nil && vp.VrfProof != nil && vp.Data != nil {
+			vrfEndorsements = append(vrfEndorsements, &utils.VrfEndorsement{
+				Endorser: vp.Endorser,
+				Data:     vp.Data,
+				Result:   vp.VrfResult,
+				Proof:    vp.VrfProof,
+			})
+			if b1 == nil {
+				b1 = vp.Data
+			} else if !bytes.Equal(b1, vp.Data) {
+				return nil, errors.New("Vrf compute msg do not match")
+			}
+		}
+
+		if r.Response.Status == 300 {
 			continue
 		}
 
-		if !bytes.Equal(a1, r.Payload) {
+		endorsements = append(endorsements, r.Endorsement)
+
+		if a1 == nil {
+			a1 = vp.Payload
+			continue
+		}
+
+		if !bytes.Equal(a1, vp.Payload) {
 			return nil, errors.New("ProposalResponsePayloads do not match")
 		}
 	}
 
-	// fill endorsements
-	endorsements := make([]*peer.Endorsement, len(resps))
-	for n, r := range resps {
-		endorsements[n] = r.Endorsement
+	if len(endorsements) == 0 {
+		return nil, errors.New("no invalid endorsements proposal responses received")
+	}
+
+	fmt.Println(fmt.Sprintf("ProposalResponsePayloads endorsements len: %d, vrfEndorsements: %d", len(endorsements), len(vrfEndorsements)))
+
+	prp, err := json.Marshal(&utils.ChaincodeResponsePayload{
+		Payload:         a1,
+		VrfEndorsements: vrfEndorsements,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	// create ChaincodeEndorsedAction
-	cea := &peer.ChaincodeEndorsedAction{ProposalResponsePayload: resps[0].Payload, Endorsements: endorsements}
+	cea := &peer.ChaincodeEndorsedAction{ProposalResponsePayload: prp, Endorsements: endorsements}
 
 	// obtain the bytes of the proposal payload that will go to the transaction
 	propPayloadBytes, err := GetBytesProposalPayloadForTx(pPayl)

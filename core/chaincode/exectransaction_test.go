@@ -1289,6 +1289,10 @@ type CreatorPolicy struct {
 	Creators [][]byte
 }
 
+func (c *CreatorPolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	panic("implement me")
+}
+
 // EvaluateSignedData takes a set of SignedData and evaluates whether this set of signatures satisfies the policy
 func (c *CreatorPolicy) EvaluateSignedData(signatureSet []*protoutil.SignedData) error {
 	for _, value := range c.Creators {

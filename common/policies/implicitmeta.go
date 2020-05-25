@@ -142,3 +142,39 @@ func (imp *ImplicitMetaPolicy) EvaluateIdentities(identities []msp.Identity) err
 	}
 	return fmt.Errorf("implicit policy evaluation failed - %d sub-policies were satisfied, but this policy requires %d of the '%s' sub-policies to be satisfied", (imp.Threshold - remaining), imp.Threshold, imp.SubPolicyName)
 }
+
+func (imp *ImplicitMetaPolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	logger.Infof("This is an vrf implicit meta policy,  this policy requires %d of the '%s' sub-policies to be satisfied", len(imp.SubPolicies), imp.Threshold, imp.SubPolicyName)
+	remaining := imp.Threshold
+
+	defer func() {
+		if remaining != 0 {
+			// This log message may be large and expensive to construct, so worth checking the log level
+			if logger.IsEnabledFor(zapcore.DebugLevel) {
+				var b bytes.Buffer
+				b.WriteString(fmt.Sprintf("Evaluation Failed: Only %d policies were satisfied, but needed %d of [ ", imp.Threshold-remaining, imp.Threshold))
+				for m := range imp.managers {
+					b.WriteString(m)
+					b.WriteString("/")
+					b.WriteString(imp.SubPolicyName)
+					b.WriteString(" ")
+				}
+				b.WriteString("]")
+				logger.Debugf(b.String())
+			}
+		}
+	}()
+
+	for _, policy := range imp.SubPolicies {
+		if policy.EvaluateVrfPolicy(signatureSet, vrfSet) == nil {
+			remaining--
+			if remaining == 0 {
+				return nil
+			}
+		}
+	}
+	if remaining == 0 {
+		return nil
+	}
+	return fmt.Errorf("vrf implicit policy evaluation failed - %d sub-policies were satisfied, but this policy requires %d of the '%s' sub-policies to be satisfied", (imp.Threshold - remaining), imp.Threshold, imp.SubPolicyName)
+}

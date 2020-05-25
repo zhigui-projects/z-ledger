@@ -144,6 +144,7 @@ func ApproveForMyOrgCmd(a *ApproverForMyOrg, cryptoProvider bccsp.BCCSP) *cobra.
 		"connectionProfile",
 		"waitForEvent",
 		"waitForEventTimeout",
+		"vrfEnabled",
 	}
 	attachFlags(chaincodeApproveForMyOrgCmd, flagList)
 

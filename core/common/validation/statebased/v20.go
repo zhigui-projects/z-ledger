@@ -103,7 +103,7 @@ func (p *policyCheckerV20) fetchCollEP(cc, coll string) ([]byte, commonerrors.Tx
 	return collEP, nil
 }
 
-func (p *policyCheckerV20) CheckCCEPIfNotChecked(cc, coll string, blockNum, txNum uint64, sd []*protoutil.SignedData) commonerrors.TxValidationError {
+func (p *policyCheckerV20) CheckCCEPIfNotChecked(cc, coll string, blockNum, txNum uint64, sd []*protoutil.SignedData, vd []*protoutil.VrfData) commonerrors.TxValidationError {
 	if coll != "" {
 		// at first we check whether we have already evaluated an endorsement
 		// policy for this collection
@@ -119,7 +119,7 @@ func (p *policyCheckerV20) CheckCCEPIfNotChecked(cc, coll string, blockNum, txNu
 
 		// if there is an endorsement policy for the collection, we evaluate it
 		if len(collEP) != 0 {
-			err := p.policySupport.Evaluate(collEP, sd)
+			err := p.policySupport.Evaluate(collEP, sd, vd)
 			if err != nil {
 				return policyErr(errors.Wrapf(err, "validation of endorsement policy for collection %s chaincode %s in tx %d:%d failed", coll, cc, blockNum, txNum))
 			}
@@ -137,7 +137,7 @@ func (p *policyCheckerV20) CheckCCEPIfNotChecked(cc, coll string, blockNum, txNu
 	}
 
 	// evaluate the cc EP
-	err := p.policySupport.Evaluate(p.ccEP, sd)
+	err := p.policySupport.Evaluate(p.ccEP, sd, vd)
 	if err != nil {
 		return policyErr(errors.Wrapf(err, "validation of endorsement policy for chaincode %s in tx %d:%d failed", cc, blockNum, txNum))
 	}
@@ -147,13 +147,13 @@ func (p *policyCheckerV20) CheckCCEPIfNotChecked(cc, coll string, blockNum, txNu
 	return nil
 }
 
-func (p *policyCheckerV20) CheckCCEPIfNoEPChecked(cc string, blockNum, txNum uint64, sd []*protoutil.SignedData) commonerrors.TxValidationError {
+func (p *policyCheckerV20) CheckCCEPIfNoEPChecked(cc string, blockNum, txNum uint64, sd []*protoutil.SignedData, vd []*protoutil.VrfData) commonerrors.TxValidationError {
 	if p.someEPChecked {
 		return nil
 	}
 
 	// validate against cc ep
-	err := p.policySupport.Evaluate(p.ccEP, sd)
+	err := p.policySupport.Evaluate(p.ccEP, sd, vd)
 	if err != nil {
 		return policyErr(errors.Wrapf(err, "validation of endorsement policy for chaincode %s in tx %d:%d failed", cc, blockNum, txNum))
 	}

@@ -7,9 +7,10 @@ SPDX-License-Identifier: Apache-2.0
 package lifecycle
 
 import (
+	"github.com/gogo/protobuf/proto"
+	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/scc"
-
 	"github.com/pkg/errors"
 )
 
@@ -39,6 +40,10 @@ type ChaincodeEndorsementInfo struct {
 
 	// EndorsementPlugin is the name of the plugin to use when endorsing.
 	EndorsementPlugin string
+
+	// Impl by zig
+	// VrfEnabled is or not vrf for endorsement
+	VrfEnabled bool
 }
 
 type ChaincodeEndorsementInfoSource struct {
@@ -117,10 +122,20 @@ func (cei *ChaincodeEndorsementInfoSource) ChaincodeEndorsementInfo(channelID, c
 		return cei.LegacyImpl.ChaincodeEndorsementInfo(channelID, chaincodeName, qe)
 	}
 
+	// Impl by zig
+	vrfEnabled := false
+	param := &pb.ApplicationPolicy{}
+	if err := proto.Unmarshal(chaincodeInfo.Definition.ValidationInfo.ValidationParameter, param); err == nil {
+		policy := param.Type.(*pb.ApplicationPolicy_ChannelConfigPolicyReference).ChannelConfigPolicyReference
+		logger.Infof("Chaincode endorsement policy: %s for channel: %s, chaincodeName: %s", policy, channelID, chaincodeName)
+		vrfEnabled = policy == "vrf-policy"
+	}
+
 	return &ChaincodeEndorsementInfo{
 		Version:           chaincodeInfo.Definition.EndorsementInfo.Version,
 		EnforceInit:       chaincodeInfo.Definition.EndorsementInfo.InitRequired,
 		EndorsementPlugin: chaincodeInfo.Definition.EndorsementInfo.EndorsementPlugin,
 		ChaincodeID:       chaincodeInfo.InstallInfo.PackageID, // Local packages use package ID for ccid
+		VrfEnabled:        vrfEnabled,
 	}, nil
 }

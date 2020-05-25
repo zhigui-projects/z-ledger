@@ -91,6 +91,19 @@ type Support struct {
 		result2 *peer.ChaincodeEvent
 		result3 error
 	}
+	GetCurrentBlockHashStub        func(string) ([]byte, error)
+	getCurrentBlockHashMutex       sync.RWMutex
+	getCurrentBlockHashArgsForCall []struct {
+		arg1 string
+	}
+	getCurrentBlockHashReturns struct {
+		result1 []byte
+		result2 error
+	}
+	getCurrentBlockHashReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 error
+	}
 	GetDeployedCCInfoProviderStub        func() ledger.DeployedChaincodeInfoProvider
 	getDeployedCCInfoProviderMutex       sync.RWMutex
 	getDeployedCCInfoProviderArgsForCall []struct {
@@ -190,6 +203,21 @@ type Support struct {
 	signReturnsOnCall map[int]struct {
 		result1 []byte
 		result2 error
+	}
+	VrfStub        func([]byte) ([]byte, []byte, error)
+	vrfMutex       sync.RWMutex
+	vrfArgsForCall []struct {
+		arg1 []byte
+	}
+	vrfReturns struct {
+		result1 []byte
+		result2 []byte
+		result3 error
+	}
+	vrfReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 []byte
+		result3 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -530,6 +558,69 @@ func (fake *Support) ExecuteLegacyInitReturnsOnCall(i int, result1 *peer.Respons
 		result2 *peer.ChaincodeEvent
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *Support) GetCurrentBlockHash(arg1 string) ([]byte, error) {
+	fake.getCurrentBlockHashMutex.Lock()
+	ret, specificReturn := fake.getCurrentBlockHashReturnsOnCall[len(fake.getCurrentBlockHashArgsForCall)]
+	fake.getCurrentBlockHashArgsForCall = append(fake.getCurrentBlockHashArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("GetCurrentBlockHash", []interface{}{arg1})
+	fake.getCurrentBlockHashMutex.Unlock()
+	if fake.GetCurrentBlockHashStub != nil {
+		return fake.GetCurrentBlockHashStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getCurrentBlockHashReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *Support) GetCurrentBlockHashCallCount() int {
+	fake.getCurrentBlockHashMutex.RLock()
+	defer fake.getCurrentBlockHashMutex.RUnlock()
+	return len(fake.getCurrentBlockHashArgsForCall)
+}
+
+func (fake *Support) GetCurrentBlockHashCalls(stub func(string) ([]byte, error)) {
+	fake.getCurrentBlockHashMutex.Lock()
+	defer fake.getCurrentBlockHashMutex.Unlock()
+	fake.GetCurrentBlockHashStub = stub
+}
+
+func (fake *Support) GetCurrentBlockHashArgsForCall(i int) string {
+	fake.getCurrentBlockHashMutex.RLock()
+	defer fake.getCurrentBlockHashMutex.RUnlock()
+	argsForCall := fake.getCurrentBlockHashArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *Support) GetCurrentBlockHashReturns(result1 []byte, result2 error) {
+	fake.getCurrentBlockHashMutex.Lock()
+	defer fake.getCurrentBlockHashMutex.Unlock()
+	fake.GetCurrentBlockHashStub = nil
+	fake.getCurrentBlockHashReturns = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *Support) GetCurrentBlockHashReturnsOnCall(i int, result1 []byte, result2 error) {
+	fake.getCurrentBlockHashMutex.Lock()
+	defer fake.getCurrentBlockHashMutex.Unlock()
+	fake.GetCurrentBlockHashStub = nil
+	if fake.getCurrentBlockHashReturnsOnCall == nil {
+		fake.getCurrentBlockHashReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 error
+		})
+	}
+	fake.getCurrentBlockHashReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *Support) GetDeployedCCInfoProvider() ledger.DeployedChaincodeInfoProvider {
@@ -1021,6 +1112,77 @@ func (fake *Support) SignReturnsOnCall(i int, result1 []byte, result2 error) {
 	}{result1, result2}
 }
 
+func (fake *Support) Vrf(arg1 []byte) ([]byte, []byte, error) {
+	var arg1Copy []byte
+	if arg1 != nil {
+		arg1Copy = make([]byte, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.vrfMutex.Lock()
+	ret, specificReturn := fake.vrfReturnsOnCall[len(fake.vrfArgsForCall)]
+	fake.vrfArgsForCall = append(fake.vrfArgsForCall, struct {
+		arg1 []byte
+	}{arg1Copy})
+	fake.recordInvocation("Vrf", []interface{}{arg1Copy})
+	fake.vrfMutex.Unlock()
+	if fake.VrfStub != nil {
+		return fake.VrfStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	fakeReturns := fake.vrfReturns
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *Support) VrfCallCount() int {
+	fake.vrfMutex.RLock()
+	defer fake.vrfMutex.RUnlock()
+	return len(fake.vrfArgsForCall)
+}
+
+func (fake *Support) VrfCalls(stub func([]byte) ([]byte, []byte, error)) {
+	fake.vrfMutex.Lock()
+	defer fake.vrfMutex.Unlock()
+	fake.VrfStub = stub
+}
+
+func (fake *Support) VrfArgsForCall(i int) []byte {
+	fake.vrfMutex.RLock()
+	defer fake.vrfMutex.RUnlock()
+	argsForCall := fake.vrfArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *Support) VrfReturns(result1 []byte, result2 []byte, result3 error) {
+	fake.vrfMutex.Lock()
+	defer fake.vrfMutex.Unlock()
+	fake.VrfStub = nil
+	fake.vrfReturns = struct {
+		result1 []byte
+		result2 []byte
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *Support) VrfReturnsOnCall(i int, result1 []byte, result2 []byte, result3 error) {
+	fake.vrfMutex.Lock()
+	defer fake.vrfMutex.Unlock()
+	fake.VrfStub = nil
+	if fake.vrfReturnsOnCall == nil {
+		fake.vrfReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 []byte
+			result3 error
+		})
+	}
+	fake.vrfReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 []byte
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *Support) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -1034,6 +1196,8 @@ func (fake *Support) Invocations() map[string][][]interface{} {
 	defer fake.executeMutex.RUnlock()
 	fake.executeLegacyInitMutex.RLock()
 	defer fake.executeLegacyInitMutex.RUnlock()
+	fake.getCurrentBlockHashMutex.RLock()
+	defer fake.getCurrentBlockHashMutex.RUnlock()
 	fake.getDeployedCCInfoProviderMutex.RLock()
 	defer fake.getDeployedCCInfoProviderMutex.RUnlock()
 	fake.getHistoryQueryExecutorMutex.RLock()
@@ -1050,6 +1214,8 @@ func (fake *Support) Invocations() map[string][][]interface{} {
 	defer fake.serializeMutex.RUnlock()
 	fake.signMutex.RLock()
 	defer fake.signMutex.RUnlock()
+	fake.vrfMutex.RLock()
+	defer fake.vrfMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

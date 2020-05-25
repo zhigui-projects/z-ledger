@@ -217,8 +217,8 @@ type PolicyEvaluatorWrapper struct {
 }
 
 // Evaluate takes a set of SignedData and evaluates whether this set of signatures satisfies the policy
-func (id *PolicyEvaluatorWrapper) Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData) error {
-	return id.PolicyEvaluator.Evaluate(policyBytes, signatureSet)
+func (id *PolicyEvaluatorWrapper) Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	return id.PolicyEvaluator.Evaluate(policyBytes, signatureSet, vrfSet)
 }
 
 // DeserializeIdentity unmarshals the given identity to msp.Identity

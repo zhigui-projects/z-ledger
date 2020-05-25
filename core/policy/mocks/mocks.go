@@ -59,6 +59,10 @@ func (m *MockPolicy) EvaluateIdentities(identities []msp.Identity) error {
 	return nil
 }
 
+func (m *MockPolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	return nil
+}
+
 type MockIdentityDeserializer struct {
 	Identity []byte
 	Msg      []byte
@@ -81,6 +85,11 @@ func (d *MockIdentityDeserializer) IsWellFormed(_ *mspproto.SerializedIdentity) 
 type MockIdentity struct {
 	identity []byte
 	msg      []byte
+}
+
+// Impl by zig
+func (id *MockIdentity) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
 }
 
 func (id *MockIdentity) Anonymous() bool {

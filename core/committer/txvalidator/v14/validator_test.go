@@ -546,6 +546,15 @@ func (msi *mockSI) GetPublicVersion() msp.Identity {
 	return msi
 }
 
+// Impl by zig
+func (msi *mockSI) Vrf(msg []byte) (rand, proof []byte, err error) {
+	panic("implement me")
+}
+
+func (msi *mockSI) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
+}
+
 // MSP mock for the parallel validation test
 type mockMSP struct {
 	ID           msp.Identity

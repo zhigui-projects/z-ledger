@@ -68,6 +68,10 @@ func (m *Policy) EvaluateIdentities(identities []msp.Identity) error {
 	panic("Implement me")
 }
 
+func (m *Policy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	panic("Implement me")
+}
+
 type DeserializersManager struct {
 	LocalDeserializer    msp.IdentityDeserializer
 	ChannelDeserializers map[string]msp.IdentityDeserializer
@@ -129,6 +133,11 @@ func (d *IdentityDeserializer) IsWellFormed(identity *mspproto.SerializedIdentit
 type Identity struct {
 	expirationDate time.Time
 	Msg            []byte
+}
+
+// Impl by zig
+func (id *Identity) VrfVerify(msg, rand, proof []byte) bool {
+	panic("implement me")
 }
 
 func (id *Identity) Anonymous() bool {

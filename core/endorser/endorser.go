@@ -8,6 +8,7 @@ package endorser
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric-protos-go/transientstore"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
@@ -76,6 +78,9 @@ type Support interface {
 
 	// GetLedgerHeight returns ledger height for given channelID
 	GetLedgerHeight(channelID string) (uint64, error)
+
+	// GetCurrentBlockHash returns ledger current block Hash for given channelID
+	GetCurrentBlockHash(channelID string) ([]byte, error)
 
 	// GetDeployedCCInfoProvider returns ledger.DeployedChaincodeInfoProvider
 	GetDeployedCCInfoProvider() ledger.DeployedChaincodeInfoProvider
@@ -274,6 +279,7 @@ func (e *Endorser) preProcess(up *UnpackedProposal, channel *Channel) error {
 
 // ProcessProposal process the Proposal
 func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
+
 	// start time for computing elapsed time metric for successfully endorsed proposals
 	startTime := time.Now()
 	e.Metrics.ProposalsReceived.Add(1)
@@ -373,6 +379,56 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessagef(err, "make sure the chaincode %s has been successfully defined on channel %s and try again", up.ChaincodeName, up.ChannelID())
 	}
 
+	peerIdentity, err := e.Support.Serialize()
+	if err != nil {
+		return nil, err
+	}
+
+	// Impl by zig
+	isInvoke := func() bool {
+		inv, ok := up.Input.Decorations["vrfEnabled"]
+		if !ok {
+			return true
+		}
+		invoke, err := strconv.ParseBool(string(inv))
+		if err != nil {
+			return true
+		}
+		return invoke
+	}()
+
+	var result, proof, msg []byte
+	if cdLedger.VrfEnabled && isInvoke {
+		//localIdentity, err := e.LocalMSP.DeserializeIdentity(peerIdentity)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//logger.Infof("Deserialize local peer identity mspId: %s, id: %s", localIdentity.GetIdentifier().Mspid, localIdentity.GetIdentifier().Id)
+
+		msg, err = e.Support.GetCurrentBlockHash(up.ChannelHeader.ChannelId)
+		if err != nil {
+			return nil, err
+		}
+
+		result, proof, err = e.Support.Vrf(msg)
+		if err != nil {
+			logger.Infof("Compute vrf error: %v", err)
+			return nil, err
+		}
+		ret, num := utils.VrfSortition(result, 10, 4)
+		if !ret {
+			logger.Infof("ProcessProposal vrf endorser election not selected, number: %d", num)
+
+			vp := &utils.VrfPayload{Data: msg, Endorser: peerIdentity, VrfResult: result, VrfProof: proof}
+			vpBytes, err := json.Marshal(vp)
+			if err != nil {
+				return nil, err
+			}
+			return &pb.ProposalResponse{Version: 1, Payload: vpBytes, Response: &pb.Response{Status: 300, Message: "Not selected as endorser for vrf"}}, nil
+		}
+		logger.Infof("ProcessProposal vrf endorser election selected, number: %d", num)
+	}
+
 	// 1 -- simulate
 	res, simulationResult, ccevent, err := e.SimulateProposal(txParams, up.ChaincodeName, up.Input)
 	if err != nil {
@@ -399,11 +455,18 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		"chaincode", up.ChaincodeName,
 	}
 
+	var vpBytes []byte
+	vpd := &utils.VrfPayload{Payload: prpBytes}
+	vpBytes, err = json.Marshal(vpd)
+	if err != nil {
+		return nil, err
+	}
+
 	switch {
 	case res.Status >= shim.ERROR:
 		return &pb.ProposalResponse{
 			Response: res,
-			Payload:  prpBytes,
+			Payload:  vpBytes,
 		}, nil
 	case up.ChannelID() == "":
 		// Chaincode invocations without a channel ID is a broken concept
@@ -433,10 +496,16 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
+	vp := &utils.VrfPayload{Data: msg, Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+	vpBytes, err = json.Marshal(vp)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.ProposalResponse{
 		Version:     1,
 		Endorsement: endorsement,
-		Payload:     mPrpBytes,
+		Payload:     vpBytes,
 		Response:    res,
 	}, nil
 }

@@ -455,21 +455,19 @@
   revision = "5ccba6eab8d6b39aa2cdd88db202bba0e25da5d7"
 
 [[projects]]
-  branch = "ormdb"
-  digest = "1:5db47a44cb04845c214814fd6859a46a54963e7c448e4d671137bcf7faf50cd6"
+  branch = "master"
+  digest = "1:bb8e924d3b4de82ab63e24c7ef69edceedad3a7c1a14fbe7805ec31d51c9bf08"
   name = "github.com/hyperledger/fabric-chaincode-go"
   packages = [
     "pkg/attrmgr",
     "pkg/cid",
     "pkg/statebased",
     "shim",
-    "shim/entitydefinition",
     "shim/internal",
     "shimtest",
   ]
   pruneopts = "NUT"
-  revision = "ad4d655bfd897344b8f3bfdfb29179223c2a27fb"
-  source = "github.com/zhigui-projects/fabric-chaincode-go"
+  revision = "2d899240a7ed642a381ba9df2f6b0c303cb149dc"
 
 [[projects]]
   digest = "1:33e7a8d765883a4ec0196509402147c3bddc6821edcc4cb1139f2322ad4bea9f"
@@ -531,25 +529,6 @@
   pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
-
-[[projects]]
-  digest = "1:c24d4cac0c313bee5aa05f12cacf4f966a47af133cad229ca537090829ef7bd9"
-  name = "github.com/jinzhu/gorm"
-  packages = [
-    ".",
-    "dialects/sqlite",
-  ]
-  pruneopts = "NUT"
-  revision = "79a77d771dee4e4b60e9c543e8663bbc80466670"
-  version = "v1.9.12"
-
-[[projects]]
-  digest = "1:802f75230c29108e787d40679f9bf5da1a5673eaf5c10eb89afd993e18972909"
-  name = "github.com/jinzhu/inflection"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f5c5f50e6090ae76a29240b61ae2a90dd810112e"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:da62aa6632d04e080b8a8b85a59ed9ed1550842a0099a55f3ae3a20d02a3745a"
@@ -618,14 +597,6 @@
   pruneopts = "NUT"
   revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
   version = "v0.0.4"
-
-[[projects]]
-  digest = "1:e870d0adda32d63345bb2991db89a4fe81ad4642f864c90f06ba546e20d67b50"
-  name = "github.com/mattn/go-sqlite3"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9bdaffc12bf8be15afceb51bb60851edd4afdff5"
-  version = "v2.0.3"
 
 [[projects]]
   digest = "1:5985ef4caf91ece5d54817c11ea25f182697534f8ae6521eadcd628c142ac4b6"
@@ -1243,7 +1214,6 @@
     "github.com/hyperledger/fabric-amcl/amcl/FP256BN",
     "github.com/hyperledger/fabric-chaincode-go/pkg/statebased",
     "github.com/hyperledger/fabric-chaincode-go/shim",
-    "github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition",
     "github.com/hyperledger/fabric-chaincode-go/shimtest",
     "github.com/hyperledger/fabric-contract-api-go/contractapi",
     "github.com/hyperledger/fabric-lib-go/healthz",
@@ -1259,8 +1229,6 @@
     "github.com/hyperledger/fabric-protos-go/peer",
     "github.com/hyperledger/fabric-protos-go/peer/lifecycle",
     "github.com/hyperledger/fabric-protos-go/transientstore",
-    "github.com/jinzhu/gorm",
-    "github.com/jinzhu/gorm/dialects/sqlite",
     "github.com/kr/pretty",
     "github.com/miekg/pkcs11",
     "github.com/mitchellh/mapstructure",

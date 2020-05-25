@@ -9,6 +9,7 @@ package v13
 import (
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	commonerrors "github.com/hyperledger/fabric/common/errors"
 )
 
@@ -30,7 +31,7 @@ type StateBasedValidator interface {
 	// Validate determines whether the transaction on the specified channel at the specified height
 	// is valid according to its chaincode-level endorsement policy and any key-level validation
 	// parametres
-	Validate(cc string, blockNum, txNum uint64, rwset, prp, ep []byte, endorsements []*peer.Endorsement) commonerrors.TxValidationError
+	Validate(cc string, blockNum, txNum uint64, rwset, prp, ep []byte, endorsements []*peer.Endorsement, vrfs []*utils.VrfEndorsement) commonerrors.TxValidationError
 
 	// PostValidate sets the internal data structures of the validator needed after the validation
 	// code was determined for a transaction on the specified channel at the specified height

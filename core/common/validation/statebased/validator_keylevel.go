@@ -11,6 +11,7 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	commonerrors "github.com/hyperledger/fabric/common/errors"
 	validation "github.com/hyperledger/fabric/core/handlers/validation/api/policies"
 	"github.com/hyperledger/fabric/core/ledger"
@@ -20,8 +21,8 @@ import (
 )
 
 type epEvaluator interface {
-	CheckCCEPIfNotChecked(cc, coll string, blockNum, txNum uint64, sd []*protoutil.SignedData) commonerrors.TxValidationError
-	CheckCCEPIfNoEPChecked(cc string, blockNum, txNum uint64, sd []*protoutil.SignedData) commonerrors.TxValidationError
+	CheckCCEPIfNotChecked(cc, coll string, blockNum, txNum uint64, sd []*protoutil.SignedData, vd []*protoutil.VrfData) commonerrors.TxValidationError
+	CheckCCEPIfNoEPChecked(cc string, blockNum, txNum uint64, sd []*protoutil.SignedData, vd []*protoutil.VrfData) commonerrors.TxValidationError
 	SBEPChecked()
 }
 
@@ -34,7 +35,7 @@ type baseEvaluator struct {
 	policySupport validation.PolicyEvaluator
 }
 
-func (p *baseEvaluator) checkSBAndCCEP(cc, coll, key string, blockNum, txNum uint64, signatureSet []*protoutil.SignedData) commonerrors.TxValidationError {
+func (p *baseEvaluator) checkSBAndCCEP(cc, coll, key string, blockNum, txNum uint64, signatureSet []*protoutil.SignedData, vrSet []*protoutil.VrfData) commonerrors.TxValidationError {
 	// see if there is a key-level validation parameter for this key
 	vp, err := p.vpmgr.GetValidationParameterForKey(cc, coll, key, blockNum, txNum)
 	if err != nil {
@@ -70,11 +71,11 @@ func (p *baseEvaluator) checkSBAndCCEP(cc, coll, key string, blockNum, txNum uin
 
 	// if no key-level validation parameter has been specified, the regular cc endorsement policy needs to hold
 	if len(vp) == 0 {
-		return p.CheckCCEPIfNotChecked(cc, coll, blockNum, txNum, signatureSet)
+		return p.CheckCCEPIfNotChecked(cc, coll, blockNum, txNum, signatureSet, vrSet)
 	}
 
 	// validate against key-level vp
-	err = p.policySupport.Evaluate(vp, signatureSet)
+	err = p.policySupport.Evaluate(vp, signatureSet, vrSet)
 	if err != nil {
 		return policyErr(errors.Wrapf(err, "validation of key %s (coll'%s':ns'%s') in tx %d:%d failed", key, coll, cc, blockNum, txNum))
 	}
@@ -84,7 +85,7 @@ func (p *baseEvaluator) checkSBAndCCEP(cc, coll, key string, blockNum, txNum uin
 	return nil
 }
 
-func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.NsRwSet, ns string, sd []*protoutil.SignedData) commonerrors.TxValidationError {
+func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.NsRwSet, ns string, sd []*protoutil.SignedData, vrfd []*protoutil.VrfData) commonerrors.TxValidationError {
 	// iterate over all writes in the rwset
 	for _, nsRWSet := range NsRwSets {
 		// skip other namespaces
@@ -96,7 +97,7 @@ func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.N
 		// we validate writes against key-level validation parameters
 		// if any are present or the chaincode-wide endorsement policy
 		for _, pubWrite := range nsRWSet.KvRwSet.Writes {
-			err := p.checkSBAndCCEP(ns, "", pubWrite.Key, blockNum, txNum, sd)
+			err := p.checkSBAndCCEP(ns, "", pubWrite.Key, blockNum, txNum, sd, vrfd)
 			if err != nil {
 				return err
 			}
@@ -105,7 +106,7 @@ func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.N
 		// we validate writes against key-level validation parameters
 		// if any are present or the chaincode-wide endorsement policy
 		for _, pubMdWrite := range nsRWSet.KvRwSet.MetadataWrites {
-			err := p.checkSBAndCCEP(ns, "", pubMdWrite.Key, blockNum, txNum, sd)
+			err := p.checkSBAndCCEP(ns, "", pubMdWrite.Key, blockNum, txNum, sd, vrfd)
 			if err != nil {
 				return err
 			}
@@ -117,7 +118,7 @@ func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.N
 			coll := collRWSet.CollectionName
 			for _, hashedWrite := range collRWSet.HashedRwSet.HashedWrites {
 				key := string(hashedWrite.KeyHash)
-				err := p.checkSBAndCCEP(ns, coll, key, blockNum, txNum, sd)
+				err := p.checkSBAndCCEP(ns, coll, key, blockNum, txNum, sd, vrfd)
 				if err != nil {
 					return err
 				}
@@ -130,7 +131,7 @@ func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.N
 			coll := collRWSet.CollectionName
 			for _, hashedMdWrite := range collRWSet.HashedRwSet.MetadataWrites {
 				key := string(hashedMdWrite.KeyHash)
-				err := p.checkSBAndCCEP(ns, coll, key, blockNum, txNum, sd)
+				err := p.checkSBAndCCEP(ns, coll, key, blockNum, txNum, sd, vrfd)
 				if err != nil {
 					return err
 				}
@@ -139,7 +140,7 @@ func (p *baseEvaluator) Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.N
 	}
 
 	// we make sure that we check at least the CCEP to honour FAB-9473
-	return p.CheckCCEPIfNoEPChecked(ns, blockNum, txNum, sd)
+	return p.CheckCCEPIfNoEPChecked(ns, blockNum, txNum, sd, vrfd)
 }
 
 /**********************************************************************************************************/
@@ -154,7 +155,7 @@ type RWSetPolicyEvaluatorFactory interface {
 
 // RWSetPolicyEvaluator provides means to evaluate transaction artefacts
 type RWSetPolicyEvaluator interface {
-	Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.NsRwSet, ns string, sd []*protoutil.SignedData) commonerrors.TxValidationError
+	Evaluate(blockNum, txNum uint64, NsRwSets []*rwsetutil.NsRwSet, ns string, sd []*protoutil.SignedData, vrfd []*protoutil.VrfData) commonerrors.TxValidationError
 }
 
 /**********************************************************************************************************/
@@ -241,7 +242,7 @@ func (klv *KeyLevelValidator) PreValidate(txNum uint64, block *common.Block) {
 }
 
 // Validate implements the function of the StateBasedValidator interface
-func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetBytes, prp, ccEP []byte, endorsements []*peer.Endorsement) commonerrors.TxValidationError {
+func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetBytes, prp, ccEP []byte, endorsements []*peer.Endorsement, vrfs []*utils.VrfEndorsement) commonerrors.TxValidationError {
 	// construct signature set
 	signatureSet := []*protoutil.SignedData{}
 	for _, endorsement := range endorsements {
@@ -258,6 +259,17 @@ func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetB
 			Signature: endorsement.Signature})
 	}
 
+	// construct vrf set
+	vrfSet := []*protoutil.VrfData{}
+	for _, v := range vrfs {
+		vrfSet = append(vrfSet, &protoutil.VrfData{
+			Data:     v.Data,
+			Identity: v.Endorser,
+			Result:   v.Result,
+			Proof:    v.Proof,
+		})
+	}
+
 	// construct the policy checker object
 	policyEvaluator := klv.pef.Evaluator(ccEP)
 
@@ -268,7 +280,7 @@ func (klv *KeyLevelValidator) Validate(cc string, blockNum, txNum uint64, rwsetB
 	}
 
 	// return the decision of the policy evaluator
-	return policyEvaluator.Evaluate(blockNum, txNum, rwset.NsRwSets, cc, signatureSet)
+	return policyEvaluator.Evaluate(blockNum, txNum, rwset.NsRwSets, cc, signatureSet, vrfSet)
 }
 
 // PostValidate implements the function of the StateBasedValidator interface

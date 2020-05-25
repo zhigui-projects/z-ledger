@@ -155,7 +155,7 @@ func (vscc *Validator) Validate(
 	}
 
 	// evaluate the signature set against the policy
-	err = vscc.policyEvaluator.Evaluate(policyBytes, signatureSet)
+	err = vscc.policyEvaluator.Evaluate(policyBytes, signatureSet, []*protoutil.VrfData{})
 	if err != nil {
 		logger.Warningf("Endorsement policy failure for transaction txid=%s, err: %s", chdr.GetTxId(), err.Error())
 		if len(signatureSet) < len(cap.Action.Endorsements) {
@@ -192,7 +192,7 @@ func (vscc *Validator) checkInstantiationPolicy(chainName string, env *common.En
 		Identity:  shdr.Creator,
 		Signature: env.Signature,
 	}}
-	err = vscc.policyEvaluator.Evaluate(instantiationPolicy, sd)
+	err = vscc.policyEvaluator.Evaluate(instantiationPolicy, sd, []*protoutil.VrfData{})
 	if err != nil {
 		return policyErr(fmt.Errorf("chaincode instantiation policy violated, error %s", err))
 	}

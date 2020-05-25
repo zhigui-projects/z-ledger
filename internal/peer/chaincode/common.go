@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -564,98 +565,142 @@ func ChaincodeInvokeOrQuery(
 	deliverClients []pb.DeliverClient,
 	bc common.BroadcastClient,
 ) (*pb.ProposalResponse, error) {
-	// Build the ChaincodeInvocationSpec message
-	invocation := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
-
-	creator, err := signer.Serialize()
-	if err != nil {
-		return nil, errors.WithMessage(err, "error serializing identity")
-	}
-
 	funcName := "invoke"
 	if !invoke {
 		funcName = "query"
 	}
 
+	resps, proposalResp, prop, txid, err := proposalProcess(spec, signer, endorserClients, cID, txID, funcName, invoke)
+	if err != nil {
+		return nil, err
+	}
+	if proposalResp == nil {
+		return nil, errors.New("no invalid proposal responses received")
+	}
+
+	if invoke {
+		// assemble a signed transaction (it's an Envelope message)
+		env, err := protoutil.CreateSignedTx(prop, signer, resps...)
+		if err != nil {
+			return proposalResp, errors.WithMessage(err, "could not assemble transaction")
+		}
+		var dg *DeliverGroup
+		var ctx context.Context
+		if waitForEvent {
+			var cancelFunc context.CancelFunc
+			ctx, cancelFunc = context.WithTimeout(context.Background(), waitForEventTimeout)
+			defer cancelFunc()
+
+			dg = NewDeliverGroup(
+				deliverClients,
+				peerAddresses,
+				signer,
+				certificate,
+				channelID,
+				txid,
+			)
+			// connect to deliver service on all peers
+			err := dg.Connect(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// send the envelope for ordering
+		if err = bc.Send(env); err != nil {
+			return proposalResp, errors.WithMessagef(err, "error sending transaction for %s", funcName)
+		}
+
+		if dg != nil && ctx != nil {
+			// wait for event that contains the txid from all peers
+			err = dg.Wait(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+	}
+
+	return proposalResp, nil
+}
+
+func createSignedProposal(
+	spec *pb.ChaincodeSpec,
+	signer identity.SignerSerializer,
+	cID, txID, funcName string,
+	vrfEnabled bool) (*pb.SignedProposal, *pb.Proposal, string, error) {
+	// Build the ChaincodeInvocationSpec message
+	invocation := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
+
+	creator, err := signer.Serialize()
+	if err != nil {
+		return nil, nil, "", errors.WithMessage(err, "error serializing identity")
+	}
+
+	if invocation.ChaincodeSpec.Input.Decorations == nil {
+		invocation.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
+	}
+	invocation.ChaincodeSpec.Input.Decorations["vrfEnabled"] = []byte(strconv.FormatBool(vrfEnabled))
+
 	// extract the transient field if it exists
 	var tMap map[string][]byte
 	if transient != "" {
 		if err := json.Unmarshal([]byte(transient), &tMap); err != nil {
-			return nil, errors.Wrap(err, "error parsing transient string")
+			return nil, nil, "", errors.Wrap(err, "error parsing transient string")
 		}
 	}
 
 	prop, txid, err := protoutil.CreateChaincodeProposalWithTxIDAndTransient(pcommon.HeaderType_ENDORSER_TRANSACTION, cID, invocation, creator, txID, tMap)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "error creating proposal for %s", funcName)
+		return nil, nil, "", errors.WithMessagef(err, "error creating proposal for %s", funcName)
 	}
 
 	signedProp, err := protoutil.GetSignedProposal(prop, signer)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "error creating signed proposal for %s", funcName)
+		return nil, nil, "", errors.WithMessagef(err, "error creating signed proposal for %s", funcName)
+	}
+	return signedProp, prop, txid, nil
+
+}
+
+func proposalProcess(spec *pb.ChaincodeSpec,
+	signer identity.SignerSerializer,
+	endorserClients []pb.EndorserClient,
+	cID, txID, funcName string,
+	vrfEnabled bool) ([]*pb.ProposalResponse, *pb.ProposalResponse, *pb.Proposal, string, error) {
+	signedProp, prop, txid, err := createSignedProposal(spec, signer, cID, txID, funcName, vrfEnabled)
+	if err != nil {
+		return nil, nil, nil, "", errors.WithMessagef(err, "error creating signed proposal for %s", funcName)
 	}
 
 	responses, err := processProposals(endorserClients, signedProp)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "error endorsing %s", funcName)
+		return nil, nil, nil, "", errors.WithMessagef(err, "error endorsing %s", funcName)
 	}
 
 	if len(responses) == 0 {
 		// this should only happen if some new code has introduced a bug
-		return nil, errors.New("no proposal responses received - this might indicate a bug")
+		return nil, nil, nil, "", errors.New("no proposal responses received - this might indicate a bug")
 	}
 	// all responses will be checked when the signed transaction is created.
 	// for now, just set this so we check the first response's status
-	proposalResp := responses[0]
+	var proposalResp *pb.ProposalResponse
+	resps := make([]*pb.ProposalResponse, 0)
+	for _, v := range responses {
+		if v == nil {
+			continue
+		}
+		if v.Response.Status >= shim.ERRORTHRESHOLD {
+			logger.Infof(" proposal responses received status: %d, message: %s", v.Response.Status, v.Response.Message)
+			continue
+		}
+		resps = append(resps, v)
 
-	if invoke {
-		if proposalResp != nil {
-			if proposalResp.Response.Status >= shim.ERRORTHRESHOLD {
-				return proposalResp, nil
-			}
-			// assemble a signed transaction (it's an Envelope message)
-			env, err := protoutil.CreateSignedTx(prop, signer, responses...)
-			if err != nil {
-				return proposalResp, errors.WithMessage(err, "could not assemble transaction")
-			}
-			var dg *DeliverGroup
-			var ctx context.Context
-			if waitForEvent {
-				var cancelFunc context.CancelFunc
-				ctx, cancelFunc = context.WithTimeout(context.Background(), waitForEventTimeout)
-				defer cancelFunc()
-
-				dg = NewDeliverGroup(
-					deliverClients,
-					peerAddresses,
-					signer,
-					certificate,
-					channelID,
-					txid,
-				)
-				// connect to deliver service on all peers
-				err := dg.Connect(ctx)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			// send the envelope for ordering
-			if err = bc.Send(env); err != nil {
-				return proposalResp, errors.WithMessagef(err, "error sending transaction for %s", funcName)
-			}
-
-			if dg != nil && ctx != nil {
-				// wait for event that contains the txid from all peers
-				err = dg.Wait(ctx)
-				if err != nil {
-					return nil, err
-				}
-			}
+		if proposalResp == nil && v.Response.Status == shim.OK {
+			proposalResp = v
 		}
 	}
-
-	return proposalResp, nil
+	return resps, proposalResp, prop, txid, nil
 }
 
 // DeliverGroup holds all of the information needed to connect

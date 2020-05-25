@@ -13,6 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/msp"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/flogging"
 	mspi "github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
@@ -137,6 +138,11 @@ type Policy interface {
 	// EvaluateIdentities takes an array of identities and evaluates whether
 	// they satisfy the policy
 	EvaluateIdentities(identities []mspi.Identity) error
+
+	// EvaluateVrfData takes a set of SignedData and VrfData whether
+	// 1) the signatures are valid over the related message
+	// 2) the vrf proof are valid over the related message
+	EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error
 }
 
 // InquireablePolicy is a Policy that one can inquire
@@ -254,6 +260,10 @@ func (rp rejectPolicy) EvaluateIdentities(identities []mspi.Identity) error {
 	return errors.Errorf("no such policy: '%s'", rp)
 }
 
+func (rp rejectPolicy) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	return errors.Errorf("no such policy: '%s'", rp)
+}
+
 // Manager returns the sub-policy manager for a given path and whether it exists
 func (pm *ManagerImpl) Manager(path []string) (Manager, bool) {
 	logger.Debugf("Manager %s looking up path %v", pm.path, path)
@@ -303,6 +313,21 @@ func (pl *PolicyLogger) EvaluateIdentities(identities []mspi.Identity) error {
 		logger.Debugf("Signature set did not satisfy policy %s", pl.policyName)
 	} else {
 		logger.Debugf("Signature set satisfies policy %s", pl.policyName)
+	}
+	return err
+}
+
+func (pl *PolicyLogger) EvaluateVrfPolicy(signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
+	if logger.IsEnabledFor(zapcore.DebugLevel) {
+		logger.Debugf("== Evaluating %T Policy %s ==", pl.Policy, pl.policyName)
+		defer logger.Debugf("== Done Evaluating %T Policy %s", pl.Policy, pl.policyName)
+	}
+
+	err := pl.Policy.EvaluateVrfPolicy(signatureSet, vrfSet)
+	if err != nil {
+		logger.Debugf("Vrf set did not satisfy policy %s", pl.policyName)
+	} else {
+		logger.Debugf("Vrf set satisfies policy %s", pl.policyName)
 	}
 	return err
 }
@@ -392,4 +417,42 @@ func SignatureSetToValidIdentities(signedData []*protoutil.SignedData, identityD
 	}
 
 	return identities
+}
+
+func VrfSetToValidIdentities(vrfData []*protoutil.VrfData, identityDeserializer mspi.IdentityDeserializer) (identities, selected []mspi.Identity) {
+	idMap := map[string]struct{}{}
+	identities = make([]mspi.Identity, 0, len(vrfData))
+	selected = make([]mspi.Identity, 0)
+
+	for i, sd := range vrfData {
+		identity, err := identityDeserializer.DeserializeIdentity(sd.Identity)
+		if err != nil {
+			logger.Warningf("principal deserialization failure (%s) for identity %x", err, sd.Identity)
+			continue
+		}
+
+		key := identity.GetIdentifier().Mspid + identity.GetIdentifier().Id
+
+		// We check if this identity has already appeared before doing a signature check, to ensure that
+		// someone cannot force us to waste time checking the same signature thousands of times
+		if _, ok := idMap[key]; ok {
+			logger.Warningf("De-duplicating identity [%s] at index %d in vrf set", key, i)
+			continue
+		}
+
+		ret := identity.VrfVerify(sd.Data, sd.Result, sd.Proof)
+		if !ret {
+			logger.Warningf("vrf for identity %d verify failed: %s", i, err)
+			continue
+		}
+
+		if ok, _ := utils.VrfSortition(sd.Result, 10, 4); ok {
+			selected = append(selected, identity)
+		}
+
+		idMap[key] = struct{}{}
+		identities = append(identities, identity)
+	}
+
+	return
 }

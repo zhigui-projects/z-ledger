@@ -193,3 +193,7 @@ noverify = [
 [[constraint]]
   name = "github.com/VictoriaMetrics/fastcache"
   version = "1.4.6"
+
+[[constraint]]
+  name = "github.com/ontio/ontology-crypto"
+  version = "1.0.8"

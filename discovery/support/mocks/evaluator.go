@@ -31,6 +31,18 @@ type Evaluator struct {
 	evaluateSignedDataReturnsOnCall map[int]struct {
 		result1 error
 	}
+	EvaluateVrfPolicyStub        func([]*protoutil.SignedData, []*protoutil.VrfData) error
+	evaluateVrfPolicyMutex       sync.RWMutex
+	evaluateVrfPolicyArgsForCall []struct {
+		arg1 []*protoutil.SignedData
+		arg2 []*protoutil.VrfData
+	}
+	evaluateVrfPolicyReturns struct {
+		result1 error
+	}
+	evaluateVrfPolicyReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -165,6 +177,77 @@ func (fake *Evaluator) EvaluateSignedDataReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *Evaluator) EvaluateVrfPolicy(arg1 []*protoutil.SignedData, arg2 []*protoutil.VrfData) error {
+	var arg1Copy []*protoutil.SignedData
+	if arg1 != nil {
+		arg1Copy = make([]*protoutil.SignedData, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	var arg2Copy []*protoutil.VrfData
+	if arg2 != nil {
+		arg2Copy = make([]*protoutil.VrfData, len(arg2))
+		copy(arg2Copy, arg2)
+	}
+	fake.evaluateVrfPolicyMutex.Lock()
+	ret, specificReturn := fake.evaluateVrfPolicyReturnsOnCall[len(fake.evaluateVrfPolicyArgsForCall)]
+	fake.evaluateVrfPolicyArgsForCall = append(fake.evaluateVrfPolicyArgsForCall, struct {
+		arg1 []*protoutil.SignedData
+		arg2 []*protoutil.VrfData
+	}{arg1Copy, arg2Copy})
+	fake.recordInvocation("EvaluateVrfPolicy", []interface{}{arg1Copy, arg2Copy})
+	fake.evaluateVrfPolicyMutex.Unlock()
+	if fake.EvaluateVrfPolicyStub != nil {
+		return fake.EvaluateVrfPolicyStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.evaluateVrfPolicyReturns
+	return fakeReturns.result1
+}
+
+func (fake *Evaluator) EvaluateVrfPolicyCallCount() int {
+	fake.evaluateVrfPolicyMutex.RLock()
+	defer fake.evaluateVrfPolicyMutex.RUnlock()
+	return len(fake.evaluateVrfPolicyArgsForCall)
+}
+
+func (fake *Evaluator) EvaluateVrfPolicyCalls(stub func([]*protoutil.SignedData, []*protoutil.VrfData) error) {
+	fake.evaluateVrfPolicyMutex.Lock()
+	defer fake.evaluateVrfPolicyMutex.Unlock()
+	fake.EvaluateVrfPolicyStub = stub
+}
+
+func (fake *Evaluator) EvaluateVrfPolicyArgsForCall(i int) ([]*protoutil.SignedData, []*protoutil.VrfData) {
+	fake.evaluateVrfPolicyMutex.RLock()
+	defer fake.evaluateVrfPolicyMutex.RUnlock()
+	argsForCall := fake.evaluateVrfPolicyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *Evaluator) EvaluateVrfPolicyReturns(result1 error) {
+	fake.evaluateVrfPolicyMutex.Lock()
+	defer fake.evaluateVrfPolicyMutex.Unlock()
+	fake.EvaluateVrfPolicyStub = nil
+	fake.evaluateVrfPolicyReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *Evaluator) EvaluateVrfPolicyReturnsOnCall(i int, result1 error) {
+	fake.evaluateVrfPolicyMutex.Lock()
+	defer fake.evaluateVrfPolicyMutex.Unlock()
+	fake.EvaluateVrfPolicyStub = nil
+	if fake.evaluateVrfPolicyReturnsOnCall == nil {
+		fake.evaluateVrfPolicyReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.evaluateVrfPolicyReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *Evaluator) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -172,6 +255,8 @@ func (fake *Evaluator) Invocations() map[string][][]interface{} {
 	defer fake.evaluateIdentitiesMutex.RUnlock()
 	fake.evaluateSignedDataMutex.RLock()
 	defer fake.evaluateSignedDataMutex.RUnlock()
+	fake.evaluateVrfPolicyMutex.RLock()
+	defer fake.evaluateVrfPolicyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

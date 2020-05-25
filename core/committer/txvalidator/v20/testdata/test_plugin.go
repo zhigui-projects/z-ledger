@@ -96,7 +96,7 @@ func (p *SampleValidationPlugin) Validate(block *common.Block, namespace string,
 	}
 	// Validate the policy
 	pol := contextData[0].(SerializedPolicy).Bytes()
-	err = p.pe.Evaluate(pol, []*protoutil.SignedData{sd})
+	err = p.pe.Evaluate(pol, []*protoutil.SignedData{sd}, []*protoutil.VrfData{})
 	if err != nil {
 		return err
 	}

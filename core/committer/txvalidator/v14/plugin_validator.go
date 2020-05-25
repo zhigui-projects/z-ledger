@@ -203,7 +203,7 @@ type PolicyEvaluator struct {
 }
 
 // Evaluate takes a set of SignedData and evaluates whether this set of signatures satisfies the policy
-func (id *PolicyEvaluator) Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData) error {
+func (id *PolicyEvaluator) Evaluate(policyBytes []byte, signatureSet []*protoutil.SignedData, vrfSet []*protoutil.VrfData) error {
 	pp := cauthdsl.NewPolicyProvider(id.IdentityDeserializer)
 	policy, _, err := pp.NewPolicy(policyBytes)
 	if err != nil {

@@ -118,6 +118,15 @@ func (m *MockBCCSP) Decrypt(k bccsp.Key, ciphertext []byte, opts bccsp.Decrypter
 	}
 }
 
+// Impl by zig
+func (m *MockBCCSP) Vrf(k bccsp.Key, msg []byte) (rand, proof []byte, err error) {
+	panic("implement me")
+}
+
+func (m *MockBCCSP) VrfVerify(k bccsp.Key, msg, rand, proof []byte) (bool, error) {
+	panic("implement me")
+}
+
 type MockKey struct {
 	BytesValue []byte
 	BytesErr   error
