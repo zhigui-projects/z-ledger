@@ -71,6 +71,7 @@ import (
 	"github.com/hyperledger/fabric/core/peer"
 	"github.com/hyperledger/fabric/core/policy"
 	"github.com/hyperledger/fabric/core/scc"
+	"github.com/hyperledger/fabric/core/scc/ascc"
 	"github.com/hyperledger/fabric/core/scc/cscc"
 	"github.com/hyperledger/fabric/core/scc/lscc"
 	"github.com/hyperledger/fabric/core/scc/qscc"
@@ -566,6 +567,7 @@ func serve(args []string) error {
 		"qscc":       {},
 		"cscc":       {},
 		"_lifecycle": {},
+		"ascc":       {},
 	}
 
 	lsccInst := &lscc.SCC{
@@ -669,6 +671,13 @@ func serve(args []string) error {
 		peerInstance,
 		factory.GetDefault(),
 	)
+
+	// New Archive system chaincode
+	asccInst := ascc.New(
+		aclProvider,
+		policyChecker,
+	)
+
 	qsccInst := scc.SelfDescribingSysCC(qscc.New(aclProvider, peerInstance))
 	if maxConcurrency := coreConfig.LimitsConcurrencyQSCC; maxConcurrency != 0 {
 		qsccInst = scc.Throttle(maxConcurrency, qsccInst)
@@ -720,7 +729,7 @@ func serve(args []string) error {
 	}
 
 	// deploy system chaincodes
-	for _, cc := range []scc.SelfDescribingSysCC{lsccInst, csccInst, qsccInst, lifecycleSCC} {
+	for _, cc := range []scc.SelfDescribingSysCC{lsccInst, csccInst, asccInst, qsccInst, lifecycleSCC} {
 		if enabled, ok := chaincodeConfig.SCCWhitelist[cc.Name()]; !ok || !enabled {
 			logger.Infof("not deploying chaincode %s as it is not enabled", cc.Name())
 			continue

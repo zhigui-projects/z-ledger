@@ -190,9 +190,9 @@ func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version
 				}
 				dbBatch.Put(dataKey, encodedVal)
 
-				if ns == "archive" && k == "by-date" {
-					logger.Infof("Publishing event[archive-by-date] with channel[%s] date[%s]", vdb.dbName, string(vv.Value))
-					(*bus).Publish("archive-by-date", vdb.dbName, string(vv.Value))
+				if ns == "ascc" && k == "byTxDate" {
+					logger.Infof("Publishing event[archive-by-tx-date] with channel[%s] date[%s]", vdb.dbName, string(vv.Value))
+					(*bus).Publish("archive-by-tx-date", vdb.dbName, string(vv.Value))
 				}
 			}
 		}

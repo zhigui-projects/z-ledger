@@ -136,7 +136,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 		panic(fmt.Sprintf("Could not save archive meta info to db: %s", err))
 	}
 
-	if err := (*bus).Subscribe("archive-by-date", mgr.archiveFn); err != nil {
+	if err := (*bus).Subscribe("archive-by-tx-date", mgr.archiveFn); err != nil {
 		logger.Errorf("Could not subscribe to archive event for chain[id=%s]", id)
 	}
 	mgr.bus = bus

@@ -40,6 +40,9 @@ const (
 	Qscc_GetTransactionByID = "qscc/GetTransactionByID"
 	Qscc_GetBlockByTxID     = "qscc/GetBlockByTxID"
 
+	//Ascc resources
+	Ascc_ArchiveByDate = "ascc/ArchiveByDate"
+
 	//Cscc resources
 	Cscc_JoinChain      = "cscc/JoinChain"
 	Cscc_GetConfigBlock = "cscc/GetConfigBlock"
