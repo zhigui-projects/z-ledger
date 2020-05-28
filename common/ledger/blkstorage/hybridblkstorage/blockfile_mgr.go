@@ -175,7 +175,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 		panic(fmt.Sprintf("Could not truncate current file to known size in db: %s", err))
 	}
 
-	// Create a new KeyValue store database handler for the blocks index in the keyvalue database
+	// Create a new KeyValue store database handler for the blocks index in the key value database
 	if mgr.index, err = newBlockIndex(indexConfig, indexStore); err != nil {
 		panic(fmt.Sprintf("error in block index: %s", err))
 	}
@@ -715,9 +715,16 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 	lastSentFileNum := int(mgr.amInfo.LastSentFileSuffix)
 	lastArchiveFileNum := int(mgr.amInfo.LastArchiveFileSuffix)
 
-	//todo: need to find out the block file num which contains the tx of given date
-	//      and convert date str to date
-	var fileNum int
+	var blkLoc *fileLocPointer
+	var err error
+	if blkLoc, err = mgr.index.getBlockLocByTxDate(dateStr); err != nil {
+		logger.Errorf("The block location of given date[%s] has not been found in the index", dateStr)
+		return
+	}
+
+	// keep the block file contains the tx of given tx date
+	fileNum := blkLoc.fileSuffixNum - 1
+
 	if fileNum > lastSentFileNum {
 		logger.Errorf("The block files of given date[%s] has not been transferred to dfs yet", dateStr)
 		return

@@ -11,6 +11,7 @@ import (
 	"crypto/sha256"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/pkg/errors"
@@ -513,4 +514,29 @@ func GetOrComputeTxIDFromEnvelope(txEnvelopBytes []byte) (string, error) {
 
 	txid := ComputeTxID(sighdr.Nonce, sighdr.Creator)
 	return txid, nil
+}
+
+// GetTxTimestampFromEnvelope gets the tx timestamp present in a given transaction
+// envelope.
+func GetTxTimestampFromEnvelope(txEnvelopBytes []byte) (*timestamp.Timestamp, error) {
+	txEnvelope, err := UnmarshalEnvelope(txEnvelopBytes)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error getting TxTimestamp from envelope")
+	}
+
+	txPayload, err := UnmarshalPayload(txEnvelope.Payload)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error getting TxTimestamp from payload")
+	}
+
+	if txPayload.Header == nil {
+		return nil, errors.New("error getting TxTimestamp from header: payload header is nil")
+	}
+
+	chdr, err := UnmarshalChannelHeader(txPayload.Header.ChannelHeader)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error getting TxTimestamp from channel header")
+	}
+
+	return chdr.GetTimestamp(), nil
 }

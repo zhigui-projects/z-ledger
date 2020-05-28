@@ -23,6 +23,7 @@ const (
 	IndexableAttrBlockNum        = IndexableAttr("BlockNum")
 	IndexableAttrBlockHash       = IndexableAttr("BlockHash")
 	IndexableAttrTxID            = IndexableAttr("TxID")
+	IndexableAttrTxDate          = IndexableAttr("TxDate")
 	IndexableAttrBlockNumTranNum = IndexableAttr("BlockNumTranNum")
 )
 
@@ -31,7 +32,7 @@ type IndexConfig struct {
 	AttrsToIndex []IndexableAttr
 }
 
-// Contains returns true iff the supplied parameter is present in the IndexConfig.AttrsToIndex
+// Contains returns true if the supplied parameter is present in the IndexConfig.AttrsToIndex
 func (c *IndexConfig) Contains(indexableAttr IndexableAttr) bool {
 	for _, a := range c.AttrsToIndex {
 		if a == indexableAttr {

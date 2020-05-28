@@ -8,6 +8,7 @@ package hybridblkstorage
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-protos-go/common"
 	ledgerutil "github.com/hyperledger/fabric/common/ledger/util"
 	"github.com/hyperledger/fabric/protoutil"
@@ -22,8 +23,9 @@ type serializedBlockInfo struct {
 
 //The order of the transactions must be maintained for history
 type txindexInfo struct {
-	txID string
-	loc  *locPointer
+	txID   string
+	txDate *timestamp.Timestamp
+	loc    *locPointer
 }
 
 func serializeBlock(block *common.Block) ([]byte, *serializedBlockInfo, error) {
@@ -160,18 +162,22 @@ func extractData(buf *ledgerutil.Buffer) (*common.BlockData, []*txindexInfo, err
 	}
 	for i := uint64(0); i < numItems; i++ {
 		var txEnvBytes []byte
-		var txid string
+		var txId string
+		var txDate *timestamp.Timestamp
 		txOffset := buf.GetBytesConsumed()
 		if txEnvBytes, err = buf.DecodeRawBytes(false); err != nil {
-			return nil, nil, errors.Wrap(err, "error decoding the transaction enevelope")
+			return nil, nil, errors.Wrap(err, "error decoding the transaction envelope")
 		}
-		if txid, err = protoutil.GetOrComputeTxIDFromEnvelope(txEnvBytes); err != nil {
-			logger.Warningf("error while extracting txid from tx envelope bytes during deserialization of block. Ignoring this error as this is caused by a malformed transaction. Error:%s",
+		if txId, err = protoutil.GetOrComputeTxIDFromEnvelope(txEnvBytes); err != nil {
+			logger.Warningf("error while extracting txId from tx envelope bytes during deserialization of block. Ignoring this error as this is caused by a malformed transaction. Error:%s",
 				err)
-
+		}
+		if txDate, err = protoutil.GetTxTimestampFromEnvelope(txEnvBytes); err != nil {
+			logger.Warningf("error while extracting txDate from tx envelope bytes during deserialization of block. Ignoring this error as this is caused by a malformed transaction. Error:%s",
+				err)
 		}
 		data.Data = append(data.Data, txEnvBytes)
-		idxInfo := &txindexInfo{txID: txid, loc: &locPointer{txOffset, buf.GetBytesConsumed() - txOffset}}
+		idxInfo := &txindexInfo{txID: txId, txDate: txDate, loc: &locPointer{txOffset, buf.GetBytesConsumed() - txOffset}}
 		txOffsets = append(txOffsets, idxInfo)
 	}
 	return data, txOffsets, nil

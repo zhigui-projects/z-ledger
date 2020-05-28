@@ -43,6 +43,7 @@ var attrsToIndex = []blkstorage.IndexableAttr{
 	blkstorage.IndexableAttrBlockHash,
 	blkstorage.IndexableAttrBlockNum,
 	blkstorage.IndexableAttrTxID,
+	blkstorage.IndexableAttrTxDate,
 	blkstorage.IndexableAttrBlockNumTranNum,
 }
 

@@ -9,6 +9,7 @@ package hybridblkstorage
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -25,6 +26,7 @@ const (
 	blockNumIdxKeyPrefix        = 'n'
 	blockHashIdxKeyPrefix       = 'h'
 	txIDIdxKeyPrefix            = 't'
+	txDateIdxKeyPrefix          = 'd'
 	blockNumTranNumIdxKeyPrefix = 'a'
 	indexCheckpointKeyStr       = "indexCheckpointKey"
 )
@@ -38,6 +40,7 @@ type index interface {
 	getBlockLocByHash(blockHash []byte) (*fileLocPointer, error)
 	getBlockLocByBlockNum(blockNum uint64) (*fileLocPointer, error)
 	getTxLoc(txID string) (*fileLocPointer, error)
+	getBlockLocByTxDate(txDate string) (*fileLocPointer, error)
 	getTXLocByBlockNumTranNum(blockNum uint64, tranNum uint64) (*fileLocPointer, error)
 	getBlockLocByTxID(txID string) (*fileLocPointer, error)
 	getTxValidationCodeByTxID(txID string) (peer.TxValidationCode, error)
@@ -59,7 +62,7 @@ type blockIndex struct {
 
 func newBlockIndex(indexConfig *blkstorage.IndexConfig, db *leveldbhelper.DBHandle) (*blockIndex, error) {
 	indexItems := indexConfig.AttrsToIndex
-	logger.Debugf("newBlockIndex() - indexItems:[%s]", indexItems)
+	logger.Infof("newBlockIndex() - indexItems:[%s]", indexItems)
 	indexItemsMap := make(map[blkstorage.IndexableAttr]bool)
 	for _, indexItem := range indexItems {
 		indexItemsMap[indexItem] = true
@@ -146,6 +149,34 @@ func (index *blockIndex) indexBlock(blockIdxInfo *blockIdxInfo) error {
 		}
 	}
 
+	//Index5 Used to find the earliest transaction by its transaction timestamp
+	if index.isAttributeIndexed(blkstorage.IndexableAttrTxDate) {
+		for _, txoffset := range txOffsets {
+			txFlp := newFileLocationPointer(flp.fileSuffixNum, flp.offset, txoffset.loc)
+			logger.Infof("Adding txLoc [%s] for tx date: [%s] to txdate-index", txFlp, txoffset.txDate)
+			txFlpBytes, marshalErr := txFlp.marshal()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			indexVal := &msgs.TxDateIndexValProto{
+				BlkNumber:   int64(blkNum),
+				BlkLocation: flpBytes,
+				TxLocation:  txFlpBytes,
+			}
+			indexValBytes, err := proto.Marshal(indexVal)
+			if err != nil {
+				return errors.Wrap(err, "unexpected error while marshaling TxDateIndexValProto message")
+			}
+			txDate := time.Unix(txoffset.txDate.Seconds, 0)
+
+			batch.Put(
+				constructTxDateKey(txDate.Format("2006-01-02"), blkNum, txoffset.txID),
+				indexValBytes,
+			)
+		}
+	}
+
 	batch.Put(indexCheckpointKey, encodeBlockNum(blockIdxInfo.blockNum))
 	// Setting snyc to true as a precaution, false may be an ok optimization after further testing.
 	if err := index.db.WriteBatch(batch, true); err != nil {
@@ -203,6 +234,18 @@ func (index *blockIndex) getTxLoc(txID string) (*fileLocPointer, error) {
 	return txFLP, nil
 }
 
+func (index *blockIndex) getBlockLocByTxDate(txDate string) (*fileLocPointer, error) {
+	v, err := index.getTxDateVal(txDate)
+	if err != nil {
+		return nil, err
+	}
+	blkFLP := &fileLocPointer{}
+	if err = blkFLP.unmarshal(v.BlkLocation); err != nil {
+		return nil, err
+	}
+	return blkFLP, nil
+}
+
 func (index *blockIndex) getBlockLocByTxID(txID string) (*fileLocPointer, error) {
 	v, err := index.getTxIDVal(txID)
 	if err != nil {
@@ -246,6 +289,29 @@ func (index *blockIndex) getTxIDVal(txID string) (*msgs.TxIDIndexValProto, error
 	return val, nil
 }
 
+func (index *blockIndex) getTxDateVal(txDate string) (*msgs.TxDateIndexValProto, error) {
+	if !index.isAttributeIndexed(blkstorage.IndexableAttrTxDate) {
+		return nil, blkstorage.ErrAttrNotIndexed
+	}
+	rangeScan := constructTxDateRangeScan(txDate)
+	itr := index.db.GetIterator(rangeScan.startKey, rangeScan.stopKey)
+	defer itr.Release()
+
+	present := itr.Next()
+	if err := itr.Error(); err != nil {
+		return nil, errors.Wrapf(err, "error while trying to retrieve transaction info by txDate [%s]", txDate)
+	}
+	if !present {
+		return nil, blkstorage.ErrNotFoundInIndex
+	}
+	valBytes := itr.Value()
+	val := &msgs.TxDateIndexValProto{}
+	if err := proto.Unmarshal(valBytes, val); err != nil {
+		return nil, errors.Wrapf(err, "unexpected error while unmarshaling bytes [%#v] into TxDateIndexValProto", valBytes)
+	}
+	return val, nil
+}
+
 func (index *blockIndex) getTXLocByBlockNumTranNum(blockNum uint64, tranNum uint64) (*fileLocPointer, error) {
 	if !index.isAttributeIndexed(blkstorage.IndexableAttrBlockNumTranNum) {
 		return nil, blkstorage.ErrAttrNotIndexed
@@ -281,6 +347,12 @@ func constructTxIDKey(txID string, blkNum, txNum uint64) []byte {
 	return append(k, util.EncodeOrderPreservingVarUint64(txNum)...)
 }
 
+func constructTxDateKey(txDate string, blkNum uint64, txID string) []byte {
+	k := append([]byte{txDateIdxKeyPrefix}, txDate...)
+	k = append(k, util.EncodeOrderPreservingVarUint64(blkNum)...)
+	return append(k, txID...)
+}
+
 type rangeScan struct {
 	startKey []byte
 	stopKey  []byte
@@ -292,6 +364,14 @@ func constructTxIDRangeScan(txID string) *rangeScan {
 		util.EncodeOrderPreservingVarUint64(uint64(len(txID)))...,
 	)
 	sk = append(sk, txID...)
+	return &rangeScan{
+		startKey: sk,
+		stopKey:  append(sk, 0xff),
+	}
+}
+
+func constructTxDateRangeScan(txDate string) *rangeScan {
+	sk := append([]byte{txDateIdxKeyPrefix}, txDate...)
 	return &rangeScan{
 		startKey: sk,
 		stopKey:  append(sk, 0xff),
@@ -385,6 +465,8 @@ func (blockIdxInfo *blockIdxInfo) String() string {
 	for _, txOffset := range blockIdxInfo.txOffsets {
 		buffer.WriteString("txId=")
 		buffer.WriteString(txOffset.txID)
+		buffer.WriteString("txDate=")
+		buffer.WriteString(time.Unix(txOffset.txDate.Seconds, 0).String())
 		buffer.WriteString(" locPointer=")
 		buffer.WriteString(txOffset.loc.String())
 		buffer.WriteString("\n")
