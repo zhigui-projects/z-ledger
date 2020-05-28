@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
 	"github.com/hyperledger/fabric/common/metrics"
@@ -219,7 +220,7 @@ func newVersionedDB(couchInstance *couchdb.CouchInstance, redoLogger *redoLogger
 
 	if redologRecord.Version.BlockNum-savepoint.BlockNum == 1 {
 		logger.Debugf("chain [%s]: Re-applying last batch", chainName)
-		if err := vdb.applyUpdates(redologRecord.UpdateBatch, redologRecord.Version); err != nil {
+		if err := vdb.applyUpdates(redologRecord.UpdateBatch, redologRecord.Version, nil); err != nil {
 			return nil, err
 		}
 	}
@@ -625,7 +626,7 @@ func validateQueryMetadata(metadata map[string]interface{}) error {
 }
 
 // ApplyUpdates implements method in VersionedDB interface
-func (vdb *VersionedDB) ApplyUpdates(updates *statedb.UpdateBatch, height *version.Height) error {
+func (vdb *VersionedDB) ApplyUpdates(updates *statedb.UpdateBatch, height *version.Height, bus *EventBus.Bus) error {
 	if height != nil && updates.ContainsPostOrderWrites {
 		// height is passed nil when committing missing private data for previously committed blocks
 		r := &redoRecord{
@@ -636,10 +637,10 @@ func (vdb *VersionedDB) ApplyUpdates(updates *statedb.UpdateBatch, height *versi
 			return err
 		}
 	}
-	return vdb.applyUpdates(updates, height)
+	return vdb.applyUpdates(updates, height, bus)
 }
 
-func (vdb *VersionedDB) applyUpdates(updates *statedb.UpdateBatch, height *version.Height) error {
+func (vdb *VersionedDB) applyUpdates(updates *statedb.UpdateBatch, height *version.Height, bus *EventBus.Bus) error {
 	// TODO a note about https://jira.hyperledger.org/browse/FAB-8622
 	// The write lock is needed only for the stage 2.
 
@@ -659,6 +660,18 @@ func (vdb *VersionedDB) applyUpdates(updates *statedb.UpdateBatch, height *versi
 	namespaces := updates.GetUpdatedNamespaces()
 	if err := vdb.postCommitProcessing(committers, namespaces, height); err != nil {
 		return err
+	}
+
+	if bus != nil {
+		for _, ns := range namespaces {
+			updates := updates.GetUpdates(ns)
+			for k, vv := range updates {
+				if ns == "ascc" && k == "byTxDate" {
+					logger.Infof("Publishing event[archive-by-tx-date] with channel[%s] date[%s]", vdb.chainName, string(vv.Value))
+					(*bus).Publish("archive-by-tx-date", vdb.chainName, string(vv.Value))
+				}
+			}
+		}
 	}
 
 	return nil

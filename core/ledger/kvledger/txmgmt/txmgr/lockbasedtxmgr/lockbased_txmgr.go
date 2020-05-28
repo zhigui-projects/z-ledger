@@ -500,7 +500,7 @@ func (txmgr *LockBasedTxMgr) Commit() error {
 	commitHeight := version.NewHeight(txmgr.current.blockNum(), txmgr.current.maxTxNumber())
 	txmgr.commitRWLock.Lock()
 	logger.Debugf("Write lock acquired for committing updates to state database")
-	if err := txmgr.db.ApplyPrivacyAwareUpdates(txmgr.current.batch, commitHeight, nil); err != nil {
+	if err := txmgr.db.ApplyPrivacyAwareUpdates(txmgr.current.batch, commitHeight, txmgr.bus); err != nil {
 		txmgr.commitRWLock.Unlock()
 		return err
 	}
