@@ -41,6 +41,7 @@ var (
 		"lscc": {},
 		"qscc": {},
 		"vscc": {},
+		"ascc": {},
 	}
 )
 

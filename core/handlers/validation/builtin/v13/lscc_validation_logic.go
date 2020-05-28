@@ -33,6 +33,7 @@ var systemChaincodeNames = map[string]struct{}{
 	"lscc": {},
 	"qscc": {},
 	"vscc": {},
+	"ascc": {},
 }
 
 // checkInstantiationPolicy evaluates an instantiation policy against a signed proposal
