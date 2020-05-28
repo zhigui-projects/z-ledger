@@ -87,7 +87,7 @@ func newDefaultACLProvider(policyChecker policy.PolicyChecker) defaultACLProvide
 	// p resources (none)
 
 	// c resources
-	d.cResourcePolicyMap[resources.Ascc_ArchiveByDate] = "" //ACL check covered by PROPOSAL
+	d.cResourcePolicyMap[resources.Ascc_ArchiveByDate] = mgmt.Admins
 
 	//--------------- CSCC resources -----------
 	//p resources (implemented by the chaincode currently)
