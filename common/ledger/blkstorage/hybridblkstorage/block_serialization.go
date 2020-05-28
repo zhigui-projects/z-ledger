@@ -108,10 +108,15 @@ func addDataBytesAndConstructTxIndexInfo(blockData *common.BlockData, buf *proto
 			logger.Warningf("error while extracting txid from tx envelope bytes during serialization of block. Ignoring this error as this is caused by a malformed transaction. Error:%s",
 				err)
 		}
+		txDate, err := protoutil.GetTxTimestampFromEnvelope(txEnvelopeBytes)
+		if err != nil {
+			logger.Warningf("error while extracting txDate from tx envelope bytes during serialization of block. Ignoring this error as this is caused by a malformed transaction. Error:%s",
+				err)
+		}
 		if err := buf.EncodeRawBytes(txEnvelopeBytes); err != nil {
 			return nil, errors.Wrap(err, "error encoding the transaction envelope")
 		}
-		idxInfo := &txindexInfo{txID: txid, loc: &locPointer{offset, len(buf.Bytes()) - offset}}
+		idxInfo := &txindexInfo{txID: txid, txDate: txDate, loc: &locPointer{offset, len(buf.Bytes()) - offset}}
 		txOffsets = append(txOffsets, idxInfo)
 	}
 	return txOffsets, nil
