@@ -8,6 +8,7 @@ package ledger
 
 import (
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	ormdbconf "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 
 	"github.com/golang/protobuf/proto"
@@ -213,6 +214,11 @@ type QueryExecutor interface {
 	ExecuteQueryOnPrivateData(namespace, collection, query string) (commonledger.ResultsIterator, error)
 	// Done releases resources occupied by the QueryExecutor
 	Done()
+	// ExecuteConditionQuery executes the given query with search condition and returns an slice that contains results of type specific to the underlying data store.
+	// Only used for state databases that support condition query
+	// For a chaincode, the namespace corresponds to the chaincodeId
+	// The returned bytes is a JSON representation an slice that contains results of type specific to the underlying data store.
+	ExecuteConditionQuery(namespace string, search entitydefinition.Search) ([]byte, error)
 }
 
 // HistoryQueryExecutor executes the history queries

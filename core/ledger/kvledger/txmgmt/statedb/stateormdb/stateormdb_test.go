@@ -297,6 +297,12 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 
 	submodels := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key].StructType())).Interface()
 	myccdb1.DB.Table(ormdb.ToTableName(key)).Find(submodels)
+	assert.Equal(t, 2, reflect.ValueOf(submodels).Elem().Len())
+	for i := 0; i < reflect.ValueOf(submodels).Elem().Len(); i++ {
+		returnVersion, _, err := decodeVersionAndMetadata(reflect.ValueOf(submodels).Elem().Index(i).FieldByName("VerAndMeta").String())
+		assert.Equal(t, uint64(2), returnVersion.BlockNum)
+		assert.NoError(t, err)
+	}
 	submodelsbytes, err := json.Marshal(&submodels)
 	assert.NoError(t, err)
 
@@ -304,6 +310,9 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 	err = json.Unmarshal(submodelsbytes, &submodels1)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(submodels1))
+	for _, sub := range submodels1 {
+		assert.Equal(t, "testmodelid1", sub.Model)
+	}
 
 	models := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key1].StructType())).Interface()
 	myccdb1.DB.Table(ormdb.ToTableName(key1)).Find(models)

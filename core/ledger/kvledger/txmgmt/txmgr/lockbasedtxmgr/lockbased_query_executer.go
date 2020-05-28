@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 package lockbasedtxmgr
 
 import (
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	commonledger "github.com/hyperledger/fabric/common/ledger"
 	"github.com/hyperledger/fabric/core/ledger"
 )
@@ -104,4 +105,9 @@ func (q *lockBasedQueryExecutor) ExecuteQueryOnPrivateData(namespace, collection
 func (q *lockBasedQueryExecutor) Done() {
 	logger.Debugf("Done with transaction simulation / query execution [%s]", q.txid)
 	q.helper.done()
+}
+
+// ExecuteConditionQuery implements method in interface `ledger.QueryExecutor`
+func (q *lockBasedQueryExecutor) ExecuteConditionQuery(namespace string, search entitydefinition.Search) ([]byte, error) {
+	return q.helper.executeConditionQuery(namespace, search)
 }

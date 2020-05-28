@@ -7,7 +7,10 @@ SPDX-License-Identifier: Apache-2.0
 package chaincode
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"io"
 	"strconv"
 	"strings"
@@ -831,6 +834,10 @@ func (h *Handler) HandleGetQueryResult(msg *pb.ChaincodeMessage, txContext *Tran
 		return nil, errors.Wrap(err, "unmarshal failed")
 	}
 
+	if getQueryResult.Query == "SEARCH" {
+		return handleConditionQuery(getQueryResult, txContext)
+	}
+
 	metadata, err := getQueryMetadataFromBytes(getQueryResult.Metadata)
 	if err != nil {
 		return nil, err
@@ -884,6 +891,19 @@ func (h *Handler) HandleGetQueryResult(msg *pb.ChaincodeMessage, txContext *Tran
 
 	chaincodeLogger.Debugf("Got keys and values. Sending %s", pb.ChaincodeMessage_RESPONSE)
 	return &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}, nil
+}
+
+func handleConditionQuery(result *pb.GetQueryResult, context *TransactionContext) (*pb.ChaincodeMessage, error) {
+	search := entitydefinition.Search{}
+	decoder := gob.NewDecoder(bytes.NewBuffer(result.Metadata))
+	err := decoder.Decode(&search)
+	if err != nil {
+		return nil, errors.Wrap(err, "search decode failed")
+	}
+
+	namespace := context.NamespaceID
+	context.TXSimulator.ExecuteConditionQuery(namespace, search)
+	return nil, nil
 }
 
 // Handles query to ledger history db

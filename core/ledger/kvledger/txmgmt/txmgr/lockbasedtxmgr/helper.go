@@ -7,7 +7,7 @@ package lockbasedtxmgr
 
 import (
 	"fmt"
-
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	commonledger "github.com/hyperledger/fabric/common/ledger"
@@ -316,6 +316,10 @@ func (h *queryHelper) done() {
 			itr.Close()
 		}
 	}()
+}
+
+func (h *queryHelper) executeConditionQuery(namespace string, search entitydefinition.Search) ([]byte, error) {
+	return nil, nil
 }
 
 func (h *queryHelper) addRangeQueryInfo() {

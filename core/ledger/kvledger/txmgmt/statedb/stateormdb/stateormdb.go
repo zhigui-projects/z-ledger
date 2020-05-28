@@ -425,6 +425,62 @@ func (v *VersionedDB) Close() {
 
 }
 
+func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefinition.Search) (interface{}, error) {
+	//db, err := v.getNamespaceDBHandle(namespace)
+	//if err != nil {
+	//	logger.Errorf("get namespaced database failed [%v]", err)
+	//	return nil, errors.WithMessage(err, "get namespaced database failed")
+	//}
+	//
+	//entityName := search.Entity
+	//gormdb := db.DB
+	//
+	//for i, cond := range search.WhereConditions {
+	//	query := cond["query"]
+	//	args := cond["args"]
+	//	for j, arg := range args {
+	//
+	//	}
+	//}
+	//
+	//db.DB.w
+	//
+	//submodels := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key].StructType())).Interface()
+	//myccdb1.DB.Table(ormdb.ToTableName(key)).Find(submodels)
+	//db.RWMutex.RLock()
+	//entity := db.ModelTypes[entityName].Interface()
+	//id, exist := db.ModelTypes[entityName].FieldByName("ID")
+	//if !exist {
+	//	return nil, errors.New("entity no ID field")
+	//}
+	//_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
+	//if !exist {
+	//	return nil, errors.New("entity no VerAndMeta field")
+	//}
+	//db.RWMutex.RUnlock()
+	//
+	//if id.Type.Kind() == reflect.String {
+	//	db.DB.Table(ormdb.ToTableName(entityName)).Where("id = ?", entityId).Find(entity)
+	//} else {
+	//	return nil, errors.New("not supported entity ID field type")
+	//}
+	//
+	//if entity == nil {
+	//	return nil, nil
+	//}
+	//
+	//verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
+	//returnVersion, returnMetadata, err := decodeVersionAndMetadata(verAndMeta)
+	//
+	//entityBytes, err := json.Marshal(entity)
+	//if err != nil {
+	//	logger.Errorf("marshal entity failed [%v]", err)
+	//	return nil, errors.WithMessage(err, "marshal entity failed")
+	//}
+	//return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: entityBytes}, nil
+	return nil, nil
+}
+
 // getNamespaceDBHandle gets the handle to a named chaincode database
 func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase, error) {
 	v.mux.RLock()
