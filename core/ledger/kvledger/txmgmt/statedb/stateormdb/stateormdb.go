@@ -438,9 +438,7 @@ func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefin
 	//for i, cond := range search.WhereConditions {
 	//	query := cond["query"]
 	//	args := cond["args"]
-	//	for j, arg := range args {
-	//
-	//	}
+	//    entitydefinition.
 	//}
 	//
 	//db.DB.w
