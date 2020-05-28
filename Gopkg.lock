@@ -456,7 +456,7 @@
 
 [[projects]]
   branch = "ormdb"
-  digest = "1:c8c4888ad82c31b3a4fadca57b71c678ec904e32a438e7646c602be33c608cc8"
+  digest = "1:145d92d2229ba97389029d145ecbaf6fa2ddb3305ad1b6f45801339cd14a7687"
   name = "github.com/hyperledger/fabric-chaincode-go"
   packages = [
     "pkg/attrmgr",
@@ -468,7 +468,7 @@
     "shimtest",
   ]
   pruneopts = "NUT"
-  revision = "35f6afa22b29678e90c0407f209845632dcf3382"
+  revision = "fb072020cc078c7a5a84ecda1012f537ed718f32"
   source = "github.com/zhigui-projects/fabric-chaincode-go"
 
 [[projects]]
