@@ -84,7 +84,8 @@ func newDefaultACLProvider(policyChecker policy.PolicyChecker) defaultACLProvide
 	d.cResourcePolicyMap[resources.Qscc_GetBlockByTxID] = CHANNELREADERS
 
 	//--------------- ASCC resources -----------
-	// p resources (none)
+	// p resources
+	d.pResourcePolicyMap[resources.Ascc_ArchiveByDate] = mgmt.Admins
 
 	// c resources
 	d.cResourcePolicyMap[resources.Ascc_ArchiveByDate] = mgmt.Admins
