@@ -8,11 +8,11 @@ version: '2'
 services:
   peer-base:
     image: hyperledger/fabric-peer:$IMAGE_TAG
-    dns:
-      - 100.100.2.136
-      - 100.100.2.138
-      - 8.8.8.8
-      - 8.8.4.4
+#    dns:
+#      - 100.100.2.136
+#      - 100.100.2.138
+#      - 8.8.8.8
+#      - 8.8.4.4
     environment:
       - CORE_LEDGER_ARCHIVE_ENABLE=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
