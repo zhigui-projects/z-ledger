@@ -24,7 +24,7 @@ func encodeVersionAndMetadata(version *version.Height, metadata []byte) (string,
 	return base64.StdEncoding.EncodeToString(msgBytes), nil
 }
 
-func decodeVersionAndMetadata(encodedstr string) (*version.Height, []byte, error) {
+func DecodeVersionAndMetadata(encodedstr string) (*version.Height, []byte, error) {
 	versionFieldBytes, err := base64.StdEncoding.DecodeString(encodedstr)
 	if err != nil {
 		return nil, nil, err

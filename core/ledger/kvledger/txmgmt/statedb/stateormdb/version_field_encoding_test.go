@@ -39,7 +39,7 @@ func testEncodeDecode(t *testing.T, v *statedb.VersionedValue) {
 	encodedVerField, err := encodeVersionAndMetadata(v.Version, v.Metadata)
 	assert.NoError(t, err)
 
-	ver, metadata, err := decodeVersionAndMetadata(encodedVerField)
+	ver, metadata, err := DecodeVersionAndMetadata(encodedVerField)
 	assert.NoError(t, err)
 	assert.Equal(t, v.Version, ver)
 	assert.Equal(t, v.Metadata, metadata)

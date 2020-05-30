@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 package lockbasedtxmgr
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric-protos-go/ledger/queryresult"
@@ -14,11 +15,13 @@ import (
 	ledger "github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/stateormdb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/storageutil"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/txmgr"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/hyperledger/fabric/core/ledger/util"
 	"github.com/pkg/errors"
+	"reflect"
 )
 
 const (
@@ -319,7 +322,32 @@ func (h *queryHelper) done() {
 }
 
 func (h *queryHelper) executeConditionQuery(namespace string, search entitydefinition.Search) ([]byte, error) {
-	return nil, nil
+	if err := h.checkDone(); err != nil {
+		return nil, err
+	}
+	models, err := h.txmgr.db.ExecuteConditionQuery(namespace, search)
+	if err != nil {
+		return nil, err
+	}
+
+	modelSlice := reflect.ValueOf(models).Elem()
+	for i := 0; i < modelSlice.Len(); i++ {
+		model := modelSlice.Index(i)
+		ver, _, err := stateormdb.DecodeVersionAndMetadata(model.FieldByName("VerAndMeta").String())
+		if err != nil {
+			return nil, err
+		}
+		key := model.FieldByName("ID").String()
+		if h.rwsetBuilder != nil {
+			h.rwsetBuilder.AddToReadSet(namespace, key, ver)
+		}
+	}
+
+	modelsBytes, err := json.Marshal(models)
+	if err != nil {
+		return nil, err
+	}
+	return modelsBytes, nil
 }
 
 func (h *queryHelper) addRangeQueryInfo() {

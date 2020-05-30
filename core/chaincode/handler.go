@@ -835,7 +835,11 @@ func (h *Handler) HandleGetQueryResult(msg *pb.ChaincodeMessage, txContext *Tran
 	}
 
 	if getQueryResult.Query == "SEARCH" {
-		return handleConditionQuery(getQueryResult, txContext)
+		res, err := handleConditionQuery(getQueryResult, txContext)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: res, Txid: msg.Txid, ChannelId: msg.ChannelId}, nil
 	}
 
 	metadata, err := getQueryMetadataFromBytes(getQueryResult.Metadata)
@@ -893,7 +897,7 @@ func (h *Handler) HandleGetQueryResult(msg *pb.ChaincodeMessage, txContext *Tran
 	return &pb.ChaincodeMessage{Type: pb.ChaincodeMessage_RESPONSE, Payload: payloadBytes, Txid: msg.Txid, ChannelId: msg.ChannelId}, nil
 }
 
-func handleConditionQuery(result *pb.GetQueryResult, context *TransactionContext) (*pb.ChaincodeMessage, error) {
+func handleConditionQuery(result *pb.GetQueryResult, context *TransactionContext) ([]byte, error) {
 	search := entitydefinition.Search{}
 	decoder := gob.NewDecoder(bytes.NewBuffer(result.Metadata))
 	err := decoder.Decode(&search)
@@ -902,8 +906,11 @@ func handleConditionQuery(result *pb.GetQueryResult, context *TransactionContext
 	}
 
 	namespace := context.NamespaceID
-	context.TXSimulator.ExecuteConditionQuery(namespace, search)
-	return nil, nil
+	res, err := context.TXSimulator.ExecuteConditionQuery(namespace, search)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return res, nil
 }
 
 // Handles query to ledger history db

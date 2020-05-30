@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"sync"
 
 	"github.com/hyperledger/fabric/common/flogging"
@@ -967,4 +968,8 @@ func constructVersionedValue(cv *statedb.CacheValue) (*statedb.VersionedValue, e
 		Version:  height,
 		Metadata: cv.Metadata,
 	}, nil
+}
+
+func (vdb *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefinition.Search) (interface{}, error) {
+	return nil, errors.New("ExecuteConditionQuery not supported for couchdb")
 }
