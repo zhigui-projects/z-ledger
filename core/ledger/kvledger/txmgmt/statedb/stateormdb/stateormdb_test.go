@@ -494,7 +494,7 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 
 	submodels := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key].StructType())).Interface()
 	//myccdb1.DB.Table(ormdb.ToTableName(key)).Find(submodels)
-	aaa:=myccdb1.DB.Where("model = ?", "testmodelid1").Table(ormdb.ToTableName(key))
+	aaa := myccdb1.DB.Where("model = ?", "testmodelid1").Table(ormdb.ToTableName(key))
 	aaa.Find(submodels)
 	assert.Equal(t, 2, reflect.ValueOf(submodels).Elem().Len())
 	for i := 0; i < reflect.ValueOf(submodels).Elem().Len(); i++ {
