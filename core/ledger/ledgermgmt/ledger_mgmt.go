@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/metrics"
@@ -63,7 +62,6 @@ func NewLedgerMgr(initializer *Initializer) *LedgerMgr {
 		initializer.DeployedChaincodeInfoProvider,
 		initializer.StateListeners,
 	)
-	bus := EventBus.New()
 	provider, err := kvledger.NewProvider(
 		&ledger.Initializer{
 			StateListeners:                  finalStateListeners,
@@ -76,7 +74,6 @@ func NewLedgerMgr(initializer *Initializer) *LedgerMgr {
 			CustomTxProcessors:              initializer.CustomTxProcessors,
 			Hasher:                          initializer.Hasher,
 		},
-		&bus,
 	)
 	if err != nil {
 		panic(fmt.Sprintf("Error in instantiating ledger provider: %s", err))

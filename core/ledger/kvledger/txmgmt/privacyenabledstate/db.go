@@ -9,7 +9,6 @@ package privacyenabledstate
 import (
 	"fmt"
 
-	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric/core/ledger/cceventmgmt"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
@@ -40,7 +39,7 @@ type DB interface {
 	GetStateMetadata(namespace, key string) ([]byte, error)
 	GetPrivateDataMetadataByHash(namespace, collection string, keyHash []byte) ([]byte, error)
 	ExecuteQueryOnPrivateData(namespace, collection, query string) (statedb.ResultsIterator, error)
-	ApplyPrivacyAwareUpdates(updates *UpdateBatch, height *version.Height, bus *EventBus.Bus) error
+	ApplyPrivacyAwareUpdates(updates *UpdateBatch, height *version.Height) error
 }
 
 // PvtdataCompositeKey encloses Namespace, CollectionName and Key components

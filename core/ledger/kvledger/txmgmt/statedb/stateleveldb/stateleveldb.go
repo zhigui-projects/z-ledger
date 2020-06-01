@@ -8,10 +8,10 @@ package stateleveldb
 
 import (
 	"bytes"
-	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
+	"github.com/hyperledger/fabric/core/ledger/archive/eventbus"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/pkg/errors"
@@ -172,7 +172,7 @@ func (vdb *versionedDB) ExecuteQueryWithMetadata(namespace, query string, metada
 }
 
 // ApplyUpdates implements method in VersionedDB interface
-func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height, bus *EventBus.Bus) error {
+func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height) error {
 	dbBatch := leveldbhelper.NewUpdateBatch()
 	namespaces := batch.GetUpdatedNamespaces()
 	for _, ns := range namespaces {
@@ -192,7 +192,7 @@ func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version
 
 				if ns == "ascc" && k == "byTxDate" {
 					logger.Infof("Publishing event[archive-by-tx-date] with channel[%s] date[%s]", vdb.dbName, string(vv.Value))
-					(*bus).Publish("archive-by-tx-date", vdb.dbName, string(vv.Value))
+					eventbus.Get(vdb.dbName).Publish("archive-by-tx-date", vdb.dbName, string(vv.Value))
 				}
 			}
 		}

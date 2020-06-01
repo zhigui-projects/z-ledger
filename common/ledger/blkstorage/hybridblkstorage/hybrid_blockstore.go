@@ -9,7 +9,6 @@ package hybridblkstorage
 import (
 	"time"
 
-	"github.com/asaskevich/EventBus"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -28,8 +27,8 @@ type hybridBlockStore struct {
 
 // NewHybridBlockStore constructs a `HybridBlockStore`
 func newHybridBlockStore(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
-	dbHandle *leveldbhelper.DBHandle, stats *stats, bus *EventBus.Bus) *hybridBlockStore {
-	fileMgr := newBlockfileMgr(id, conf, indexConfig, dbHandle, bus)
+	dbHandle *leveldbhelper.DBHandle, stats *stats) *hybridBlockStore {
+	fileMgr := newBlockfileMgr(id, conf, indexConfig, dbHandle)
 
 	// create ledgerStats and initialize blockchain_height stat
 	ledgerStats := stats.ledgerStats(id)

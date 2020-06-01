@@ -9,7 +9,6 @@ package hybridblkstorage
 import (
 	"bytes"
 	"fmt"
-	"github.com/asaskevich/EventBus"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
@@ -20,6 +19,7 @@ import (
 	"github.com/hyperledger/fabric/common/ledger/util"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
 	"github.com/hyperledger/fabric/core/ledger/archive/dfs"
+	"github.com/hyperledger/fabric/core/ledger/archive/eventbus"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
@@ -56,7 +56,6 @@ type hybridBlockfileMgr struct {
 	amInfoCond        *sync.Cond
 	dfsClient         *hdfs.Client
 	lock              sync.RWMutex
-	bus               *EventBus.Bus
 }
 
 /*
@@ -100,7 +99,7 @@ At start up a new manager:
 		-- If index and file system are not in sync, syncs index from the FS
   *)  Updates blockchain info used by the APIs
 */
-func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig, indexStore *leveldbhelper.DBHandle, bus *EventBus.Bus) *hybridBlockfileMgr {
+func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig, indexStore *leveldbhelper.DBHandle) *hybridBlockfileMgr {
 	logger.Debugf("newBlockfileMgr() initializing hybrid-file-based block storage for ledger: %s ", id)
 	//Determine the root directory for the blockfile storage, if it does not exist create it
 	rootDir := conf.getLedgerBlockDir(id)
@@ -136,10 +135,9 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 		panic(fmt.Sprintf("Could not save archive meta info to db: %s", err))
 	}
 
-	if err := (*bus).Subscribe("archive-by-tx-date", mgr.archiveFn); err != nil {
+	if err := eventbus.Get(id).Subscribe("archive-by-tx-date", mgr.archiveFn); err != nil {
 		logger.Errorf("Could not subscribe to archive event for chain[id=%s]", id)
 	}
-	mgr.bus = bus
 
 	// cp = checkpointInfo, retrieve from the database the file suffix or number of where blocks were stored.
 	// It also retrieves the current size of that file and the last block number that was written to that file.

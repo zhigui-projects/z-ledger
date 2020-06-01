@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/asaskevich/EventBus"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/archive"
@@ -50,7 +49,7 @@ type kvLedger struct {
 }
 
 // newKVLedger constructs new `KVLedger`
-func newKVLedger(ledgerID string, blockStore *ledgerstorage.Store, versionedDB privacyenabledstate.DB, historyDB *history.DB, configHistoryMgr confighistory.Mgr, stateListeners []ledger.StateListener, bookkeeperProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, ccLifecycleEventProvider ledger.ChaincodeLifecycleEventProvider, stats *ledgerStats, customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher, bus *EventBus.Bus) (*kvLedger, error) {
+func newKVLedger(ledgerID string, blockStore *ledgerstorage.Store, versionedDB privacyenabledstate.DB, historyDB *history.DB, configHistoryMgr confighistory.Mgr, stateListeners []ledger.StateListener, bookkeeperProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, ccLifecycleEventProvider ledger.ChaincodeLifecycleEventProvider, stats *ledgerStats, customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher) (*kvLedger, error) {
 	logger.Debugf("Creating KVLedger ledgerID=%s: ", ledgerID)
 	// Create a kvLedger for this chain/ledger, which encapsulates the underlying
 	// id store, blockstore, txmgr (state database), history database
@@ -66,7 +65,6 @@ func newKVLedger(ledgerID string, blockStore *ledgerstorage.Store, versionedDB p
 		ccInfoProvider,
 		customTxProcessors,
 		hasher,
-		bus,
 	); err != nil {
 		return nil, err
 	}
@@ -100,7 +98,7 @@ func newKVLedger(ledgerID string, blockStore *ledgerstorage.Store, versionedDB p
 	return l, nil
 }
 
-func (l *kvLedger) initTxMgr(versionedDB privacyenabledstate.DB, stateListeners []ledger.StateListener, btlPolicy pvtdatapolicy.BTLPolicy, bookkeeperProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, customtxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher, bus *EventBus.Bus) error {
+func (l *kvLedger) initTxMgr(versionedDB privacyenabledstate.DB, stateListeners []ledger.StateListener, btlPolicy pvtdatapolicy.BTLPolicy, bookkeeperProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, customtxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher) error {
 	var err error
 	txmgr, err := lockbasedtxmgr.NewLockBasedTxMgr(
 		l.ledgerID,
@@ -111,7 +109,6 @@ func (l *kvLedger) initTxMgr(versionedDB privacyenabledstate.DB, stateListeners 
 		ccInfoProvider,
 		customtxProcessors,
 		hasher,
-		bus,
 	)
 	if err != nil {
 		return err

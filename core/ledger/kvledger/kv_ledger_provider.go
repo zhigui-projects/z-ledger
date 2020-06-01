@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/asaskevich/EventBus"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
@@ -66,16 +65,14 @@ type Provider struct {
 	stats               *stats
 	fileLock            *leveldbhelper.FileLock
 	hasher              ledger.Hasher
-	bus                 *EventBus.Bus
 }
 
 // NewProvider instantiates a new Provider.
 // This is not thread-safe and assumed to be synchronized by the caller
-func NewProvider(initializer *ledger.Initializer, bus *EventBus.Bus) (pr *Provider, e error) {
+func NewProvider(initializer *ledger.Initializer) (pr *Provider, e error) {
 	p := &Provider{
 		initializer: initializer,
 		hasher:      initializer.Hasher,
-		bus:         bus,
 	}
 
 	defer func() {
@@ -104,7 +101,7 @@ func NewProvider(initializer *ledger.Initializer, bus *EventBus.Bus) (pr *Provid
 		return nil, err
 	}
 
-	if err := p.initLedgerStorageProvider(bus); err != nil {
+	if err := p.initLedgerStorageProvider(); err != nil {
 		return nil, err
 	}
 
@@ -140,7 +137,7 @@ func (p *Provider) initLedgerIDInventory() error {
 	return nil
 }
 
-func (p *Provider) initLedgerStorageProvider(bus *EventBus.Bus) error {
+func (p *Provider) initLedgerStorageProvider() error {
 	// initialize ledger storage
 	privateData := &pvtdatastorage.PrivateDataConfig{
 		PrivateDataConfig: p.initializer.Config.PrivateDataConfig,
@@ -152,7 +149,6 @@ func (p *Provider) initLedgerStorageProvider(bus *EventBus.Bus) error {
 		p.initializer.Config.ArchiveConfig,
 		privateData,
 		p.initializer.MetricsProvider,
-		bus,
 	)
 	if err != nil {
 		return err
@@ -322,7 +318,6 @@ func (p *Provider) openInternal(ledgerID string) (ledger.PeerLedger, error) {
 		p.stats.ledgerStats(ledgerID),
 		p.initializer.CustomTxProcessors,
 		p.hasher,
-		p.bus,
 	)
 	if err != nil {
 		return nil, err

@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/asaskevich/EventBus"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset"
@@ -44,7 +43,6 @@ type LockBasedTxMgr struct {
 	oldBlockCommit  sync.Mutex
 	current         *current
 	hasher          ledger.Hasher
-	bus             *EventBus.Bus
 }
 
 type current struct {
@@ -62,7 +60,7 @@ func (c *current) maxTxNumber() uint64 {
 }
 
 // NewLockBasedTxMgr constructs a new instance of NewLockBasedTxMgr
-func NewLockBasedTxMgr(ledgerid string, db privacyenabledstate.DB, stateListeners []ledger.StateListener, btlPolicy pvtdatapolicy.BTLPolicy, bookkeepingProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher, bus *EventBus.Bus) (*LockBasedTxMgr, error) {
+func NewLockBasedTxMgr(ledgerid string, db privacyenabledstate.DB, stateListeners []ledger.StateListener, btlPolicy pvtdatapolicy.BTLPolicy, bookkeepingProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher) (*LockBasedTxMgr, error) {
 
 	if hasher == nil {
 		return nil, errors.New("create new lock based TxMgr failed: passed in nil ledger hasher")
@@ -75,7 +73,6 @@ func NewLockBasedTxMgr(ledgerid string, db privacyenabledstate.DB, stateListener
 		stateListeners: stateListeners,
 		ccInfoProvider: ccInfoProvider,
 		hasher:         hasher,
-		bus:            bus,
 	}
 	pvtstatePurgeMgr, err := pvtstatepurgemgmt.InstantiatePurgeMgr(ledgerid, db, btlPolicy, bookkeepingProvider)
 	if err != nil {
@@ -226,7 +223,7 @@ func (txmgr *LockBasedTxMgr) RemoveStaleAndCommitPvtDataOfOldBlocks(reconciledPv
 
 	// (6) commit the pvt data to the stateDB
 	logger.Debug("Committing updates to state database")
-	if err := txmgr.db.ApplyPrivacyAwareUpdates(batch, nil, txmgr.bus); err != nil {
+	if err := txmgr.db.ApplyPrivacyAwareUpdates(batch, nil); err != nil {
 		return err
 	}
 	return nil
@@ -500,7 +497,7 @@ func (txmgr *LockBasedTxMgr) Commit() error {
 	commitHeight := version.NewHeight(txmgr.current.blockNum(), txmgr.current.maxTxNumber())
 	txmgr.commitRWLock.Lock()
 	logger.Debugf("Write lock acquired for committing updates to state database")
-	if err := txmgr.db.ApplyPrivacyAwareUpdates(txmgr.current.batch, commitHeight, txmgr.bus); err != nil {
+	if err := txmgr.db.ApplyPrivacyAwareUpdates(txmgr.current.batch, commitHeight); err != nil {
 		txmgr.commitRWLock.Unlock()
 		return err
 	}
