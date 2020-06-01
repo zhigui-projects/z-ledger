@@ -435,7 +435,7 @@ func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefin
 	entityName := search.Entity
 	gormdb := db.DB
 	for _, cond := range search.WhereConditions {
-		query := cond["query"]
+		query := string(cond["query"][0])
 		argsBytes := cond["args"]
 		args, err := entitydefinition.DecodeSearchValues(argsBytes)
 		if err != nil {
@@ -445,7 +445,7 @@ func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefin
 	}
 
 	for _, cond := range search.OrConditions {
-		query := cond["query"]
+		query := string(cond["query"][0])
 		argsBytes := cond["args"]
 		args, err := entitydefinition.DecodeSearchValues(argsBytes)
 		if err != nil {
@@ -455,7 +455,7 @@ func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefin
 	}
 
 	for _, cond := range search.NotConditions {
-		query := cond["query"]
+		query := string(cond["query"][0])
 		argsBytes := cond["args"]
 		args, err := entitydefinition.DecodeSearchValues(argsBytes)
 		if err != nil {
@@ -468,6 +468,7 @@ func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefin
 		gormdb = gormdb.Order(order)
 	}
 
+	//TODO:make it configurable
 	maxLimit := 30
 	var limit int
 	if search.LimitCondition > maxLimit {
@@ -475,7 +476,7 @@ func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefin
 	} else {
 		limit = search.LimitCondition
 	}
-	gormdb.Offset(search.OffsetCondition).Limit(limit)
+	gormdb = gormdb.Offset(search.OffsetCondition).Limit(limit)
 
 	db.RWMutex.RLock()
 	models := reflect.New(reflect.SliceOf(db.ModelTypes[entityName].StructType())).Interface()
