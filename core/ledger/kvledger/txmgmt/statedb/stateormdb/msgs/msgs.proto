@@ -9,7 +9,7 @@ option go_package = "github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/s
 
 package msgs;
 
-message VersionFieldProto {
+message ORMVersionFieldProto {
     bytes version_bytes = 1;
     bytes metadata = 2;
 }

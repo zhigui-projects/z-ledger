@@ -13,7 +13,7 @@ import (
 )
 
 func encodeVersionAndMetadata(version *version.Height, metadata []byte) (string, error) {
-	msg := &msgs.VersionFieldProto{
+	msg := &msgs.ORMVersionFieldProto{
 		VersionBytes: version.ToBytes(),
 		Metadata:     metadata,
 	}
@@ -24,12 +24,12 @@ func encodeVersionAndMetadata(version *version.Height, metadata []byte) (string,
 	return base64.StdEncoding.EncodeToString(msgBytes), nil
 }
 
-func decodeVersionAndMetadata(encodedstr string) (*version.Height, []byte, error) {
+func DecodeVersionAndMetadata(encodedstr string) (*version.Height, []byte, error) {
 	versionFieldBytes, err := base64.StdEncoding.DecodeString(encodedstr)
 	if err != nil {
 		return nil, nil, err
 	}
-	versionFieldMsg := &msgs.VersionFieldProto{}
+	versionFieldMsg := &msgs.ORMVersionFieldProto{}
 	if err = proto.Unmarshal(versionFieldBytes, versionFieldMsg); err != nil {
 		return nil, nil, err
 	}

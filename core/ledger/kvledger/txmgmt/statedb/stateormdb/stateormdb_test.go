@@ -297,17 +297,239 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 
 	submodels := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key].StructType())).Interface()
 	myccdb1.DB.Table(ormdb.ToTableName(key)).Find(submodels)
-	submodelsbytes, err := json.Marshal(&submodels)
+	assert.Equal(t, 2, reflect.ValueOf(submodels).Elem().Len())
+	for i := 0; i < reflect.ValueOf(submodels).Elem().Len(); i++ {
+		returnVersion, _, err := DecodeVersionAndMetadata(reflect.ValueOf(submodels).Elem().Index(i).FieldByName("VerAndMeta").String())
+		assert.Equal(t, uint64(2), returnVersion.BlockNum)
+		assert.NoError(t, err)
+	}
+	submodelsbytes, err := json.Marshal(submodels)
 	assert.NoError(t, err)
 
 	submodels1 := make([]TestSubModel, 0)
 	err = json.Unmarshal(submodelsbytes, &submodels1)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(submodels1))
+	for _, sub := range submodels1 {
+		assert.Equal(t, "testmodelid1", sub.Model)
+	}
 
 	models := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key1].StructType())).Interface()
 	myccdb1.DB.Table(ormdb.ToTableName(key1)).Find(models)
-	modelsbytes, err := json.Marshal(&models)
+	modelsbytes, err := json.Marshal(models)
+	assert.NoError(t, err)
+
+	models1 := make([]TestModel, 0)
+	err = json.Unmarshal(modelsbytes, &models1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(models1))
+
+	ormdb.DeleteORMDatabase(vdb1.metadataDB)
+	for _, db := range vdb1.namespaceDBs {
+		ormdb.DeleteORMDatabase(db)
+	}
+	provider1.Close()
+	os.RemoveAll(config.RedoLogPath)
+}
+
+func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
+	batchUpdate := statedb.NewUpdateBatch()
+	key, testSubEfds, err := entitydefinition.RegisterEntity(&TestSubModel{}, 1)
+	assert.NoError(t, err)
+	testSubEfdsBytes, err := json.Marshal(testSubEfds)
+	assert.NoError(t, err)
+
+	key1, testEfds, err := entitydefinition.RegisterEntity(&TestModel{}, 2)
+	assert.NoError(t, err)
+	testEfdsBytes, err := json.Marshal(testEfds)
+	assert.NoError(t, err)
+
+	testsubmodelDel := TestSubModel{ID: "testsubmodelid3", Name: "testsubmodel3", Model: "testmodelid1", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	testsubmodelDelBytes, err := json.Marshal(&testsubmodelDel)
+	assert.NoError(t, err)
+	batchUpdate.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key, testSubEfdsBytes, &version.Height{BlockNum: 1, TxNum: 1})
+	batchUpdate.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key1, testEfdsBytes, &version.Height{BlockNum: 1, TxNum: 2})
+	batchUpdate.Put("mycc", key+entitydefinition.ORMDB_SEPERATOR+"testsubmodelid3", testsubmodelDelBytes, &version.Height{BlockNum: 1, TxNum: 3})
+
+	yaml := "---\n" +
+		"ledger:\n" +
+		"  state:\n" +
+		"    ormDBConfig:\n" +
+		"      username: test\n" +
+		"      dbtype: sqlite3\n" +
+		"      redoLogPath: /tmp/ormdbredolog\n" +
+		"      userCacheSizeMBs: 64\n" +
+		"      sqlite3Config:\n" +
+		"        path: /tmp/ormdb\n"
+
+	defer viper.Reset()
+	viper.SetConfigType("yaml")
+
+	if err := viper.ReadConfig(bytes.NewReader([]byte(yaml))); err != nil {
+		t.Fatalf("Error reading config: %s", err)
+	}
+
+	config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
+	_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
+
+	provider, err := NewVersionedDBProvider(config, nil, statedb.NewCache(config.UserCacheSizeMBs, []string{"lscc"}))
+	assert.NoError(t, err)
+	assert.Equal(t, 64, provider.ormDBInstance.Config.UserCacheSizeMBs)
+
+	_, err = provider.GetDBHandle("mychannel")
+	assert.NoError(t, err)
+	vdb := provider.databases["mychannel"]
+
+	err = vdb.ApplyUpdates(batchUpdate, &version.Height{BlockNum: 2, TxNum: 5})
+	assert.NoError(t, err)
+
+	savepoint := &SavePoint{}
+	vdb.metadataDB.DB.Where(&SavePoint{Key: savePointKey}).Find(savepoint)
+	savepointHeightBytes, err := base64.StdEncoding.DecodeString(savepoint.Height)
+	assert.NoError(t, err)
+	savepointHeight, _, err := version.NewHeightFromBytes(savepointHeightBytes)
+	assert.NotNil(t, savepointHeight)
+	assert.Equal(t, uint64(2), savepointHeight.BlockNum)
+	assert.Equal(t, uint64(5), savepointHeight.TxNum)
+
+	myccdb := vdb.namespaceDBs["mycc"]
+	assert.True(t, myccdb.DB.HasTable(ormdb.ToTableName(key)))
+	assert.True(t, myccdb.DB.HasTable(ormdb.ToTableName(key1)))
+
+	var subModelEfds []entitydefinition.EntityFieldDefinition
+	myccdb.DB.Where("owner=?", key).Find(&subModelEfds)
+	assert.Equal(t, 6, len(subModelEfds))
+
+	var modelEfds []entitydefinition.EntityFieldDefinition
+	myccdb.DB.Where("owner=?", key1).Find(&modelEfds)
+	assert.Equal(t, 14, len(modelEfds))
+
+	var total []entitydefinition.EntityFieldDefinition
+	myccdb.DB.Find(&total)
+	assert.Equal(t, 20, len(total))
+
+	vdb.metadataDB.DB.Close()
+	for _, db := range vdb.namespaceDBs {
+		db.DB.Close()
+	}
+	provider.Close()
+
+	// Test restart provider
+	batchUpdate1 := statedb.NewUpdateBatch()
+	key2, testEfds1, err := entitydefinition.RegisterEntity(&TestModel1{}, 3)
+	assert.NoError(t, err)
+	testEfds1Bytes, err := json.Marshal(testEfds1)
+	assert.NoError(t, err)
+
+	key3, testEfds2, err := entitydefinition.RegisterEntity(&TestModel2{}, 4)
+	assert.NoError(t, err)
+	testEfds2Bytes, err := json.Marshal(testEfds2)
+	assert.NoError(t, err)
+
+	key4, testEfds3, err := entitydefinition.RegisterEntity(&TestModel3{}, 5)
+	assert.NoError(t, err)
+	testEfds3Bytes, err := json.Marshal(testEfds3)
+	assert.NoError(t, err)
+
+	testsubmodelRec := TestSubModel{ID: "testsubmodelid1", Name: "testsubmodel1", Model: "testmodelid1", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	testsubmodelRecBytes, err := json.Marshal(&testsubmodelRec)
+	assert.NoError(t, err)
+	testsubmodelRec1 := TestSubModel{ID: "testsubmodelid2", Name: "testsubmodel2", Model: "testmodelid1", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	testsubmodelRec1Bytes, err := json.Marshal(&testsubmodelRec1)
+	assert.NoError(t, err)
+	birthday := time.Now()
+	MemberNumber := "testnum"
+	testmodelRec := &TestModel{ID: "testmodelid1", Name: "testmodel1", Age: sql.NullInt64{Int64: 11}, Birthday: &birthday, Email: "test@test.com", Role: "admin", MemberNumber: &MemberNumber, Num: 12, Address: "address", IgnoreMe: 22, TestSubModels: []TestSubModel{testsubmodelRec, testsubmodelRec1}, Attachment: []byte("test"), CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	testmodelRecBytes, err := json.Marshal(testmodelRec)
+	assert.NoError(t, err)
+
+	batchUpdate1.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key2, testEfds1Bytes, &version.Height{BlockNum: 2, TxNum: 1})
+	batchUpdate1.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key3, testEfds2Bytes, &version.Height{BlockNum: 2, TxNum: 2})
+	batchUpdate1.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key4, testEfds3Bytes, &version.Height{BlockNum: 2, TxNum: 3})
+	batchUpdate1.Put("mycc", key+entitydefinition.ORMDB_SEPERATOR+"testsubmodelid1", testsubmodelRecBytes, &version.Height{BlockNum: 2, TxNum: 4})
+	batchUpdate1.Put("mycc", key+entitydefinition.ORMDB_SEPERATOR+"testsubmodelid2", testsubmodelRec1Bytes, &version.Height{BlockNum: 2, TxNum: 5})
+	batchUpdate1.Delete("mycc", key+entitydefinition.ORMDB_SEPERATOR+"testsubmodelid3", &version.Height{BlockNum: 2, TxNum: 6})
+	batchUpdate1.Put("mycc", key1+entitydefinition.ORMDB_SEPERATOR+"testmodelid1", testmodelRecBytes, &version.Height{BlockNum: 2, TxNum: 7})
+
+	provider1, err := NewVersionedDBProvider(config, nil, statedb.NewCache(config.UserCacheSizeMBs, []string{"lscc"}))
+	assert.NoError(t, err)
+	assert.Equal(t, 64, provider1.ormDBInstance.Config.UserCacheSizeMBs)
+
+	_, err = provider1.GetDBHandle("mychannel")
+	assert.NoError(t, err)
+	vdb1 := provider1.databases["mychannel"]
+
+	err = vdb1.ApplyUpdates(batchUpdate1, &version.Height{BlockNum: 3, TxNum: 5})
+	assert.NoError(t, err)
+
+	savepoint1 := &SavePoint{}
+	vdb1.metadataDB.DB.Where(&SavePoint{Key: savePointKey}).Find(savepoint1)
+	savepoint1HeightBytes, err := base64.StdEncoding.DecodeString(savepoint1.Height)
+	assert.NoError(t, err)
+	savepoint1Height, _, err := version.NewHeightFromBytes(savepoint1HeightBytes)
+	assert.NotNil(t, savepoint1Height)
+	assert.Equal(t, uint64(3), savepoint1Height.BlockNum)
+	assert.Equal(t, uint64(5), savepoint1Height.TxNum)
+
+	myccdb1 := vdb1.namespaceDBs["mycc"]
+	assert.True(t, myccdb1.DB.HasTable(ormdb.ToTableName(key)))
+	assert.True(t, myccdb1.DB.HasTable(ormdb.ToTableName(key1)))
+	assert.True(t, myccdb1.DB.HasTable(ormdb.ToTableName(key2)))
+
+	var subModelEfds1 []entitydefinition.EntityFieldDefinition
+	myccdb1.DB.Where("owner=?", key).Find(&subModelEfds1)
+	assert.Equal(t, 6, len(subModelEfds1))
+
+	var modelEfds1 []entitydefinition.EntityFieldDefinition
+	myccdb1.DB.Where("owner=?", key1).Find(&modelEfds1)
+	assert.Equal(t, 14, len(modelEfds1))
+
+	var model1Efds []entitydefinition.EntityFieldDefinition
+	myccdb1.DB.Where("owner=?", key2).Find(&model1Efds)
+	assert.Equal(t, 5, len(model1Efds))
+
+	var total1 []entitydefinition.EntityFieldDefinition
+	myccdb1.DB.Find(&total1)
+	assert.Equal(t, 35, len(total1))
+
+	submodels := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key].StructType())).Interface()
+	//myccdb1.DB.Table(ormdb.ToTableName(key)).Find(submodels)
+	aaa := myccdb1.DB.Where("model = ?", "testmodelid1").Table(ormdb.ToTableName(key))
+	aaa.Find(submodels)
+	assert.Equal(t, 2, reflect.ValueOf(submodels).Elem().Len())
+	for i := 0; i < reflect.ValueOf(submodels).Elem().Len(); i++ {
+		returnVersion, _, err := DecodeVersionAndMetadata(reflect.ValueOf(submodels).Elem().Index(i).FieldByName("VerAndMeta").String())
+		assert.Equal(t, uint64(2), returnVersion.BlockNum)
+		assert.NoError(t, err)
+	}
+	submodelsbytes, err := json.Marshal(submodels)
+	assert.NoError(t, err)
+
+	searchSubModels := &entitydefinition.Search{}
+	err = searchSubModels.Where("model = ?", "testmodelid1")
+	searchSubModels.Entity = key
+	searchSubModels.Limit(10)
+	searchSubModels.Offset(0)
+	assert.NoError(t, err)
+	submodels2, err := vdb1.ExecuteConditionQuery("mycc", *searchSubModels)
+	assert.NoError(t, err)
+	for i := 0; i < reflect.ValueOf(submodels2).Elem().Len(); i++ {
+		returnVersion, _, err := DecodeVersionAndMetadata(reflect.ValueOf(submodels2).Elem().Index(i).FieldByName("VerAndMeta").String())
+		assert.Equal(t, uint64(2), returnVersion.BlockNum)
+		assert.NoError(t, err)
+	}
+
+	submodels1 := make([]TestSubModel, 0)
+	err = json.Unmarshal(submodelsbytes, &submodels1)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(submodels1))
+	for _, sub := range submodels1 {
+		assert.Equal(t, "testmodelid1", sub.Model)
+	}
+
+	models := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key1].StructType())).Interface()
+	myccdb1.DB.Table(ormdb.ToTableName(key1)).Find(models)
+	modelsbytes, err := json.Marshal(models)
 	assert.NoError(t, err)
 
 	models1 := make([]TestModel, 0)

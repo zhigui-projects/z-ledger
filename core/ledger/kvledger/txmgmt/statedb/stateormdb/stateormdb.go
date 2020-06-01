@@ -234,7 +234,7 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 	}
 
 	verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
-	returnVersion, returnMetadata, err := decodeVersionAndMetadata(verAndMeta)
+	returnVersion, returnMetadata, err := DecodeVersionAndMetadata(verAndMeta)
 
 	entityBytes, err := json.Marshal(entity)
 	if err != nil {
@@ -423,6 +423,70 @@ func (v *VersionedDB) Open() error {
 
 func (v *VersionedDB) Close() {
 
+}
+
+func (v *VersionedDB) ExecuteConditionQuery(namespace string, search entitydefinition.Search) (interface{}, error) {
+	db, err := v.getNamespaceDBHandle(namespace)
+	if err != nil {
+		logger.Errorf("get namespaced database failed [%v]", err)
+		return nil, errors.WithMessage(err, "get namespaced database failed")
+	}
+
+	entityName := search.Entity
+	gormdb := db.DB
+	for _, cond := range search.WhereConditions {
+		query := string(cond["query"][0])
+		argsBytes := cond["args"]
+		args, err := entitydefinition.DecodeSearchValues(argsBytes)
+		if err != nil {
+			return nil, errors.WithMessage(err, "decode search where args failed")
+		}
+		gormdb = gormdb.Where(query, args...)
+	}
+
+	for _, cond := range search.OrConditions {
+		query := string(cond["query"][0])
+		argsBytes := cond["args"]
+		args, err := entitydefinition.DecodeSearchValues(argsBytes)
+		if err != nil {
+			return nil, errors.WithMessage(err, "decode search or args failed")
+		}
+		gormdb = gormdb.Or(query, args...)
+	}
+
+	for _, cond := range search.NotConditions {
+		query := string(cond["query"][0])
+		argsBytes := cond["args"]
+		args, err := entitydefinition.DecodeSearchValues(argsBytes)
+		if err != nil {
+			return nil, errors.WithMessage(err, "decode search not args failed")
+		}
+		gormdb = gormdb.Not(query, args...)
+	}
+
+	for _, order := range search.OrderConditions {
+		gormdb = gormdb.Order(order)
+	}
+
+	//TODO:make it configurable
+	maxLimit := 30
+	var limit int
+	if search.LimitCondition > maxLimit {
+		limit = maxLimit
+	} else {
+		limit = search.LimitCondition
+	}
+	gormdb = gormdb.Offset(search.OffsetCondition).Limit(limit)
+
+	db.RWMutex.RLock()
+	models := reflect.New(reflect.SliceOf(db.ModelTypes[entityName].StructType())).Interface()
+	db.RWMutex.RUnlock()
+	err = gormdb.Table(ormdb.ToTableName(entityName)).Find(models).Error
+	if err != nil {
+		return nil, errors.WithMessage(err, "condition query failed")
+	}
+
+	return models, nil
 }
 
 // getNamespaceDBHandle gets the handle to a named chaincode database

@@ -8,6 +8,7 @@ package statedb
 
 import (
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"sort"
 
 	"github.com/hyperledger/fabric/core/common/ccprovider"
@@ -71,6 +72,8 @@ type VersionedDB interface {
 	Open() error
 	// Close closes the db
 	Close()
+	// ExecuteConditionQuery executes the given query and returns results of type entity definition.
+	ExecuteConditionQuery(namespace string, search entitydefinition.Search) (interface{}, error)
 }
 
 //BulkOptimizable interface provides additional functions for

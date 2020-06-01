@@ -4,6 +4,7 @@ package mock
 import (
 	"sync"
 
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	ledgera "github.com/hyperledger/fabric/common/ledger"
 	"github.com/hyperledger/fabric/core/ledger"
 )
@@ -62,6 +63,20 @@ type TxSimulator struct {
 	DoneStub        func()
 	doneMutex       sync.RWMutex
 	doneArgsForCall []struct {
+	}
+	ExecuteConditionQueryStub        func(string, entitydefinition.Search) ([]byte, error)
+	executeConditionQueryMutex       sync.RWMutex
+	executeConditionQueryArgsForCall []struct {
+		arg1 string
+		arg2 entitydefinition.Search
+	}
+	executeConditionQueryReturns struct {
+		result1 []byte
+		result2 error
+	}
+	executeConditionQueryReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 error
 	}
 	ExecuteQueryStub        func(string, string) (ledgera.ResultsIterator, error)
 	executeQueryMutex       sync.RWMutex
@@ -644,6 +659,70 @@ func (fake *TxSimulator) DoneCalls(stub func()) {
 	fake.doneMutex.Lock()
 	defer fake.doneMutex.Unlock()
 	fake.DoneStub = stub
+}
+
+func (fake *TxSimulator) ExecuteConditionQuery(arg1 string, arg2 entitydefinition.Search) ([]byte, error) {
+	fake.executeConditionQueryMutex.Lock()
+	ret, specificReturn := fake.executeConditionQueryReturnsOnCall[len(fake.executeConditionQueryArgsForCall)]
+	fake.executeConditionQueryArgsForCall = append(fake.executeConditionQueryArgsForCall, struct {
+		arg1 string
+		arg2 entitydefinition.Search
+	}{arg1, arg2})
+	fake.recordInvocation("ExecuteConditionQuery", []interface{}{arg1, arg2})
+	fake.executeConditionQueryMutex.Unlock()
+	if fake.ExecuteConditionQueryStub != nil {
+		return fake.ExecuteConditionQueryStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.executeConditionQueryReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *TxSimulator) ExecuteConditionQueryCallCount() int {
+	fake.executeConditionQueryMutex.RLock()
+	defer fake.executeConditionQueryMutex.RUnlock()
+	return len(fake.executeConditionQueryArgsForCall)
+}
+
+func (fake *TxSimulator) ExecuteConditionQueryCalls(stub func(string, entitydefinition.Search) ([]byte, error)) {
+	fake.executeConditionQueryMutex.Lock()
+	defer fake.executeConditionQueryMutex.Unlock()
+	fake.ExecuteConditionQueryStub = stub
+}
+
+func (fake *TxSimulator) ExecuteConditionQueryArgsForCall(i int) (string, entitydefinition.Search) {
+	fake.executeConditionQueryMutex.RLock()
+	defer fake.executeConditionQueryMutex.RUnlock()
+	argsForCall := fake.executeConditionQueryArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *TxSimulator) ExecuteConditionQueryReturns(result1 []byte, result2 error) {
+	fake.executeConditionQueryMutex.Lock()
+	defer fake.executeConditionQueryMutex.Unlock()
+	fake.ExecuteConditionQueryStub = nil
+	fake.executeConditionQueryReturns = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *TxSimulator) ExecuteConditionQueryReturnsOnCall(i int, result1 []byte, result2 error) {
+	fake.executeConditionQueryMutex.Lock()
+	defer fake.executeConditionQueryMutex.Unlock()
+	fake.ExecuteConditionQueryStub = nil
+	if fake.executeConditionQueryReturnsOnCall == nil {
+		fake.executeConditionQueryReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 error
+		})
+	}
+	fake.executeConditionQueryReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *TxSimulator) ExecuteQuery(arg1 string, arg2 string) (ledgera.ResultsIterator, error) {
@@ -2080,6 +2159,8 @@ func (fake *TxSimulator) Invocations() map[string][][]interface{} {
 	defer fake.deleteStateMetadataMutex.RUnlock()
 	fake.doneMutex.RLock()
 	defer fake.doneMutex.RUnlock()
+	fake.executeConditionQueryMutex.RLock()
+	defer fake.executeConditionQueryMutex.RUnlock()
 	fake.executeQueryMutex.RLock()
 	defer fake.executeQueryMutex.RUnlock()
 	fake.executeQueryOnPrivateDataMutex.RLock()

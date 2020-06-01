@@ -8,6 +8,7 @@ package stateleveldb
 
 import (
 	"bytes"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
@@ -86,6 +87,10 @@ func (vdb *versionedDB) ValidateKeyValue(key string, value []byte) error {
 // BytesKeySupported implements method in VersionedDB interface
 func (vdb *versionedDB) BytesKeySupported() bool {
 	return true
+}
+
+func (vdb *versionedDB) ExecuteConditionQuery(namespace string, search entitydefinition.Search) (interface{}, error) {
+	return nil, errors.New("ExecuteConditionQuery not supported for leveldb")
 }
 
 // GetState implements method in VersionedDB interface
