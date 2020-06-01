@@ -6,10 +6,23 @@ import (
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric-protos-go/peer"
 )
 
 type ChaincodeStub struct {
+	ConditionQueryStub        func(interface{}, entitydefinition.Search) error
+	conditionQueryMutex       sync.RWMutex
+	conditionQueryArgsForCall []struct {
+		arg1 interface{}
+		arg2 entitydefinition.Search
+	}
+	conditionQueryReturns struct {
+		result1 error
+	}
+	conditionQueryReturnsOnCall map[int]struct {
+		result1 error
+	}
 	CreateCompositeKeyStub        func(string, []string) (string, error)
 	createCompositeKeyMutex       sync.RWMutex
 	createCompositeKeyArgsForCall []struct {
@@ -57,6 +70,29 @@ type ChaincodeStub struct {
 		result1 error
 	}
 	delStateReturnsOnCall map[int]struct {
+		result1 error
+	}
+	DeleteStub        func(string) error
+	deleteMutex       sync.RWMutex
+	deleteArgsForCall []struct {
+		arg1 string
+	}
+	deleteReturns struct {
+		result1 error
+	}
+	deleteReturnsOnCall map[int]struct {
+		result1 error
+	}
+	GetStub        func(interface{}, string) error
+	getMutex       sync.RWMutex
+	getArgsForCall []struct {
+		arg1 interface{}
+		arg2 string
+	}
+	getReturns struct {
+		result1 error
+	}
+	getReturnsOnCall map[int]struct {
 		result1 error
 	}
 	GetArgsStub        func() [][]byte
@@ -450,6 +486,17 @@ type ChaincodeStub struct {
 	putStateReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SaveStub        func(interface{}) error
+	saveMutex       sync.RWMutex
+	saveArgsForCall []struct {
+		arg1 interface{}
+	}
+	saveReturns struct {
+		result1 error
+	}
+	saveReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetEventStub        func(string, []byte) error
 	setEventMutex       sync.RWMutex
 	setEventArgsForCall []struct {
@@ -504,6 +551,67 @@ type ChaincodeStub struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *ChaincodeStub) ConditionQuery(arg1 interface{}, arg2 entitydefinition.Search) error {
+	fake.conditionQueryMutex.Lock()
+	ret, specificReturn := fake.conditionQueryReturnsOnCall[len(fake.conditionQueryArgsForCall)]
+	fake.conditionQueryArgsForCall = append(fake.conditionQueryArgsForCall, struct {
+		arg1 interface{}
+		arg2 entitydefinition.Search
+	}{arg1, arg2})
+	fake.recordInvocation("ConditionQuery", []interface{}{arg1, arg2})
+	fake.conditionQueryMutex.Unlock()
+	if fake.ConditionQueryStub != nil {
+		return fake.ConditionQueryStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.conditionQueryReturns
+	return fakeReturns.result1
+}
+
+func (fake *ChaincodeStub) ConditionQueryCallCount() int {
+	fake.conditionQueryMutex.RLock()
+	defer fake.conditionQueryMutex.RUnlock()
+	return len(fake.conditionQueryArgsForCall)
+}
+
+func (fake *ChaincodeStub) ConditionQueryCalls(stub func(interface{}, entitydefinition.Search) error) {
+	fake.conditionQueryMutex.Lock()
+	defer fake.conditionQueryMutex.Unlock()
+	fake.ConditionQueryStub = stub
+}
+
+func (fake *ChaincodeStub) ConditionQueryArgsForCall(i int) (interface{}, entitydefinition.Search) {
+	fake.conditionQueryMutex.RLock()
+	defer fake.conditionQueryMutex.RUnlock()
+	argsForCall := fake.conditionQueryArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *ChaincodeStub) ConditionQueryReturns(result1 error) {
+	fake.conditionQueryMutex.Lock()
+	defer fake.conditionQueryMutex.Unlock()
+	fake.ConditionQueryStub = nil
+	fake.conditionQueryReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ChaincodeStub) ConditionQueryReturnsOnCall(i int, result1 error) {
+	fake.conditionQueryMutex.Lock()
+	defer fake.conditionQueryMutex.Unlock()
+	fake.ConditionQueryStub = nil
+	if fake.conditionQueryReturnsOnCall == nil {
+		fake.conditionQueryReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.conditionQueryReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *ChaincodeStub) CreateCompositeKey(arg1 string, arg2 []string) (string, error) {
@@ -753,6 +861,127 @@ func (fake *ChaincodeStub) DelStateReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.delStateReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ChaincodeStub) Delete(arg1 string) error {
+	fake.deleteMutex.Lock()
+	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
+	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("Delete", []interface{}{arg1})
+	fake.deleteMutex.Unlock()
+	if fake.DeleteStub != nil {
+		return fake.DeleteStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.deleteReturns
+	return fakeReturns.result1
+}
+
+func (fake *ChaincodeStub) DeleteCallCount() int {
+	fake.deleteMutex.RLock()
+	defer fake.deleteMutex.RUnlock()
+	return len(fake.deleteArgsForCall)
+}
+
+func (fake *ChaincodeStub) DeleteCalls(stub func(string) error) {
+	fake.deleteMutex.Lock()
+	defer fake.deleteMutex.Unlock()
+	fake.DeleteStub = stub
+}
+
+func (fake *ChaincodeStub) DeleteArgsForCall(i int) string {
+	fake.deleteMutex.RLock()
+	defer fake.deleteMutex.RUnlock()
+	argsForCall := fake.deleteArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *ChaincodeStub) DeleteReturns(result1 error) {
+	fake.deleteMutex.Lock()
+	defer fake.deleteMutex.Unlock()
+	fake.DeleteStub = nil
+	fake.deleteReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ChaincodeStub) DeleteReturnsOnCall(i int, result1 error) {
+	fake.deleteMutex.Lock()
+	defer fake.deleteMutex.Unlock()
+	fake.DeleteStub = nil
+	if fake.deleteReturnsOnCall == nil {
+		fake.deleteReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deleteReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ChaincodeStub) Get(arg1 interface{}, arg2 string) error {
+	fake.getMutex.Lock()
+	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
+	fake.getArgsForCall = append(fake.getArgsForCall, struct {
+		arg1 interface{}
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("Get", []interface{}{arg1, arg2})
+	fake.getMutex.Unlock()
+	if fake.GetStub != nil {
+		return fake.GetStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getReturns
+	return fakeReturns.result1
+}
+
+func (fake *ChaincodeStub) GetCallCount() int {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	return len(fake.getArgsForCall)
+}
+
+func (fake *ChaincodeStub) GetCalls(stub func(interface{}, string) error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = stub
+}
+
+func (fake *ChaincodeStub) GetArgsForCall(i int) (interface{}, string) {
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
+	argsForCall := fake.getArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *ChaincodeStub) GetReturns(result1 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = nil
+	fake.getReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ChaincodeStub) GetReturnsOnCall(i int, result1 error) {
+	fake.getMutex.Lock()
+	defer fake.getMutex.Unlock()
+	fake.GetStub = nil
+	if fake.getReturnsOnCall == nil {
+		fake.getReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.getReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -2589,6 +2818,66 @@ func (fake *ChaincodeStub) PutStateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *ChaincodeStub) Save(arg1 interface{}) error {
+	fake.saveMutex.Lock()
+	ret, specificReturn := fake.saveReturnsOnCall[len(fake.saveArgsForCall)]
+	fake.saveArgsForCall = append(fake.saveArgsForCall, struct {
+		arg1 interface{}
+	}{arg1})
+	fake.recordInvocation("Save", []interface{}{arg1})
+	fake.saveMutex.Unlock()
+	if fake.SaveStub != nil {
+		return fake.SaveStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.saveReturns
+	return fakeReturns.result1
+}
+
+func (fake *ChaincodeStub) SaveCallCount() int {
+	fake.saveMutex.RLock()
+	defer fake.saveMutex.RUnlock()
+	return len(fake.saveArgsForCall)
+}
+
+func (fake *ChaincodeStub) SaveCalls(stub func(interface{}) error) {
+	fake.saveMutex.Lock()
+	defer fake.saveMutex.Unlock()
+	fake.SaveStub = stub
+}
+
+func (fake *ChaincodeStub) SaveArgsForCall(i int) interface{} {
+	fake.saveMutex.RLock()
+	defer fake.saveMutex.RUnlock()
+	argsForCall := fake.saveArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *ChaincodeStub) SaveReturns(result1 error) {
+	fake.saveMutex.Lock()
+	defer fake.saveMutex.Unlock()
+	fake.SaveStub = nil
+	fake.saveReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ChaincodeStub) SaveReturnsOnCall(i int, result1 error) {
+	fake.saveMutex.Lock()
+	defer fake.saveMutex.Unlock()
+	fake.SaveStub = nil
+	if fake.saveReturnsOnCall == nil {
+		fake.saveReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.saveReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *ChaincodeStub) SetEvent(arg1 string, arg2 []byte) error {
 	var arg2Copy []byte
 	if arg2 != nil {
@@ -2857,6 +3146,8 @@ func (fake *ChaincodeStub) SplitCompositeKeyReturnsOnCall(i int, result1 string,
 func (fake *ChaincodeStub) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.conditionQueryMutex.RLock()
+	defer fake.conditionQueryMutex.RUnlock()
 	fake.createCompositeKeyMutex.RLock()
 	defer fake.createCompositeKeyMutex.RUnlock()
 	fake.createTableMutex.RLock()
@@ -2865,6 +3156,10 @@ func (fake *ChaincodeStub) Invocations() map[string][][]interface{} {
 	defer fake.delPrivateDataMutex.RUnlock()
 	fake.delStateMutex.RLock()
 	defer fake.delStateMutex.RUnlock()
+	fake.deleteMutex.RLock()
+	defer fake.deleteMutex.RUnlock()
+	fake.getMutex.RLock()
+	defer fake.getMutex.RUnlock()
 	fake.getArgsMutex.RLock()
 	defer fake.getArgsMutex.RUnlock()
 	fake.getArgsSliceMutex.RLock()
@@ -2925,6 +3220,8 @@ func (fake *ChaincodeStub) Invocations() map[string][][]interface{} {
 	defer fake.putPrivateDataMutex.RUnlock()
 	fake.putStateMutex.RLock()
 	defer fake.putStateMutex.RUnlock()
+	fake.saveMutex.RLock()
+	defer fake.saveMutex.RUnlock()
 	fake.setEventMutex.RLock()
 	defer fake.setEventMutex.RUnlock()
 	fake.setPrivateDataValidationParameterMutex.RLock()

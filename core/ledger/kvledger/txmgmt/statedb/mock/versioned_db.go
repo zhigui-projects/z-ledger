@@ -4,6 +4,7 @@ package mock
 import (
 	"sync"
 
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 )
@@ -34,6 +35,20 @@ type VersionedDB struct {
 	CloseStub        func()
 	closeMutex       sync.RWMutex
 	closeArgsForCall []struct {
+	}
+	ExecuteConditionQueryStub        func(string, entitydefinition.Search) (interface{}, error)
+	executeConditionQueryMutex       sync.RWMutex
+	executeConditionQueryArgsForCall []struct {
+		arg1 string
+		arg2 entitydefinition.Search
+	}
+	executeConditionQueryReturns struct {
+		result1 interface{}
+		result2 error
+	}
+	executeConditionQueryReturnsOnCall map[int]struct {
+		result1 interface{}
+		result2 error
 	}
 	ExecuteQueryStub        func(string, string) (statedb.ResultsIterator, error)
 	executeQueryMutex       sync.RWMutex
@@ -309,6 +324,70 @@ func (fake *VersionedDB) CloseCalls(stub func()) {
 	fake.closeMutex.Lock()
 	defer fake.closeMutex.Unlock()
 	fake.CloseStub = stub
+}
+
+func (fake *VersionedDB) ExecuteConditionQuery(arg1 string, arg2 entitydefinition.Search) (interface{}, error) {
+	fake.executeConditionQueryMutex.Lock()
+	ret, specificReturn := fake.executeConditionQueryReturnsOnCall[len(fake.executeConditionQueryArgsForCall)]
+	fake.executeConditionQueryArgsForCall = append(fake.executeConditionQueryArgsForCall, struct {
+		arg1 string
+		arg2 entitydefinition.Search
+	}{arg1, arg2})
+	fake.recordInvocation("ExecuteConditionQuery", []interface{}{arg1, arg2})
+	fake.executeConditionQueryMutex.Unlock()
+	if fake.ExecuteConditionQueryStub != nil {
+		return fake.ExecuteConditionQueryStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.executeConditionQueryReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *VersionedDB) ExecuteConditionQueryCallCount() int {
+	fake.executeConditionQueryMutex.RLock()
+	defer fake.executeConditionQueryMutex.RUnlock()
+	return len(fake.executeConditionQueryArgsForCall)
+}
+
+func (fake *VersionedDB) ExecuteConditionQueryCalls(stub func(string, entitydefinition.Search) (interface{}, error)) {
+	fake.executeConditionQueryMutex.Lock()
+	defer fake.executeConditionQueryMutex.Unlock()
+	fake.ExecuteConditionQueryStub = stub
+}
+
+func (fake *VersionedDB) ExecuteConditionQueryArgsForCall(i int) (string, entitydefinition.Search) {
+	fake.executeConditionQueryMutex.RLock()
+	defer fake.executeConditionQueryMutex.RUnlock()
+	argsForCall := fake.executeConditionQueryArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *VersionedDB) ExecuteConditionQueryReturns(result1 interface{}, result2 error) {
+	fake.executeConditionQueryMutex.Lock()
+	defer fake.executeConditionQueryMutex.Unlock()
+	fake.ExecuteConditionQueryStub = nil
+	fake.executeConditionQueryReturns = struct {
+		result1 interface{}
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *VersionedDB) ExecuteConditionQueryReturnsOnCall(i int, result1 interface{}, result2 error) {
+	fake.executeConditionQueryMutex.Lock()
+	defer fake.executeConditionQueryMutex.Unlock()
+	fake.ExecuteConditionQueryStub = nil
+	if fake.executeConditionQueryReturnsOnCall == nil {
+		fake.executeConditionQueryReturnsOnCall = make(map[int]struct {
+			result1 interface{}
+			result2 error
+		})
+	}
+	fake.executeConditionQueryReturnsOnCall[i] = struct {
+		result1 interface{}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *VersionedDB) ExecuteQuery(arg1 string, arg2 string) (statedb.ResultsIterator, error) {
@@ -950,6 +1029,8 @@ func (fake *VersionedDB) Invocations() map[string][][]interface{} {
 	defer fake.bytesKeySupportedMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
+	fake.executeConditionQueryMutex.RLock()
+	defer fake.executeConditionQueryMutex.RUnlock()
 	fake.executeQueryMutex.RLock()
 	defer fake.executeQueryMutex.RUnlock()
 	fake.executeQueryWithMetadataMutex.RLock()
