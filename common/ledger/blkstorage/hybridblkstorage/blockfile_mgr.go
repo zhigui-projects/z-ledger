@@ -112,19 +112,19 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	dfsConf := &dc.Config{Type: archiveConf.Type, HdfsConf: archiveConf.HdfsConf, IpfsConf: archiveConf.IpfsConf}
 	client, err := dfs.NewDfsClient(dfsConf)
 	if err != nil {
-		panic(fmt.Sprintf("Could not connect to HDFS, due to %+v", err))
+		logger.Error(fmt.Sprintf("Could not connect to HDFS, due to %+v", err))
 	}
 	// Instantiate the manager, i.e. blockFileMgr structure
 	mgr := &hybridBlockfileMgr{rootDir: rootDir, conf: conf, db: indexStore, dfsClient: client}
 
 	amInfo, err := mgr.loadArchiveMetaInfo()
 	if err != nil {
-		panic(fmt.Sprintf("Could not get archive meta info for ledger: %s from db: %+v", id, err))
+		logger.Errorf("Could not get archive meta info for ledger: %s from db: %+v", id, err)
 	}
 	if amInfo == nil {
 		logger.Info("Getting archive info from dfs storage")
 		if amInfo, err = constructArchiveMetaInfoFromDfsBlockFiles(rootDir, client); err != nil {
-			panic(fmt.Sprintf("Could not build archive meta info from dfs block files: %+v", err))
+			logger.Errorf("Could not build archive meta info from dfs block files: %+v", err)
 		}
 		logger.Infof("Archive meta info constructed by scanning the dfs blocks dir: %s", spew.Sdump(amInfo))
 	} else {
@@ -135,7 +135,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	mgr.amInfo = amInfo
 	mgr.amInfoCond = sync.NewCond(&sync.Mutex{})
 	if err := mgr.saveArchiveMetaInfo(amInfo); err != nil {
-		panic(fmt.Sprintf("Could not save archive meta info to db: %s", err))
+		logger.Errorf("Could not save archive meta info to db: %s", err)
 	}
 
 	if err := eventbus.Get(id).Subscribe("archive-by-tx-date", mgr.archiveFn); err != nil {

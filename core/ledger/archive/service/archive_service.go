@@ -8,6 +8,9 @@ package service
 
 import (
 	"fmt"
+	"path/filepath"
+	"sync"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fsnotify/fsnotify"
 	proto "github.com/hyperledger/fabric-protos-go/gossip"
@@ -21,8 +24,6 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
 	"github.com/pkg/errors"
-	"path/filepath"
-	"sync"
 )
 
 var logger = flogging.MustGetLogger("archive.service")
