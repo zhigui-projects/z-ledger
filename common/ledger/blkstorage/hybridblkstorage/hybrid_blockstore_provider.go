@@ -14,6 +14,7 @@ import (
 	"github.com/hyperledger/fabric/common/ledger/util"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
 	"github.com/hyperledger/fabric/common/metrics"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 	"github.com/pkg/errors"
 )
 
@@ -31,10 +32,12 @@ type HybridBlockstoreProvider struct {
 	indexConfig     *blkstorage.IndexConfig
 	leveldbProvider *leveldbhelper.Provider
 	stats           *stats
+	archiveConf     *archive.Config
 }
 
 // NewProvider constructs a filesystem based block store provider
-func NewProvider(conf *Conf, indexConfig *blkstorage.IndexConfig, metricsProvider metrics.Provider) (blkstorage.BlockStoreProvider, error) {
+func NewProvider(conf *Conf, indexConfig *blkstorage.IndexConfig, metricsProvider metrics.Provider,
+	archiveConf *archive.Config) (blkstorage.BlockStoreProvider, error) {
 	dbConf := &leveldbhelper.Conf{
 		DBPath:                conf.getIndexDir(),
 		ExpectedFormatVersion: dataFormatVersion(indexConfig),
@@ -59,7 +62,7 @@ func NewProvider(conf *Conf, indexConfig *blkstorage.IndexConfig, metricsProvide
 
 	// create stats instance at provider level and pass to newHybridBlockStore
 	stats := newStats(metricsProvider)
-	return &HybridBlockstoreProvider{conf, indexConfig, p, stats}, nil
+	return &HybridBlockstoreProvider{conf, indexConfig, p, stats, archiveConf}, nil
 }
 
 // CreateBlockStore simply calls OpenBlockStore
@@ -72,7 +75,7 @@ func (p *HybridBlockstoreProvider) CreateBlockStore(ledgerid string) (blkstorage
 // This method should be invoked only once for a particular ledgerid
 func (p *HybridBlockstoreProvider) OpenBlockStore(ledgerid string) (blkstorage.BlockStore, error) {
 	indexStoreHandle := p.leveldbProvider.GetDBHandle(ledgerid)
-	return newHybridBlockStore(ledgerid, p.conf, p.indexConfig, indexStoreHandle, p.stats), nil
+	return newHybridBlockStore(ledgerid, p.conf, p.indexConfig, indexStoreHandle, p.stats, p.archiveConf), nil
 }
 
 // Exists tells whether the BlockStore with given id exists

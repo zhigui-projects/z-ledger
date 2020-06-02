@@ -15,10 +15,11 @@ import (
 	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage"
 	coreconfig "github.com/hyperledger/fabric/core/config"
 	le "github.com/hyperledger/fabric/core/ledger"
-	"github.com/hyperledger/fabric/core/ledger/archive/dfs"
+	"github.com/hyperledger/fabric/core/ledger/archive"
+	"github.com/hyperledger/fabric/core/ledger/dfs"
+	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
-	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
 	"path/filepath"
 	"sync"
@@ -54,7 +55,7 @@ type ArchiveService struct {
 	gossip    ArchiveGossip
 	id        peerID
 	ledgerMgr *ledgermgmt.LedgerMgr
-	dfsClient *hdfs.Client
+	dfsClient common.FsClient
 	watchers  map[string]*fsnotify.Watcher
 	lock      sync.RWMutex
 	stopCh    chan struct{}
@@ -63,8 +64,9 @@ type ArchiveService struct {
 // New construction function to create and initialize
 // archive service instance. It tries to establish connection to
 // the specified dfs name node, in case it fails to dial to it, return nil
-func New(g gossip, ledgerMgr *ledgermgmt.LedgerMgr, channel string, peerId string) (*ArchiveService, error) {
-	client, err := dfs.NewHDFSClient()
+func New(g gossip, ledgerMgr *ledgermgmt.LedgerMgr, channel string, peerId string, conf *archive.Config) (*ArchiveService, error) {
+	dfsConf := &common.Config{Type: conf.Type, HdfsConf: conf.HdfsConf, IpfsConf: conf.IpfsConf}
+	client, err := dfs.NewDfsClient(dfsConf)
 	if err != nil {
 		logger.Errorf("Archive service can't connect to HDFS, due to %+v", err)
 		return nil, err

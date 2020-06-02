@@ -11,6 +11,8 @@ import (
 
 	coreconfig "github.com/hyperledger/fabric/core/config"
 	"github.com/hyperledger/fabric/core/ledger"
+	"github.com/hyperledger/fabric/core/ledger/archive"
+	config "github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
 	"github.com/spf13/viper"
 )
@@ -50,8 +52,17 @@ func ledgerConfig() *ledger.Config {
 	rootFSPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "ledgersData")
 	conf := &ledger.Config{
 		RootFSPath: rootFSPath,
-		ArchiveConfig: &ledger.ArchiveConfig{
+		ArchiveConfig: &archive.Config{
 			Enabled: enableArchive,
+			Type:    viper.GetString("ledger.archive.type"),
+			HdfsConf: &config.HdfsConfig{
+				User:                viper.GetString("ledger.archive.hdfsConfig.user"),
+				NameNodes:           viper.GetStringSlice("ledger.archive.hdfsConfig.nameNodes"),
+				UseDatanodeHostname: viper.GetBool("ledger.archive.hdfsConfig.useDatanodeHostname"),
+			},
+			IpfsConf: &config.IpfsConfig{
+				//TODO maxpeng
+			},
 		},
 		StateDBConfig: &ledger.StateDBConfig{
 			StateDatabase: viper.GetString("ledger.state.stateDatabase"),

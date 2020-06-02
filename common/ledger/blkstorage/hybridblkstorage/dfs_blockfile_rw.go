@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package hybridblkstorage
 
 import (
-	"github.com/pengisgood/hdfs"
+	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/pkg/errors"
 )
 
@@ -18,10 +18,10 @@ type fileReader interface {
 
 ////  DFS READER ////
 type dfsBlockfileReader struct {
-	reader *hdfs.FileReader
+	reader common.FsReader
 }
 
-func newDfsBlockfileReader(filePath string, dfsClient *hdfs.Client) (*dfsBlockfileReader, error) {
+func newDfsBlockfileReader(filePath string, dfsClient common.FsClient) (*dfsBlockfileReader, error) {
 	if dfsClient == nil {
 		return nil, errors.New("dfs client should not be nil")
 	}

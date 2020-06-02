@@ -8,16 +8,18 @@ package ledger
 
 import (
 	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-lib-go/healthz"
 	"github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric-protos-go/ledger/archive"
+	pb "github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/bccsp"
 	commonledger "github.com/hyperledger/fabric/common/ledger"
 	"github.com/hyperledger/fabric/common/metrics"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
 )
 
@@ -39,18 +41,13 @@ type Config struct {
 	// RootFSPath is the top-level directory where ledger files are stored.
 	RootFSPath string
 	// ArchiveConfig holds the configuration parameters for the archive service.
-	ArchiveConfig *ArchiveConfig
+	ArchiveConfig *archive.Config
 	// StateDBConfig holds the configuration parameters for the state database.
 	StateDBConfig *StateDBConfig
 	// PrivateDataConfig holds the configuration parameters for the private data store.
 	PrivateDataConfig *PrivateDataConfig
 	// HistoryDBConfig holds the configuration parameters for the transaction history database.
 	HistoryDBConfig *HistoryDBConfig
-}
-
-// ArchiveConfig is a structure used to configure the archive service for the ledger.
-type ArchiveConfig struct {
-	Enabled bool
 }
 
 // StateDBConfig is a structure used to configure the state parameters for the ledger.
@@ -102,8 +99,8 @@ type PeerLedgerProvider interface {
 type PeerLedger interface {
 	commonledger.Ledger
 	TransferBlockFiles() error
-	GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error)
-	UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo)
+	GetArchiveMetaInfo() (*pb.ArchiveMetaInfo, error)
+	UpdateArchiveMetaInfo(metaInfo *pb.ArchiveMetaInfo)
 	// GetTransactionByID retrieves a transaction by id
 	GetTransactionByID(txID string) (*peer.ProcessedTransaction, error)
 	// GetBlockByHash returns a block given it's hash

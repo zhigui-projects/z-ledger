@@ -9,11 +9,11 @@ package hybridblkstorage
 import (
 	"bufio"
 	"fmt"
-	"github.com/pengisgood/hdfs"
 	"io"
 	"os"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/pkg/errors"
 )
 
@@ -31,8 +31,8 @@ type hybridBlockStream interface {
 // It starts from the given offset and can traverse till the end of the file
 type dfsBlockfileStream struct {
 	fileNum       int
-	reader        *hdfs.FileReader
-	client        *hdfs.Client
+	reader        common.FsReader
+	client        common.FsClient
 	currentOffset int64
 }
 
@@ -49,8 +49,8 @@ type dfsBlockStream struct {
 ///////////////////////////////////
 // dfsBlockfileStream functions
 ////////////////////////////////////
-func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, client *hdfs.Client) (*dfsBlockfileStream, error) {
-	var reader *hdfs.FileReader
+func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, client common.FsClient) (*dfsBlockfileStream, error) {
+	var reader common.FsReader
 	var err error
 
 	filePath := deriveBlockfilePath(rootDir, fileNum)
@@ -144,7 +144,7 @@ func (s *dfsBlockfileStream) close() error {
 ///////////////////////////////////
 // dfsBlockStream functions
 ////////////////////////////////////
-func newDfsBlockStream(rootDir string, startFileNum int, startOffset int64, endFileNum int, client *hdfs.Client) (*dfsBlockStream, error) {
+func newDfsBlockStream(rootDir string, startFileNum int, startOffset int64, endFileNum int, client common.FsClient) (*dfsBlockStream, error) {
 	startFileStream, err := newDfsBlockfileStream(rootDir, startFileNum, startOffset, client)
 	if err != nil {
 		return nil, err

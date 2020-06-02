@@ -64,6 +64,7 @@ import (
 	"github.com/hyperledger/fabric/core/handlers/library"
 	validation "github.com/hyperledger/fabric/core/handlers/validation/api"
 	"github.com/hyperledger/fabric/core/ledger"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 	"github.com/hyperledger/fabric/core/ledger/cceventmgmt"
 	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
@@ -407,6 +408,7 @@ func serve(args []string) error {
 		common.HeaderType_CONFIG: &peer.ConfigTxProcessor{},
 	}
 
+	ledgerConfig := ledgerConfig()
 	peerInstance.LedgerMgr = ledgermgmt.NewLedgerMgr(
 		&ledgermgmt.Initializer{
 			CustomTxProcessors:              txProcessors,
@@ -416,7 +418,7 @@ func serve(args []string) error {
 			MetricsProvider:                 metricsProvider,
 			HealthCheckRegistry:             opsSystem,
 			StateListeners:                  []ledger.StateListener{lifecycleCache},
-			Config:                          ledgerConfig(),
+			Config:                          ledgerConfig,
 			Hasher:                          factory.GetDefault(),
 			EbMetadataProvider:              ebMetadataProvider,
 		},
@@ -434,6 +436,7 @@ func serve(args []string) error {
 		deliverGRPCClient,
 		deliverServiceConfig,
 		peerInstance.LedgerMgr,
+		ledgerConfig.ArchiveConfig,
 	)
 	if err != nil {
 		return errors.WithMessage(err, "failed to initialize gossip service")
@@ -1135,17 +1138,7 @@ func secureDialOpts(credSupport *comm.CredentialSupport) func() []grpc.DialOptio
 // 2. Init the message crypto service;
 // 3. Init the security advisor;
 // 4. Init gossip related struct.
-func initGossipService(
-	policyMgr policies.ChannelPolicyManagerGetter,
-	metricsProvider metrics.Provider,
-	peerServer *comm.GRPCServer,
-	signer msp.SigningIdentity,
-	credSupport *comm.CredentialSupport,
-	peerAddress string,
-	deliverGRPCClient *comm.GRPCClient,
-	deliverServiceConfig *deliverservice.DeliverServiceConfig,
-	ledgerMgr *ledgermgmt.LedgerMgr,
-) (*gossipservice.GossipService, error) {
+func initGossipService(policyMgr policies.ChannelPolicyManagerGetter, metricsProvider metrics.Provider, peerServer *comm.GRPCServer, signer msp.SigningIdentity, credSupport *comm.CredentialSupport, peerAddress string, deliverGRPCClient *comm.GRPCClient, deliverServiceConfig *deliverservice.DeliverServiceConfig, ledgerMgr *ledgermgmt.LedgerMgr, archiveConfig *archive.Config) (*gossipservice.GossipService, error) {
 
 	var certs *gossipcommon.TLSCertificates
 	if peerServer.TLSEnabled() {
@@ -1191,6 +1184,7 @@ func initGossipService(
 		serviceConfig,
 		deliverServiceConfig,
 		ledgerMgr,
+		archiveConfig,
 	)
 }
 

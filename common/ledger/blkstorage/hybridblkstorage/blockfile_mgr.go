@@ -12,16 +12,17 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric-protos-go/ledger/archive"
+	pb "github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage"
 	"github.com/hyperledger/fabric/common/ledger/util"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
-	"github.com/hyperledger/fabric/core/ledger/archive/dfs"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 	"github.com/hyperledger/fabric/core/ledger/archive/eventbus"
+	"github.com/hyperledger/fabric/core/ledger/dfs"
+	dc "github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/hyperledger/fabric/protoutil"
-	"github.com/pengisgood/hdfs"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"math"
@@ -52,9 +53,9 @@ type hybridBlockfileMgr struct {
 	cpInfoCond        *sync.Cond
 	currentFileWriter *blockfileWriter
 	bcInfo            atomic.Value
-	amInfo            *archive.ArchiveMetaInfo
+	amInfo            *pb.ArchiveMetaInfo
 	amInfoCond        *sync.Cond
-	dfsClient         *hdfs.Client
+	dfsClient         dc.FsClient
 	lock              sync.RWMutex
 }
 
@@ -99,7 +100,8 @@ At start up a new manager:
 		-- If index and file system are not in sync, syncs index from the FS
   *)  Updates blockchain info used by the APIs
 */
-func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig, indexStore *leveldbhelper.DBHandle) *hybridBlockfileMgr {
+func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
+	indexStore *leveldbhelper.DBHandle, archiveConf *archive.Config) *hybridBlockfileMgr {
 	logger.Debugf("newBlockfileMgr() initializing hybrid-file-based block storage for ledger: %s ", id)
 	//Determine the root directory for the blockfile storage, if it does not exist create it
 	rootDir := conf.getLedgerBlockDir(id)
@@ -107,7 +109,8 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	if err != nil {
 		panic(fmt.Sprintf("Error creating block storage root dir [%s]: %s", rootDir, err))
 	}
-	client, err := dfs.NewHDFSClient()
+	dfsConf := &dc.Config{Type: archiveConf.Type, HdfsConf: archiveConf.HdfsConf, IpfsConf: archiveConf.IpfsConf}
+	client, err := dfs.NewDfsClient(dfsConf)
 	if err != nil {
 		panic(fmt.Sprintf("Could not connect to HDFS, due to %+v", err))
 	}
@@ -632,13 +635,13 @@ func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error)
 }
 
 //Get the current archive meta info that is stored in the database
-func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
+func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*pb.ArchiveMetaInfo, error) {
 	var b []byte
 	var err error
 	if b, err = mgr.db.Get(archiveMetaInfoKey); b == nil || err != nil {
 		return nil, err
 	}
-	archiveMetaInfo := &archive.ArchiveMetaInfo{}
+	archiveMetaInfo := &pb.ArchiveMetaInfo{}
 	if err := proto.Unmarshal(b, archiveMetaInfo); err != nil {
 		return nil, err
 	}
@@ -646,7 +649,7 @@ func (mgr *hybridBlockfileMgr) loadArchiveMetaInfo() (*archive.ArchiveMetaInfo, 
 	return archiveMetaInfo, nil
 }
 
-func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *archive.ArchiveMetaInfo) error {
+func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *pb.ArchiveMetaInfo) error {
 	logger.Infof("Saving archive meta info: %s", spew.Sdump(amInfo))
 	b, err := proto.Marshal(amInfo)
 	if err != nil {
@@ -660,7 +663,7 @@ func (mgr *hybridBlockfileMgr) saveArchiveMetaInfo(amInfo *archive.ArchiveMetaIn
 	return nil
 }
 
-func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *archive.ArchiveMetaInfo) {
+func (mgr *hybridBlockfileMgr) updateArchiveMetaInfo(amInfo *pb.ArchiveMetaInfo) {
 	logger.Infof("Updating archive meta info: %s", spew.Sdump(amInfo))
 	mgr.amInfoCond.L.Lock()
 	defer mgr.amInfoCond.L.Unlock()
@@ -689,7 +692,7 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 			logger.Warnf("Blockfile already exists[%s] in dfs", filePath)
 		}
 		if int32(lastSentFileNum+1) > mgr.amInfo.LastSentFileSuffix {
-			newAmInfo := &archive.ArchiveMetaInfo{
+			newAmInfo := &pb.ArchiveMetaInfo{
 				LastSentFileSuffix:    int32(lastSentFileNum + 1),
 				LastArchiveFileSuffix: mgr.amInfo.LastArchiveFileSuffix,
 				FileProofs:            mgr.amInfo.FileProofs,
@@ -759,7 +762,7 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 	}
 
 	// update archive meta info
-	newAmInfo := &archive.ArchiveMetaInfo{
+	newAmInfo := &pb.ArchiveMetaInfo{
 		LastSentFileSuffix:    mgr.amInfo.LastSentFileSuffix,
 		LastArchiveFileSuffix: int32(fileNum),
 		FileProofs:            mgr.amInfo.FileProofs,

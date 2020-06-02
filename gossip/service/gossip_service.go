@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package service
 
 import (
-	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
 	"sync"
 
 	gproto "github.com/hyperledger/fabric-protos-go/gossip"
@@ -17,6 +16,7 @@ import (
 	"github.com/hyperledger/fabric/core/committer/txvalidator"
 	"github.com/hyperledger/fabric/core/common/privdata"
 	"github.com/hyperledger/fabric/core/deliverservice"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 	archiveservice "github.com/hyperledger/fabric/core/ledger/archive/service"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
 	"github.com/hyperledger/fabric/core/transientstore"
@@ -167,6 +167,7 @@ type GossipService struct {
 	chains          map[string]state.GossipStateProvider
 	leaderElection  map[string]election.LeaderElectionService
 	ledgerMgr       *ledgermgmt.LedgerMgr
+	archiveConfig   *archive.Config
 	archiveService  map[string]*archiveservice.ArchiveService
 	deliveryService map[string]deliverservice.DeliverService
 	deliveryFactory DeliveryServiceFactory
@@ -205,21 +206,7 @@ func (jcm *joinChannelMessage) AnchorPeersOf(org api.OrgIdentityType) []api.Anch
 var logger = util.GetLogger(util.ServiceLogger, "")
 
 // New creates the gossip service.
-func New(
-	peerIdentity identity.SignerSerializer,
-	gossipMetrics *gossipmetrics.GossipMetrics,
-	endpoint string,
-	s *grpc.Server,
-	mcs api.MessageCryptoService,
-	secAdv api.SecurityAdvisor,
-	secureDialOpts api.PeerSecureDialOpts,
-	credSupport *corecomm.CredentialSupport,
-	deliverGRPCClient *corecomm.GRPCClient,
-	gossipConfig *gossip.Config,
-	serviceConfig *ServiceConfig,
-	deliverServiceConfig *deliverservice.DeliverServiceConfig,
-	ledgerMgr *ledgermgmt.LedgerMgr,
-) (*GossipService, error) {
+func New(peerIdentity identity.SignerSerializer, gossipMetrics *gossipmetrics.GossipMetrics, endpoint string, s *grpc.Server, mcs api.MessageCryptoService, secAdv api.SecurityAdvisor, secureDialOpts api.PeerSecureDialOpts, credSupport *corecomm.CredentialSupport, deliverGRPCClient *corecomm.GRPCClient, gossipConfig *gossip.Config, serviceConfig *ServiceConfig, deliverServiceConfig *deliverservice.DeliverServiceConfig, ledgerMgr *ledgermgmt.LedgerMgr, archiveConfig *archive.Config) (*GossipService, error) {
 	serializedIdentity, err := peerIdentity.Serialize()
 	if err != nil {
 		return nil, err
@@ -244,6 +231,7 @@ func New(
 		chains:          make(map[string]state.GossipStateProvider),
 		leaderElection:  make(map[string]election.LeaderElectionService),
 		ledgerMgr:       ledgerMgr,
+		archiveConfig:   archiveConfig,
 		archiveService:  make(map[string]*archiveservice.ArchiveService),
 		deliveryService: make(map[string]deliverservice.DeliverService),
 		deliveryFactory: &deliveryFactoryImpl{
@@ -357,10 +345,10 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 		g.deliveryService[channelID] = g.deliveryFactory.Service(g, ordererSource, g.mcs, g.serviceConfig.OrgLeader)
 	}
 
-	if g.archiveService[channelID] == nil && ledgerconfig.IsArchiveEnabled() {
+	if g.archiveService[channelID] == nil && g.archiveConfig.Enabled {
 		logger.Infof("Initializing archive service instance for channel: %s", channelID)
 		PKIid := g.mcs.GetPKIidOfCert(g.peerIdentity)
-		g.archiveService[channelID], _ = archiveservice.New(g, g.ledgerMgr, channelID, string(PKIid))
+		g.archiveService[channelID], _ = archiveservice.New(g, g.ledgerMgr, channelID, string(PKIid), g.archiveConfig)
 	}
 
 	// Delivery service might be nil only if it was not able to get connected

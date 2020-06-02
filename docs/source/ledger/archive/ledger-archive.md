@@ -104,7 +104,7 @@ type hybridBlockfileMgr struct {
    // 归档元信息
    amInfo            *archive.ArchiveMetaInfo
    amInfoCond        *sync.Cond
-   dfsClient         *hdfs.Client
+   dfsClient         common.FsClient
    lock              sync.RWMutex
 }
 ```

@@ -17,7 +17,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/archive"
-	"github.com/pengisgood/hdfs"
+	dc "github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/pkg/errors"
 )
 
@@ -81,7 +81,7 @@ func constructCheckpointInfoFromBlockFiles(rootDir string) (*checkpointInfo, err
 	return cpInfo, nil
 }
 
-func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo, client *hdfs.Client) {
+func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo, client dc.FsClient) {
 	logger.Infof("syncAMInfoFromDfs amInfo=%s", spew.Sdump(amInfo))
 	//Checks if the file suffix of where the last block was written exists
 	filePath := deriveBlockfilePath(rootDir, int(amInfo.LastSentFileSuffix))
@@ -110,7 +110,7 @@ func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo,
 	//amInfo.FileProofs[]
 }
 
-func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client *hdfs.Client) (*archive.ArchiveMetaInfo, error) {
+func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client dc.FsClient) (*archive.ArchiveMetaInfo, error) {
 	logger.Info("Retrieving archive meta info from dfs block files")
 	var lastArchiveFileNum int
 	var lastSentFileNum int
@@ -166,7 +166,7 @@ func retrieveLastArchiveFileNum(rootDir string) (int, error) {
 	return smallestFileNum, err
 }
 
-func retrieveLastSentFileNumFromDfs(rootDir string, client *hdfs.Client) (int, error) {
+func retrieveLastSentFileNumFromDfs(rootDir string, client dc.FsClient) (int, error) {
 	biggestFileNum := -1
 	filesInfo, err := client.ReadDir(rootDir)
 	if err != nil {

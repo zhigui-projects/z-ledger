@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/hyperledger/fabric-protos-go/common"
-	"github.com/hyperledger/fabric-protos-go/ledger/archive"
+	pb "github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/ledger"
 	"github.com/hyperledger/fabric/common/ledger/blkstorage"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 )
 
 // hybridBlockStore - hybrid implementation for `BlockStore`
@@ -27,8 +28,8 @@ type hybridBlockStore struct {
 
 // NewHybridBlockStore constructs a `HybridBlockStore`
 func newHybridBlockStore(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
-	dbHandle *leveldbhelper.DBHandle, stats *stats) *hybridBlockStore {
-	fileMgr := newBlockfileMgr(id, conf, indexConfig, dbHandle)
+	dbHandle *leveldbhelper.DBHandle, stats *stats, archiveConf *archive.Config) *hybridBlockStore {
+	fileMgr := newBlockfileMgr(id, conf, indexConfig, dbHandle, archiveConf)
 
 	// create ledgerStats and initialize blockchain_height stat
 	ledgerStats := stats.ledgerStats(id)
@@ -42,11 +43,11 @@ func (store *hybridBlockStore) TransferBlockFiles() error {
 	return store.fileMgr.transferBlockFiles()
 }
 
-func (store *hybridBlockStore) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
+func (store *hybridBlockStore) GetArchiveMetaInfo() (*pb.ArchiveMetaInfo, error) {
 	return store.fileMgr.loadArchiveMetaInfo()
 }
 
-func (store *hybridBlockStore) UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo) {
+func (store *hybridBlockStore) UpdateArchiveMetaInfo(metaInfo *pb.ArchiveMetaInfo) {
 	if err := store.fileMgr.saveArchiveMetaInfo(metaInfo); err != nil {
 		logger.Errorf("Saving archive meta info failed with error: %s", err)
 		return

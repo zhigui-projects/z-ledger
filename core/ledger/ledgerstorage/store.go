@@ -17,6 +17,7 @@ import (
 	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage"
 	"github.com/hyperledger/fabric/common/metrics"
 	"github.com/hyperledger/fabric/core/ledger"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 	"github.com/hyperledger/fabric/core/ledger/ledgerconfig"
 	"github.com/hyperledger/fabric/core/ledger/pvtdatapolicy"
 	"github.com/hyperledger/fabric/core/ledger/pvtdatastorage"
@@ -47,7 +48,7 @@ var attrsToIndex = []blkstorage.IndexableAttr{
 }
 
 // NewProvider returns the handle to the provider
-func NewProvider(blockStoreDir string, archiveConf *ledger.ArchiveConfig, conf *pvtdatastorage.PrivateDataConfig, metricsProvider metrics.Provider) (*Provider, error) {
+func NewProvider(blockStoreDir string, archiveConf *archive.Config, conf *pvtdatastorage.PrivateDataConfig, metricsProvider metrics.Provider) (*Provider, error) {
 	// Initialize the block storage
 	indexConfig := &blkstorage.IndexConfig{AttrsToIndex: attrsToIndex}
 	var blockStoreProvider blkstorage.BlockStoreProvider
@@ -59,6 +60,7 @@ func NewProvider(blockStoreDir string, archiveConf *ledger.ArchiveConfig, conf *
 			hybridblkstorage.NewConf(blockStoreDir, ledgerconfig.GetDefaultMaxBlockfileSize()),
 			indexConfig,
 			metricsProvider,
+			archiveConf,
 		)
 	} else {
 		blockStoreProvider, err = fsblkstorage.NewProvider(
