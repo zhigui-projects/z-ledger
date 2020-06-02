@@ -575,6 +575,17 @@
   version = "v0.1.0"
 
 [[projects]]
+  digest = "1:efc693dbcbe885796a3d46bd1817646d713996bcc2893d42f5434141afc1a86f"
+  name = "github.com/jcmturner/gofork"
+  packages = [
+    "encoding/asn1",
+    "x/crypto/pbkdf2",
+  ]
+  pruneopts = "NUT"
+  revision = "dc7c13fece037a4a36e2b3c69db4991498d30692"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:c24d4cac0c313bee5aa05f12cacf4f966a47af133cad229ca537090829ef7bd9"
   name = "github.com/jinzhu/gorm"
   packages = [
@@ -591,17 +602,6 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "f5c5f50e6090ae76a29240b61ae2a90dd810112e"
-
-[[projects]]
-  digest = "1:efc693dbcbe885796a3d46bd1817646d713996bcc2893d42f5434141afc1a86f"
-  name = "github.com/jcmturner/gofork"
-  packages = [
-    "encoding/asn1",
-    "x/crypto/pbkdf2",
-  ]
-  pruneopts = "NUT"
-  revision = "dc7c13fece037a4a36e2b3c69db4991498d30692"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:da62aa6632d04e080b8a8b85a59ed9ed1550842a0099a55f3ae3a20d02a3745a"
@@ -1094,7 +1094,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:78455fedb19bd151a09b502971b49326cc044a460a8c26664f5fa2e6ba182c94"
+  digest = "1:28fed84a6e705e880813c76a150a86eb5fd5ea86fe6aee04e34676114af92aa7"
   name = "golang.org/x/crypto"
   packages = [
     "ed25519",
