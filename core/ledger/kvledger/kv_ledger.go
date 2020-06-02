@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
 	commonledger "github.com/hyperledger/fabric/common/ledger"
@@ -48,20 +49,7 @@ type kvLedger struct {
 }
 
 // newKVLedger constructs new `KVLedger`
-func newKVLedger(
-	ledgerID string,
-	blockStore *ledgerstorage.Store,
-	versionedDB privacyenabledstate.DB,
-	historyDB *history.DB,
-	configHistoryMgr confighistory.Mgr,
-	stateListeners []ledger.StateListener,
-	bookkeeperProvider bookkeeping.Provider,
-	ccInfoProvider ledger.DeployedChaincodeInfoProvider,
-	ccLifecycleEventProvider ledger.ChaincodeLifecycleEventProvider,
-	stats *ledgerStats,
-	customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor,
-	hasher ledger.Hasher,
-) (*kvLedger, error) {
+func newKVLedger(ledgerID string, blockStore *ledgerstorage.Store, versionedDB privacyenabledstate.DB, historyDB *history.DB, configHistoryMgr confighistory.Mgr, stateListeners []ledger.StateListener, bookkeeperProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, ccLifecycleEventProvider ledger.ChaincodeLifecycleEventProvider, stats *ledgerStats, customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher) (*kvLedger, error) {
 	logger.Debugf("Creating KVLedger ledgerID=%s: ", ledgerID)
 	// Create a kvLedger for this chain/ledger, which encapsulates the underlying
 	// id store, blockstore, txmgr (state database), history database
@@ -110,15 +98,7 @@ func newKVLedger(
 	return l, nil
 }
 
-func (l *kvLedger) initTxMgr(
-	versionedDB privacyenabledstate.DB,
-	stateListeners []ledger.StateListener,
-	btlPolicy pvtdatapolicy.BTLPolicy,
-	bookkeeperProvider bookkeeping.Provider,
-	ccInfoProvider ledger.DeployedChaincodeInfoProvider,
-	customtxProcessors map[common.HeaderType]ledger.CustomTxProcessor,
-	hasher ledger.Hasher,
-) error {
+func (l *kvLedger) initTxMgr(versionedDB privacyenabledstate.DB, stateListeners []ledger.StateListener, btlPolicy pvtdatapolicy.BTLPolicy, bookkeeperProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, customtxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher) error {
 	var err error
 	txmgr, err := lockbasedtxmgr.NewLockBasedTxMgr(
 		l.ledgerID,
@@ -319,6 +299,18 @@ func (l *kvLedger) recommitLostBlocks(firstBlockNum uint64, lastBlockNum uint64,
 	}
 	logger.Infof("Recommitted lost blocks - firstBlockNum=%d, lastBlockNum=%d, recoverables=%#v", firstBlockNum, lastBlockNum, recoverables)
 	return nil
+}
+
+func (l *kvLedger) TransferBlockFiles() error {
+	return l.blockStore.TransferBlockFiles()
+}
+
+func (l *kvLedger) GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error) {
+	return l.blockStore.GetArchiveMetaInfo()
+}
+
+func (l *kvLedger) UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo) {
+	l.blockStore.UpdateArchiveMetaInfo(metaInfo)
 }
 
 // GetTransactionByID retrieves a transaction by id

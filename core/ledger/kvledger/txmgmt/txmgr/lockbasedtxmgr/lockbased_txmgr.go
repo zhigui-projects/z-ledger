@@ -60,16 +60,7 @@ func (c *current) maxTxNumber() uint64 {
 }
 
 // NewLockBasedTxMgr constructs a new instance of NewLockBasedTxMgr
-func NewLockBasedTxMgr(
-	ledgerid string,
-	db privacyenabledstate.DB,
-	stateListeners []ledger.StateListener,
-	btlPolicy pvtdatapolicy.BTLPolicy,
-	bookkeepingProvider bookkeeping.Provider,
-	ccInfoProvider ledger.DeployedChaincodeInfoProvider,
-	customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor,
-	hasher ledger.Hasher,
-) (*LockBasedTxMgr, error) {
+func NewLockBasedTxMgr(ledgerid string, db privacyenabledstate.DB, stateListeners []ledger.StateListener, btlPolicy pvtdatapolicy.BTLPolicy, bookkeepingProvider bookkeeping.Provider, ccInfoProvider ledger.DeployedChaincodeInfoProvider, customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor, hasher ledger.Hasher) (*LockBasedTxMgr, error) {
 
 	if hasher == nil {
 		return nil, errors.New("create new lock based TxMgr failed: passed in nil ledger hasher")

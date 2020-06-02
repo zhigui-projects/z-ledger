@@ -8,6 +8,7 @@ package blkstorage
 
 import (
 	"github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/archive"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/ledger"
 	l "github.com/hyperledger/fabric/core/ledger"
@@ -22,6 +23,7 @@ const (
 	IndexableAttrBlockNum        = IndexableAttr("BlockNum")
 	IndexableAttrBlockHash       = IndexableAttr("BlockHash")
 	IndexableAttrTxID            = IndexableAttr("TxID")
+	IndexableAttrTxDate          = IndexableAttr("TxDate")
 	IndexableAttrBlockNumTranNum = IndexableAttr("BlockNumTranNum")
 )
 
@@ -30,7 +32,7 @@ type IndexConfig struct {
 	AttrsToIndex []IndexableAttr
 }
 
-// Contains returns true iff the supplied parameter is present in the IndexConfig.AttrsToIndex
+// Contains returns true if the supplied parameter is present in the IndexConfig.AttrsToIndex
 func (c *IndexConfig) Contains(indexableAttr IndexableAttr) bool {
 	for _, a := range c.AttrsToIndex {
 		if a == indexableAttr {
@@ -61,6 +63,9 @@ type BlockStoreProvider interface {
 // An implementation of this interface is expected to take an argument
 // of type `IndexConfig` which configures the block store on what items should be indexed
 type BlockStore interface {
+	TransferBlockFiles() error
+	GetArchiveMetaInfo() (*archive.ArchiveMetaInfo, error)
+	UpdateArchiveMetaInfo(metaInfo *archive.ArchiveMetaInfo)
 	AddBlock(block *common.Block) error
 	GetBlockchainInfo() (*common.BlockchainInfo, error)
 	RetrieveBlocks(startNum uint64) (ledger.ResultsIterator, error)

@@ -7,6 +7,8 @@ If you want to start solo, kafka or sbft consensus, please do the following
 cd $GOPATH/src/github.com/hyperledger/fabric
 mkdir -p scripts/bin
 go build -o scripts/bin/configtxgen cmd/configtxgen/main.go
+
+cd scripts/first-network
 ./byfn.sh generate -o solo
 ./byfn.sh up -o solo
 ```

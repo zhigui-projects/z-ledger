@@ -445,6 +445,7 @@ func (g *Node) gossipBatch(msgs []*emittedGossipMessage) {
 	var stateInfoMsgs []*emittedGossipMessage
 	var orgMsgs []*emittedGossipMessage
 	var leadershipMsgs []*emittedGossipMessage
+	var archiveMsgs []*emittedGossipMessage
 
 	isABlock := func(o interface{}) bool {
 		return protoext.IsDataMsg(o.(*emittedGossipMessage).GossipMessage)
@@ -466,6 +467,9 @@ func (g *Node) gossipBatch(msgs []*emittedGossipMessage) {
 	isLeadershipMsg := func(o interface{}) bool {
 		return protoext.IsLeadershipMsg(o.(*emittedGossipMessage).GossipMessage)
 	}
+	isArchiveMsg := func(o interface{}) bool {
+		return protoext.IsArchiveMsg(o.(*emittedGossipMessage).GossipMessage)
+	}
 
 	// Gossip blocks
 	blocks, msgs = partitionMessages(isABlock, msgs)
@@ -476,6 +480,12 @@ func (g *Node) gossipBatch(msgs []*emittedGossipMessage) {
 	// Gossip Leadership messages
 	leadershipMsgs, msgs = partitionMessages(isLeadershipMsg, msgs)
 	g.gossipInChan(leadershipMsgs, func(gc channel.GossipChannel) filter.RoutingFilter {
+		return filter.CombineRoutingFilters(gc.EligibleForChannel, gc.IsMemberInChan, g.IsInMyOrg)
+	})
+
+	// Gossip Archive meta info
+	archiveMsgs, msgs = partitionMessages(isArchiveMsg, msgs)
+	g.gossipInChan(archiveMsgs, func(gc channel.GossipChannel) filter.RoutingFilter {
 		return filter.CombineRoutingFilters(gc.EligibleForChannel, gc.IsMemberInChan, g.IsInMyOrg)
 	})
 

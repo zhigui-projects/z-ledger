@@ -154,7 +154,7 @@ func (m *LedgerMgr) Close() {
 	logger.Infof("ledger mgmt closed")
 }
 
-func (m *LedgerMgr) getOpenedLedger(ledgerID string) (ledger.PeerLedger, error) {
+func (m *LedgerMgr) GetOpenedLedger(ledgerID string) (ledger.PeerLedger, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	l, ok := m.openedLedgers[ledgerID]
@@ -203,7 +203,7 @@ type chaincodeInfoProviderImpl struct {
 // GetDeployedChaincodeInfo implements function in the interface cceventmgmt.ChaincodeInfoProvider
 func (p *chaincodeInfoProviderImpl) GetDeployedChaincodeInfo(chainid string,
 	chaincodeDefinition *cceventmgmt.ChaincodeDefinition) (*ledger.DeployedChaincodeInfo, error) {
-	ledger, err := p.ledgerMgr.getOpenedLedger(chainid)
+	ledger, err := p.ledgerMgr.GetOpenedLedger(chainid)
 	if err != nil {
 		return nil, err
 	}

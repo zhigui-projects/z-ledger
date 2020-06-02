@@ -182,8 +182,9 @@ noverify = [
       non-go = false
 
 [[constraint]]
-  branch = "master"
+  branch = "archive-v2.0.0"
   name = "github.com/hyperledger/fabric-protos-go"
+  source = "github.com/zhigui-projects/fabric-protos-go"
 
 [[constraint]]
   branch = "ormdb"
@@ -197,3 +198,15 @@ noverify = [
 [[constraint]]
   name = "github.com/ontio/ontology-crypto"
   version = "1.0.8"
+
+[[constraint]]
+  name = "github.com/pengisgood/hdfs"
+  version = "v2.1.1-dep"
+
+[[constraint]]
+  name = "github.com/fsnotify/fsnotify"
+  version = "1.4.9"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/asaskevich/EventBus"
