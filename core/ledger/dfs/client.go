@@ -3,6 +3,8 @@ package dfs
 import (
 	"errors"
 	"fmt"
+
+	"github.com/davecgh/go-spew/spew"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/hyperledger/fabric/core/ledger/dfs/hdfs"
@@ -17,7 +19,7 @@ const (
 var logger = flogging.MustGetLogger("dfs")
 
 func NewDfsClient(conf *common.Config) (common.FsClient, error) {
-	logger.Infof("initializing dfs client with config: %v", conf)
+	logger.Infof("initializing dfs client with config: %s", spew.Sdump(conf))
 
 	var fsClient common.FsClient
 	var err error
