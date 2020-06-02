@@ -126,6 +126,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:ebe1e510bc2d3e0340af52b46e69393a2233c651eeb0d8b00f9f9ac3371115d3"
+  name = "github.com/btcsuite/btcd"
+  packages = ["btcec"]
+  pruneopts = "NUT"
+  revision = "f3ec13030e4e828869954472cbc51ac36bee5c1d"
+  version = "v0.20.1-beta"
+
+[[projects]]
   digest = "1:0c31fa2fb2c809d61d640e28cc400087fe205df6ec9623dd1eb91a7de8d4f5d6"
   name = "github.com/cespare/xxhash"
   packages = ["."]
@@ -533,6 +541,14 @@
   version = "v1.0"
 
 [[projects]]
+  digest = "1:4f96fa1e6816dd27ebbd4d8e2228357c0646998ca2fc2715bda4c71ba1bb97d3"
+  name = "github.com/itchyny/base58-go"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "53c1f055dd808e73e305cfc0468ba0e8343727f4"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:c24d4cac0c313bee5aa05f12cacf4f966a47af133cad229ca537090829ef7bd9"
   name = "github.com/jinzhu/gorm"
   packages = [
@@ -703,6 +719,20 @@
   pruneopts = "NT"
   revision = "90e289841c1ed79b7a598a7cd9959750cb5e89e2"
   version = "v1.5.0"
+
+[[projects]]
+  digest = "1:fb0a3457e6c6055f01620912110b36529d63f623a1c2d92c29b4db8d887e1de8"
+  name = "github.com/ontio/ontology-crypto"
+  packages = [
+    "ec",
+    "keypair",
+    "sm2",
+    "sm3",
+    "vrf",
+  ]
+  pruneopts = "NUT"
+  revision = "7eba89bbe29bb640f7525b936ce5687593156ec9"
+  version = "v1.0.9"
 
 [[projects]]
   digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
@@ -1014,9 +1044,15 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9c4fed825c10231651e81bf0ab2c12e3a6cc349dcc62a78f8d3a9dfb6744855e"
+  digest = "1:78455fedb19bd151a09b502971b49326cc044a460a8c26664f5fa2e6ba182c94"
   name = "golang.org/x/crypto"
-  packages = ["sha3"]
+  packages = [
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "pbkdf2",
+    "scrypt",
+    "sha3",
+  ]
   pruneopts = "NUT"
   revision = "cc06ce4a13d484c0101a9e92913248488a75786d"
 
@@ -1272,6 +1308,9 @@
     "github.com/onsi/gomega/gstruct",
     "github.com/onsi/gomega/matchers",
     "github.com/onsi/gomega/types",
+    "github.com/ontio/ontology-crypto/ec",
+    "github.com/ontio/ontology-crypto/keypair",
+    "github.com/ontio/ontology-crypto/vrf",
     "github.com/pkg/errors",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",
