@@ -10,7 +10,7 @@ var (
 	logger = flogging.MustGetLogger("archive.eventbus")
 	bus    = make(map[string]EventBus.Bus)
 
-	lock *sync.RWMutex
+	lock sync.RWMutex
 )
 
 // Get returns the event bus singleton
