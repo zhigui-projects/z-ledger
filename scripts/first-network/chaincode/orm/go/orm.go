@@ -8,7 +8,9 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/common/util"
 	"math/rand"
 	"strings"
@@ -57,23 +59,19 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 	fmt.Println("ex02 Invoke")
 	function, args := stub.GetFunctionAndParameters()
 	if function == "invoke" {
-		// Make payment of X units from A to B
 		return t.invoke(stub, args)
 	} else if function == "delete" {
-		// Deletes an entity from its state
 		return t.delete(stub, args)
 	} else if function == "query" {
-		// the old "Query" is now implemtned in invoke
 		return t.query(stub, args)
 	}
 
 	return shim.Error("Invalid invoke function name. Expecting \"invoke\" \"delete\" \"query\"")
 }
 
-// Save user and two account
 func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	user := &User{}
-	user.ID = strings.ReplaceAll(util.GenerateUUID(), "-", "")
+	user.ID = args[3]
 	user.Name = args[0]
 	user.Email = args[1]
 	now := time.Now().UTC()
@@ -107,46 +105,50 @@ func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string
 	return shim.Success([]byte(user.ID))
 }
 
-// Deletes an entity from state
 func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	userId := args[0]
 
-	stub.Delete()
-	// Delete the key from the state in ledger
-	err := stub.Delete(userId)
+	accounts := make([]Account, 0)
+	search := &entitydefinition.Search{}
+	err := search.Where("user_id = ?", userId)
+	search.Offset(0).Limit(1)
+
 	if err != nil {
-		return shim.Error("Failed to delete user")
+		return shim.Error("create search condition failed")
+	}
+	err = stub.ConditionQuery(accounts, search)
+	if err != nil {
+		return shim.Error("condition query failed")
+	}
+	accountsByte, err := json.Marshal(accounts)
+	if err != nil {
+		return shim.Error("marshal accounts failed")
 	}
 
-	return shim.Success(nil)
+	for _, account := range accounts {
+		err = stub.Delete(account)
+		if err != nil {
+			return shim.Error("delete account failed")
+		}
+	}
+
+	return shim.Success(accountsByte)
 }
 
-// query callback representing the query of a chaincode
 func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var A string // Entities
-	var err error
+	userId := args[0]
 
-	if len(args) != 1 {
-		return shim.Error("Incorrect number of arguments. Expecting name of the person to query")
-	}
-
-	A = args[0]
-
-	// Get the state from the ledger
-	Avalbytes, err := stub.GetState(A)
+	user := &User{ID: userId}
+	err := stub.Get(user)
 	if err != nil {
-		jsonResp := "{\"Error\":\"Failed to get state for " + A + "\"}"
-		return shim.Error(jsonResp)
+		return shim.Error("query user failed")
 	}
 
-	if Avalbytes == nil {
-		jsonResp := "{\"Error\":\"Nil amount for " + A + "\"}"
-		return shim.Error(jsonResp)
+	userBytes, err := json.Marshal(user)
+	if err != nil {
+		return shim.Error("marshal user failed")
 	}
-
-	jsonResp := "{\"Name\":\"" + A + "\",\"Amount\":\"" + string(Avalbytes) + "\"}"
-	fmt.Printf("Query Response:%s\n", jsonResp)
-	return shim.Success(Avalbytes)
+	return shim.Success(userBytes)
 }
 
 func randStr() (string, error) {
