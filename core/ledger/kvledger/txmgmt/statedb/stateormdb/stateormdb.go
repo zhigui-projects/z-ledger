@@ -139,11 +139,11 @@ func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, redoLog *
 	}
 
 	logger.Debugf("chain [%s]: save point = %#v, version of redolog record = %#v",
-		chainName, savepoint, redologRecord.version)
+		chainName, savepoint, redologRecord.Version)
 
-	if redologRecord.version.BlockNum-latestSavepoint.BlockNum == 1 {
+	if redologRecord.Version.BlockNum-latestSavepoint.BlockNum == 1 {
 		logger.Debugf("chain [%s]: Re-applying last batch", chainName)
-		if err := vdb.applyUpdates(redologRecord.updateBatch, redologRecord.version); err != nil {
+		if err := vdb.applyUpdates(redologRecord.UpdateBatch, redologRecord.Version); err != nil {
 			return nil, err
 		}
 	}
@@ -311,8 +311,8 @@ func (v *VersionedDB) ApplyUpdates(updates *statedb.UpdateBatch, height *version
 	if height != nil && updates.ContainsPostOrderWrites {
 		// height is passed nil when committing missing private data for previously committed blocks
 		r := &redoRecord{
-			updateBatch: updates,
-			version:     height,
+			UpdateBatch: updates,
+			Version:     height,
 		}
 		if err := v.redoLog.persist(r); err != nil {
 			return err
