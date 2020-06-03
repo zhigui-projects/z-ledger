@@ -273,12 +273,27 @@ func (v *VersionedDB) GetStateMultipleKeys(namespace string, keys []string) ([]*
 
 // GetStateRangeScanIterator implements method in VersionedDB interface
 func (v *VersionedDB) GetStateRangeScanIterator(namespace string, startKey string, endKey string) (statedb.ResultsIterator, error) {
-	return nil, errors.New("GetStateRangeScanIterator not supported for ormdb")
+	return &resultsIterator{}, nil
+}
+
+type resultsIterator struct {
+}
+
+func (itr *resultsIterator) Next() (statedb.QueryResult, error) {
+	return nil, nil
+}
+
+func (itr *resultsIterator) Close() {
+
+}
+
+func (itr *resultsIterator) GetBookmarkAndClose() string {
+	return ""
 }
 
 // GetStateRangeScanIteratorWithMetadata implements method in VersionedDB interface
 func (v *VersionedDB) GetStateRangeScanIteratorWithMetadata(namespace string, startKey string, endKey string, metadata map[string]interface{}) (statedb.QueryResultsIterator, error) {
-	return nil, errors.New("GetStateRangeScanIteratorWithMetadata not supported for ormdb")
+	return &resultsIterator{}, nil
 }
 
 // ExecuteQuery implements method in VersionedDB interface
