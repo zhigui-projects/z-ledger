@@ -459,7 +459,7 @@ func (v *VersionedDB) GetStateRangeScanIteratorWithMetadata(namespace string, st
 	}
 
 	if !isORMKey {
-		rows, err := db.DB.Table(ormdb.ToTableName("SysState")).Where("id >= ? AND id < ?", startKey, endKey).Rows()
+		rows, err := db.DB.Table(ormdb.ToTableName(reflect.TypeOf(&SysState{}).Elem().Name())).Where("id >= ? AND id < ?", startKey, endKey).Rows()
 		if err != nil {
 			return nil, errors.WithMessage(err, "rang query sys state failed")
 		}
