@@ -82,15 +82,15 @@ func ledgerConfig() *ledger.Config {
 	if conf.StateDBConfig.StateDatabase == "ORMDB" {
 		config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
 		_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
-		fmt.Println("232313123123" + config.DBType + "232313123123")
+		fmt.Println("232313123123" + config.DbType + "232313123123")
 		fmt.Println("232313123123" + config.Username + "232313123123")
 		config.RedoLogPath = filepath.Join(rootFSPath, "ormdbRedoLogs")
-		config.DBType = viper.GetString("ledger.state.ormDBConfig.dbtype")
-		fmt.Println("232313123123" + config.DBType + "232313123123")
+		config.DbType = viper.GetString("ledger.state.ormDBConfig.dbtype")
+		fmt.Println("232313123123" + config.DbType + "232313123123")
 		config.UserCacheSizeMBs = viper.GetInt("ledger.state.ormDBConfig.userCacheSizeMBs")
 		config.Username = viper.GetString("ledger.state.ormDBConfig.username")
 		fmt.Println("232313123123" + config.Username + "232313123123")
-		if config.DBType == "sqlite3" {
+		if config.DbType == "sqlite3" {
 			config.Sqlite3Config.Path = filepath.Join(rootFSPath, "ormdb")
 		}
 		conf.StateDBConfig.ORMDB = config

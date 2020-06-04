@@ -43,7 +43,7 @@ func NewORMDBInstance(config *config.ORMDBConfig, metricsProvider metrics.Provid
 func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string) (*ORMDatabase, error) {
 	var db *gorm.DB
 	var err error
-	switch ormDBInstance.Config.DBType {
+	switch ormDBInstance.Config.DbType {
 	case "sqlite3":
 		db, err = sqllite3.CreateIfNotExistAndOpen(ormDBInstance.Config, dbName)
 		if err != nil {
@@ -57,7 +57,7 @@ func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string) (*ORMDatabas
 		ORMDBInstance: ormDBInstance,
 		DBName:        dbName,
 		DB:            db,
-		Type:          ormDBInstance.Config.DBType,
+		Type:          ormDBInstance.Config.DbType,
 		ModelTypes:    make(map[string]entitydefinition.DynamicStruct),
 	}
 

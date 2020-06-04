@@ -7,7 +7,7 @@ package config
 
 // ORMDBConfig
 type ORMDBConfig struct {
-	DBType           string
+	DbType           string
 	Username         string
 	Password         string
 	Host             string
