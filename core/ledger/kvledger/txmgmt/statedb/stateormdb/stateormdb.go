@@ -212,8 +212,11 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 	}
 
 	if !isORMKey {
-		sysState := &SysState{ID: key}
-		if err = db.DB.Find(sysState).Error; err != nil {
+		sysState := &SysState{}
+		if err = db.DB.Where("id = ?", key).Find(sysState).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, nil
+			}
 			return nil, errors.WithMessage(err, "query sys state failed")
 		}
 
@@ -606,7 +609,7 @@ func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
 	sp := &SysState{}
 	err := v.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(sp).Error
 	if err != nil {
-		if err.Error() == "record not found" {
+		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		} else {
 			logger.Errorf("Failed to read savepoint data %s", err.Error())

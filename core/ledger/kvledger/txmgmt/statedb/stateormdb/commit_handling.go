@@ -210,6 +210,9 @@ func (c *committer) commitUpdates() error {
 		} else {
 			sysState := &SysState{ID: update.Key, Value: base64.StdEncoding.EncodeToString(update.Value), VerAndMeta: update.VerAndMeta}
 			if err = c.db.DB.Save(sysState).Error; err != nil {
+				testSysState := &SysState{}
+				c.db.DB.Where("id = ?", update.Key).Find(testSysState)
+				fmt.Printf("dasdasdads%v", testSysState)
 				return err
 			}
 		}
