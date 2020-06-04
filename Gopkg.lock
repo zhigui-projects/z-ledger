@@ -174,6 +174,14 @@
   version = "v4"
 
 [[projects]]
+  branch = "master"
+  digest = "1:5c8eae341054f2edcc1c68932683fc3963c94ac97c00939303c9d4bea3bb4bd8"
+  name = "github.com/crackcomm/go-gitignore"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "887ab5e44cc38866fff9bc2f34c3a97e2a827c12"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -565,6 +573,14 @@
   pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  digest = "1:ed49911331fb3756d2e6be2c745520ba1d304ccdb17cca28d1d672096968e3ca"
+  name = "github.com/ipfs/go-ipfs-files"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "bb6f211d67c273467a8a4b5bebdad7031bb2dc5e"
+  version = "v0.0.8"
 
 [[projects]]
   digest = "1:4f96fa1e6816dd27ebbd4d8e2228357c0646998ca2fc2715bda4c71ba1bb97d3"
@@ -1099,9 +1115,9 @@
   packages = [
     "ed25519",
     "ed25519/internal/edwards25519",
+    "md4",
     "pbkdf2",
     "scrypt",
-    "md4",
     "sha3",
   ]
   pruneopts = "NUT"
@@ -1425,6 +1441,7 @@
     "github.com/hyperledger/fabric-protos-go/peer",
     "github.com/hyperledger/fabric-protos-go/peer/lifecycle",
     "github.com/hyperledger/fabric-protos-go/transientstore",
+    "github.com/ipfs/go-ipfs-files",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/sqlite",
     "github.com/kr/pretty",

@@ -210,3 +210,11 @@ noverify = [
 [[constraint]]
   branch = "master"
   name = "github.com/asaskevich/EventBus"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/pengisgood/go-ipfs-api"
+
+[[constraint]]
+  name = "github.com/ipfs/go-ipfs-files"
+  version = "0.0.8"
