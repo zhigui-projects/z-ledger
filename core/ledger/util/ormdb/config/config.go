@@ -7,14 +7,14 @@ package config
 
 // ORMDBConfig
 type ORMDBConfig struct {
-	DbType           string
-	Username         string
-	Password         string
-	Host             string
-	Port             int
-	RedoLogPath      string
-	UserCacheSizeMBs int
-	Sqlite3Config    *Sqlite3Config
+	DbType           string         `mapstructure:"dbtype" json:"dbtype" yaml:"dbtype"`
+	Username         string         `mapstructure:"username" json:"username" yaml:"username"`
+	Password         string         `mapstructure:"password" json:"password" yaml:"password"`
+	Host             string         `mapstructure:"host" json:"host" yaml:"host"`
+	Port             int            `mapstructure:"port" json:"port" yaml:"port"`
+	RedoLogPath      string         `mapstructure:"redoLogPath" json:"redoLogPath" yaml:"redoLogPath"`
+	UserCacheSizeMBs int            `mapstructure:"userCacheSizeMBs" json:"userCacheSizeMBs" yaml:"userCacheSizeMBs"`
+	Sqlite3Config    *Sqlite3Config `mapstructure:"sqlite3Config" json:"sqlite3Config" yaml:"sqlite3Config"`
 }
 
 // Sqlite3Config

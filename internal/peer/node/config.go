@@ -82,6 +82,7 @@ func ledgerConfig() *ledger.Config {
 	if conf.StateDBConfig.StateDatabase == "ORMDB" {
 		config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
 		_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
+		fmt.Printf("23123123123%v", config)
 		fmt.Println("232313123123" + config.DbType + "232313123123")
 		fmt.Println("232313123123" + config.Username + "232313123123")
 		config.RedoLogPath = filepath.Join(rootFSPath, "ormdbRedoLogs")
