@@ -78,7 +78,7 @@ func ledgerConfig() *ledger.Config {
 	}
 
 	if conf.StateDBConfig.StateDatabase == "ORMDB" {
-		config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
+		config := &ormdbconfig.ORMDBConfig{}
 		config.RedoLogPath = filepath.Join(rootFSPath, "ormdbRedoLogs")
 		config.DbType = viper.GetString("ledger.state.ormDBConfig.dbtype")
 		config.Host = viper.GetString("ledger.state.ormDBConfig.host")
@@ -87,7 +87,15 @@ func ledgerConfig() *ledger.Config {
 		config.Username = viper.GetString("ledger.state.ormDBConfig.username")
 		config.Password = viper.GetString("ledger.state.ormDBConfig.password")
 		if config.DbType == "sqlite3" {
-			config.Sqlite3Config.Path = filepath.Join(rootFSPath, "ormdb")
+			sqlite3Config := &ormdbconfig.Sqlite3Config{}
+			sqlite3Config.Path = filepath.Join(rootFSPath, "ormdb")
+			config.Sqlite3Config = sqlite3Config
+		}
+		if config.DbType == "mysql" {
+			mysqlConfig := &ormdbconfig.MysqlConfig{}
+			mysqlConfig.Charset = viper.GetString("ledger.state.ormDBConfig.mysqlConfig.charset")
+			mysqlConfig.Collate = viper.GetString("ledger.state.ormDBConfig.mysqlConfig.collate")
+			config.MysqlConfig = mysqlConfig
 		}
 		conf.StateDBConfig.ORMDB = config
 	}
