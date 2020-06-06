@@ -15,19 +15,20 @@ import (
 
 // CreateIfNotExistAndOpen opens a gorm mysql database instance
 func CreateIfNotExistAndOpen(config *config.ORMDBConfig, dbName string) (db *gorm.DB, err error) {
-	con := fmt.Sprintf("%s:%s@/(%s:%d)", config.Username, config.Password, config.Host, config.Port)
+	con := fmt.Sprintf("%s:%s@(%s:%d)/", config.Username, config.Password, config.Host, config.Port)
+	fmt.Println(con)
 	cdb, err := gorm.Open("mysql", con)
 	if err != nil {
 		panic(errors.WithMessage(err, "error connect mysql"))
 	}
 
-	createDBStatement := fmt.Sprintf("CREATE DATABASE %s DEFAULT CHARACTER SET %s COLLATE %s", dbName, config.MysqlConfig.Charset, config.MysqlConfig.Collate)
+	createDBStatement := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARACTER SET %s COLLATE %s", dbName, config.MysqlConfig.Charset, config.MysqlConfig.Collate)
 	err = cdb.Exec(createDBStatement).Error
 	if err != nil {
 		panic(errors.WithMessage(err, "error creating mysql db"))
 	}
-
-	dbcon := fmt.Sprintf("%s:%s@/(%s:%d)/%s?charset=%s&parseTime=True", config.Username, config.Password, config.Host, config.Port, config.MysqlConfig.Charset)
+	cdb.Close()
+	dbcon := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=%s&parseTime=True", config.Username, config.Password, config.Host, config.Port, dbName, config.MysqlConfig.Charset)
 
 	db, err = gorm.Open("mysql", dbcon)
 	if err != nil {
