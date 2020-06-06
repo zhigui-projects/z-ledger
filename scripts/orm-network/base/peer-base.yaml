@@ -25,11 +25,10 @@ services:
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       # Allow more time for chaincode container to build on install.
       - CORE_CHAINCODE_EXECUTETIMEOUT=300s
+      - CORE_LEDGER_STATE_STATEDATABASE=ORMDB
       - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=test
       - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=sqlite3
-      - CORE_LEDGER_STATE_ORMDBCONFIG_REDOLOGPATH=/var/hyperledger/production/ormdbredolog
       - CORE_LEDGER_STATE_ORMDBCONFIG_USERCACHESIZEMBS=64
-      - CORE_LEDGER_STATE_ORMDBCONFIG_SQLITE3CONFIG=/var/hyperledger/production/ormdb
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: peer node start
 

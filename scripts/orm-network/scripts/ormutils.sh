@@ -316,6 +316,8 @@ chaincodeQuery() {
     # is merged.
     test $rc -ne 0 && VALUE=$(cat log.txt | egrep '^[0-9]+$')
     test "$VALUE" = "$EXPECTED_RESULT" && let rc=0
+    test $res -eq 0 && VALUE=$(cat log.txt)
+    test "$VALUE" = "$EXPECTED_RESULT" && let rc=0
   done
   echo
   cat log.txt
@@ -425,8 +427,11 @@ chaincodeInvoke() {
   if [ "${IS_INIT}" -eq "1" ]; then
     CCARGS='{"Args":["Init"]}'
     INIT_ARG="--isInit"
+  elif [ "${IS_INIT}" -eq "2" ]; then
+    CCARGS='{"Args":["invoke","username","user@abc.com","abcd1234","A3ED98C6302C467493BBB78F249F457C","2FD3965C38D744FBBEB901EDCDA24487"]}'
+    INIT_ARG=""
   else
-    CCARGS='{"Args":["invoke","username","user@abc.com","abcd1234","A3ED98C6302C467493BBB78F249F457C"]}'
+    CCARGS='{"Args":["invoke","username","user@abc.com","abcd1234","A3ED98C6302C467493BBB78F249F457C","2FD3965C38D744FBBEB901EDCDA24487"]}'
     INIT_ARG=""
   fi
 

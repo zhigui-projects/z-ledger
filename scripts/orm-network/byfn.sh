@@ -174,6 +174,9 @@ function networkUp() {
   if [ "${IF_COUCHDB}" == "couchdb" ]; then
     COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_COUCH}"
   fi
+  if [ "${IF_COUCHDB}" == "mysqldb" ]; then
+    COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_MYSQL}"
+  fi
   IMAGE_TAG=$IMAGETAG docker-compose ${COMPOSE_FILES} up -d 2>&1
   docker ps -a
   if [ $? -ne 0 ]; then
@@ -201,14 +204,14 @@ function networkUp() {
 
   if [ "${NO_CHAINCODE}" != "true" ]; then
     echo Vendoring Go dependencies ...
-    pushd ./chaincode/abstore/go
+    pushd ./chaincode/orm/go
     GO111MODULE=on go mod vendor
     popd
     echo Finished vendoring Go dependencies
   fi
 
   # now run the end to end script
-  docker exec cli scripts/script.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT $VERBOSE $NO_CHAINCODE
+  docker exec cli scripts/ormscript.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT $VERBOSE $NO_CHAINCODE
   if [ $? -ne 0 ]; then
     echo "ERROR !!!! Test failed"
     exit 1
@@ -246,7 +249,9 @@ function upgradeNetwork() {
     if [ "${IF_COUCHDB}" == "couchdb" ]; then
       COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_COUCH}"
     fi
-
+    if [ "${IF_COUCHDB}" == "mysqldb" ]; then
+      COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_MYSQL}"
+    fi
     # removing the cli container
     docker-compose $COMPOSE_FILES stop cli
     docker-compose $COMPOSE_FILES up -d --no-deps cli
@@ -290,7 +295,7 @@ function upgradeNetwork() {
 # Tear down running network
 function networkDown() {
   # stop kafka and zookeeper containers in case we're running with kafka consensus-type
-  docker-compose -f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH -f $COMPOSE_FILE_KAFKA -f $COMPOSE_FILE_RAFT2 -f $COMPOSE_FILE_CA down --volumes --remove-orphans
+  docker-compose -f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH -f $COMPOSE_FILE_MYSQL -f $COMPOSE_FILE_KAFKA -f $COMPOSE_FILE_RAFT2 -f $COMPOSE_FILE_CA down --volumes --remove-orphans
 
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   if [ "$MODE" != "restart" ]; then
@@ -638,6 +643,7 @@ COMPOSE_FILE_SBFT=docker-compose-sbft.yaml
 # certificate authorities compose file
 COMPOSE_FILE_CA=docker-compose-ca.yaml
 #
+COMPOSE_FILE_MYSQL=docker-compose-mysql.yaml
 # use golang as the default language for chaincode
 LANGUAGE=golang
 # default image tag

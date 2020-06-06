@@ -7,9 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package node
 
 import (
-	"fmt"
 	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
-	"github.com/mitchellh/mapstructure"
 	"path/filepath"
 
 	coreconfig "github.com/hyperledger/fabric/core/config"
@@ -81,16 +79,13 @@ func ledgerConfig() *ledger.Config {
 
 	if conf.StateDBConfig.StateDatabase == "ORMDB" {
 		config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
-		_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
-		fmt.Printf("23123123123%v", config)
-		fmt.Println("232313123123" + config.DbType + "232313123123")
-		fmt.Println("232313123123" + config.Username + "232313123123")
 		config.RedoLogPath = filepath.Join(rootFSPath, "ormdbRedoLogs")
 		config.DbType = viper.GetString("ledger.state.ormDBConfig.dbtype")
-		fmt.Println("232313123123" + config.DbType + "232313123123")
+		config.Host = viper.GetString("ledger.state.ormDBConfig.host")
+		config.Port = viper.GetInt("ledger.state.ormDBConfig.port")
 		config.UserCacheSizeMBs = viper.GetInt("ledger.state.ormDBConfig.userCacheSizeMBs")
 		config.Username = viper.GetString("ledger.state.ormDBConfig.username")
-		fmt.Println("232313123123" + config.Username + "232313123123")
+		config.Password = viper.GetString("ledger.state.ormDBConfig.password")
 		if config.DbType == "sqlite3" {
 			config.Sqlite3Config.Path = filepath.Join(rootFSPath, "ormdb")
 		}

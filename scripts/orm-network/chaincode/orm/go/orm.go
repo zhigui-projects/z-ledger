@@ -10,14 +10,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
-	"github.com/hyperledger/fabric/common/util"
-	"math/rand"
-	"strings"
-	"time"
-
 	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
+	"strconv"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -28,8 +24,6 @@ type User struct {
 	ID        string
 	Name      string
 	Email     string    `gorm:"type:varchar(100);unique_index"`
-	CreatedAt time.Time `ormdb:"datatype"`
-	UpdatedAt time.Time `ormdb:"datatype"`
 	Accounts  []Account `ormdb:"entity"`
 }
 
@@ -38,8 +32,6 @@ type Account struct {
 	Number    string
 	Amount    sql.NullFloat64 `ormdb:"datatype"`
 	UserId    string
-	CreatedAt time.Time `ormdb:"datatype"`
-	UpdatedAt time.Time `ormdb:"datatype"`
 }
 
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -74,16 +66,12 @@ func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string
 	user.ID = args[3]
 	user.Name = args[0]
 	user.Email = args[1]
-	now := time.Now().UTC()
-	user.CreatedAt = now
-	user.UpdatedAt = now
 
 	accounts := make([]Account, 2)
 	for i, _ := range accounts {
 		account := &Account{}
-		account.ID = strings.ReplaceAll(util.GenerateUUID(), "-", "")
-		ra, _ := randStr()
-		account.Number = args[2] + ra
+		account.ID = args[4] + strconv.Itoa(i)
+		account.Number = args[2] + strconv.Itoa(i)
 		account.UserId = user.ID
 		account.Amount = sql.NullFloat64{Float64: 100.00}
 		accounts[i] = *account
@@ -149,17 +137,6 @@ func (t *SimpleChaincode) query(stub shim.ChaincodeStubInterface, args []string)
 		return shim.Error("marshal user failed")
 	}
 	return shim.Success(userBytes)
-}
-
-func randStr() (string, error) {
-	c := 10
-	b := make([]byte, c)
-	_, err := rand.Read(b)
-	if err != nil {
-		fmt.Println("error:", err)
-		return "", err
-	}
-	return string(b), nil
 }
 
 func main() {

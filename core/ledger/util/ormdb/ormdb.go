@@ -10,6 +10,7 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/metrics"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
+	"github.com/hyperledger/fabric/core/ledger/util/ormdb/mysql"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/sqllite3"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
@@ -50,6 +51,12 @@ func CreateORMDatabase(ormDBInstance *ORMDBInstance, dbName string) (*ORMDatabas
 			logger.Errorf("create sqlite3 database with dbname [%s] failed", dbName)
 			return nil, errors.WithMessage(err, "create sqlite3 database failed")
 		}
+	case "mysql":
+		db, err = mysql.CreateIfNotExistAndOpen(ormDBInstance.Config, dbName)
+		if err != nil {
+			logger.Errorf("create mysql database with dbname [%s] failed", dbName)
+			return nil, errors.WithMessage(err, "create mysql database failed")
+		}
 	default:
 		return nil, errors.New("not supported database type")
 	}
@@ -73,6 +80,12 @@ func DeleteORMDatabase(ormDatabase *ORMDatabase) error {
 		if err != nil {
 			logger.Errorf("delete sqlite3 database with dbname [%s] failed", ormDatabase.DBName)
 			return errors.WithMessage(err, "delete sqlite3 database failed")
+		}
+	case "mysql":
+		err = mysql.DropAndDelete(ormDatabase.DB)
+		if err != nil {
+			logger.Errorf("delete mysql database with dbname [%s] failed", ormDatabase.DBName)
+			return errors.WithMessage(err, "delete mysql database failed")
 		}
 	default:
 		return errors.New("not supported database type")

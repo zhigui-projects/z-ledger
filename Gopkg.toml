@@ -193,3 +193,7 @@ noverify = [
 [[constraint]]
   name = "github.com/VictoriaMetrics/fastcache"
   version = "1.4.6"
+
+[[constraint]]
+  name = "github.com/go-sql-driver/mysql"
+  version = "1.5.0"

@@ -212,9 +212,6 @@ func (c *committer) commitUpdates() error {
 			if err = c.db.DB.Save(sysState).Error; err != nil {
 				return err
 			}
-			testSysState := &SysState{}
-			c.db.DB.Where("id = ?", update.Key).Find(testSysState)
-			fmt.Println("====" + testSysState.ID)
 		}
 	}
 

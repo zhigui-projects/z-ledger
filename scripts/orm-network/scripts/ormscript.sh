@@ -78,15 +78,15 @@ joinChannel () {
 	done
 }
 
-## Create channel
+# Create channel
 echo "Creating channel..."
 createChannel
 
-## Join all the peers to the channel
+# Join all the peers to the channel
 echo "Having all peers join the channel..."
 joinChannel
 
-## Set the anchor peers for each org in the channel
+# Set the anchor peers for each org in the channel
 echo "Updating anchor peers for org1..."
 updateAnchorPeers 0 1
 echo "Updating anchor peers for org2..."
@@ -132,13 +132,14 @@ if [ "${NO_CHAINCODE}" != "true" ]; then
 	# invoke init
 	chaincodeInvoke 1 0 1 0 2
 
+  sleep 30s
   # Invoke chaincode on peer0.org1 and peer0.org2
 	echo "Sending invoke transaction on peer0.org1 peer0.org2..."
 	chaincodeInvoke 0 0 1 0 2
 
 	# Query chaincode on peer0.org1
 	echo "Querying chaincode on peer0.org1..."
-	chaincodeQuery 0 1 100
+	chaincodeQuery 0 1 \{\"ID\":\"A3ED98C6302C467493BBB78F249F457C\"\,\"Name\":\"username\"\,\"Email\":\"user@abc.com\"\,\"Accounts\":null\}
 
 	# Query chaincode on peer0.org1
 #	echo "Querying chaincode on peer0.org1..."

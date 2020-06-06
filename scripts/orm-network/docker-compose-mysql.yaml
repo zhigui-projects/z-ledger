@@ -1,0 +1,102 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+networks:
+  byfn:
+
+services:
+  mysqldb0:
+    container_name: mysqldb0
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=test
+    ports:
+      - "3306:3306"
+    networks:
+      - byfn
+
+  peer0.org1.example.com:
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=ORMDB
+      - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=root
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PASSWORD=test
+      - CORE_LEDGER_STATE_ORMDBCONFIG_HOST=mysqldb0
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=3306
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_CHARSET=utf8mb4
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_COLLATE=utf8mb4_general_ci
+      - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
+    depends_on:
+      - mysqldb0
+
+  mysqldb1:
+    container_name: mysqldb1
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=test
+    ports:
+      - "4306:3306"
+    networks:
+      - byfn
+
+  peer1.org1.example.com:
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=ORMDB
+      - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=root
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PASSWORD=test
+      - CORE_LEDGER_STATE_ORMDBCONFIG_HOST=mysqldb1
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=4306
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_CHARSET=utf8mb4
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_COLLATE=utf8mb4_general_ci
+      - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
+    depends_on:
+      - mysqldb1
+
+  mysqldb2:
+    container_name: mysqldb2
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=test
+    ports:
+      - "5306:3306"
+    networks:
+      - byfn
+
+  peer0.org2.example.com:
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=ORMDB
+      - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=root
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PASSWORD=test
+      - CORE_LEDGER_STATE_ORMDBCONFIG_HOST=mysqldb2
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=5306
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_CHARSET=utf8mb4
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_COLLATE=utf8mb4_general_ci
+      - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
+    depends_on:
+      - mysqldb2
+
+  mysqldb3:
+    container_name: mysqldb3
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=test
+    ports:
+      - "6306:3306"
+    networks:
+      - byfn
+
+  peer1.org2.example.com:
+    environment:
+      - CORE_LEDGER_STATE_STATEDATABASE=ORMDB
+      - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=root
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PASSWORD=test
+      - CORE_LEDGER_STATE_ORMDBCONFIG_HOST=mysqldb3
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=6306
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_CHARSET=utf8mb4
+      - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_COLLATE=utf8mb4_general_ci
+      - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
+    depends_on:
+      - mysqldb3
