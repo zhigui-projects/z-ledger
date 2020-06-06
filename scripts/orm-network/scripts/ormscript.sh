@@ -82,6 +82,7 @@ joinChannel () {
 echo "Creating channel..."
 createChannel
 
+sleep 10
 # Join all the peers to the channel
 echo "Having all peers join the channel..."
 joinChannel

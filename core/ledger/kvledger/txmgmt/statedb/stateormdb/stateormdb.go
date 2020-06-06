@@ -224,11 +224,6 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 			logger.Errorf("marshal version and meta failed [%v]", err)
 			return nil, errors.WithMessage(err, "marshal version and meta failed")
 		}
-		//value, err := base64.StdEncoding.DecodeString(sysState.Value)
-		//if err != nil {
-		//	logger.Errorf("decode sys state value failed [%v]", err)
-		//	return nil, errors.WithMessage(err, "decode sys state value failed")
-		//}
 		return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: sysState.Value}, nil
 	} else {
 		entityName := keys[0]
@@ -616,11 +611,6 @@ func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
 		}
 	}
 
-	//versionBytes, err := base64.StdEncoding.DecodeString(sp.Value)
-	//if err != nil {
-	//	logger.Errorf("Failed to decode savepoint data %s", err.Error())
-	//	return nil, err
-	//}
 	height, _, err := version.NewHeightFromBytes(sp.Value)
 	return height, err
 }

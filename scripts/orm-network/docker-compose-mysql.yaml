@@ -15,7 +15,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=test
     ports:
-      - "3306:3306"
+      - 3306
     networks:
       - byfn
 
@@ -31,6 +31,8 @@ services:
       - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
     depends_on:
       - mysqldb0
+    networks:
+      - byfn
 
   mysqldb1:
     container_name: mysqldb1
@@ -38,7 +40,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=test
     ports:
-      - "4306:3306"
+      - 3306
     networks:
       - byfn
 
@@ -48,12 +50,14 @@ services:
       - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=root
       - CORE_LEDGER_STATE_ORMDBCONFIG_PASSWORD=test
       - CORE_LEDGER_STATE_ORMDBCONFIG_HOST=mysqldb1
-      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=4306
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=3306
       - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_CHARSET=utf8mb4
       - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_COLLATE=utf8mb4_general_ci
       - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
     depends_on:
       - mysqldb1
+    networks:
+      - byfn
 
   mysqldb2:
     container_name: mysqldb2
@@ -61,7 +65,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=test
     ports:
-      - "5306:3306"
+      - 3306
     networks:
       - byfn
 
@@ -71,12 +75,14 @@ services:
       - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=root
       - CORE_LEDGER_STATE_ORMDBCONFIG_PASSWORD=test
       - CORE_LEDGER_STATE_ORMDBCONFIG_HOST=mysqldb2
-      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=5306
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=3306
       - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_CHARSET=utf8mb4
       - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_COLLATE=utf8mb4_general_ci
       - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
     depends_on:
       - mysqldb2
+    networks:
+      - byfn
 
   mysqldb3:
     container_name: mysqldb3
@@ -84,7 +90,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=test
     ports:
-      - "6306:3306"
+      - 3306
     networks:
       - byfn
 
@@ -94,9 +100,11 @@ services:
       - CORE_LEDGER_STATE_ORMDBCONFIG_USERNAME=root
       - CORE_LEDGER_STATE_ORMDBCONFIG_PASSWORD=test
       - CORE_LEDGER_STATE_ORMDBCONFIG_HOST=mysqldb3
-      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=6306
+      - CORE_LEDGER_STATE_ORMDBCONFIG_PORT=3306
       - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_CHARSET=utf8mb4
       - CORE_LEDGER_STATE_ORMDBCONFIG_MYSQLCONFIG_COLLATE=utf8mb4_general_ci
       - CORE_LEDGER_STATE_ORMDBCONFIG_DBTYPE=mysql
     depends_on:
       - mysqldb3
+    networks:
+      - byfn

@@ -187,8 +187,6 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 
 	savepoint := &SysState{}
 	vdb.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint)
-	//savepointHeightBytes, err := base64.StdEncoding.DecodeString(savepoint.Value)
-	//assert.NoError(t, err)
 	savepointHeight, _, err := version.NewHeightFromBytes(savepoint.Value)
 	assert.NotNil(t, savepointHeight)
 	assert.Equal(t, uint64(2), savepointHeight.BlockNum)
@@ -266,8 +264,6 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 
 	savepoint1 := &SysState{}
 	vdb1.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint1)
-	//savepoint1HeightBytes, err := base64.StdEncoding.DecodeString(savepoint1.Value)
-	//assert.NoError(t, err)
 	savepoint1Height, _, err := version.NewHeightFromBytes(savepoint1.Value)
 	assert.NotNil(t, savepoint1Height)
 	assert.Equal(t, uint64(3), savepoint1Height.BlockNum)
@@ -384,8 +380,6 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 
 	savepoint := &SysState{}
 	vdb.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint)
-	//savepointHeightBytes, err := base64.StdEncoding.DecodeString(savepoint.Value)
-	//assert.NoError(t, err)
 	savepointHeight, _, err := version.NewHeightFromBytes(savepoint.Value)
 	assert.NotNil(t, savepointHeight)
 	assert.Equal(t, uint64(2), savepointHeight.BlockNum)
@@ -463,8 +457,6 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 
 	savepoint1 := &SysState{}
 	vdb1.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint1)
-	//savepoint1HeightBytes, err := base64.StdEncoding.DecodeString(savepoint1.Value)
-	//assert.NoError(t, err)
 	savepoint1Height, _, err := version.NewHeightFromBytes(savepoint1.Value)
 	assert.NotNil(t, savepoint1Height)
 	assert.Equal(t, uint64(3), savepoint1Height.BlockNum)
