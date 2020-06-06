@@ -1,0 +1,15 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+services:
+    mysqldb0:
+        container_name: mysqldb0
+        image: mysql:5.7
+        environment:
+            - MYSQL_ROOT_PASSWORD=test
+        ports:
+            - "3306:3306"

@@ -1,27 +1,19 @@
-1. Start simple consensus network
-```
-./byfn.sh up -o etcdraft
-```
-If you want to start solo, kafka or sbft consensus, please do the following
+1.编译tools
 ```
 cd $GOPATH/src/github.com/hyperledger/fabric
 mkdir -p scripts/bin
 go build -o scripts/bin/configtxgen cmd/configtxgen/main.go
-./byfn.sh generate -o solo
-./byfn.sh up -o solo
+go build -o scripts/bin/cryptogen cmd/cryptogen/main.go
 ```
 
-2. Start multiple consensus network
+2.默认是sqlite3数据库
 ```
-./byfn.sh up -o etcdraft
+cd scripts/orm-network
+./byfn.sh up 
+```
 
-docker-compose -f docker-compose-kafka.yaml up -d
-
-docker exec -it cli bash
-
-./scripts/solochannel.sh
-
-./scripts/kafkachannel.sh
-
-./scripts/sbftchannel.sh
+3.切换到mysql数据库
+```
+cd scripts/orm-network
+./byfn.sh up -s mysqldb
 ```
