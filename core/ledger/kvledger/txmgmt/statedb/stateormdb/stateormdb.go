@@ -30,7 +30,7 @@ const savePointKey = "savepoint"
 
 type SysState struct {
 	ID         string
-	Value      []byte
+	Value      []byte `gorm:"size:65535"`
 	VerAndMeta string `json:"-"`
 }
 
