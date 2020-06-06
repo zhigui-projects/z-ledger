@@ -6,7 +6,6 @@ SPDX-License-Identifier: Apache-2.0
 package stateormdb
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
@@ -208,7 +207,7 @@ func (c *committer) commitUpdates() error {
 				return err
 			}
 		} else {
-			sysState := &SysState{ID: update.Key, Value: base64.StdEncoding.EncodeToString(update.Value), VerAndMeta: update.VerAndMeta}
+			sysState := &SysState{ID: update.Key, Value: update.Value, VerAndMeta: update.VerAndMeta}
 			if err = c.db.DB.Save(sysState).Error; err != nil {
 				return err
 			}

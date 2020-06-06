@@ -7,7 +7,6 @@ package stateormdb
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
@@ -31,7 +30,7 @@ const savePointKey = "savepoint"
 
 type SysState struct {
 	ID         string
-	Value      string
+	Value      []byte
 	VerAndMeta string `json:"-"`
 }
 
@@ -225,12 +224,12 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 			logger.Errorf("marshal version and meta failed [%v]", err)
 			return nil, errors.WithMessage(err, "marshal version and meta failed")
 		}
-		value, err := base64.StdEncoding.DecodeString(sysState.Value)
-		if err != nil {
-			logger.Errorf("decode sys state value failed [%v]", err)
-			return nil, errors.WithMessage(err, "decode sys state value failed")
-		}
-		return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: value}, nil
+		//value, err := base64.StdEncoding.DecodeString(sysState.Value)
+		//if err != nil {
+		//	logger.Errorf("decode sys state value failed [%v]", err)
+		//	return nil, errors.WithMessage(err, "decode sys state value failed")
+		//}
+		return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: sysState.Value}, nil
 	} else {
 		entityName := keys[0]
 		entityId := keys[1]
@@ -595,7 +594,7 @@ func (v *VersionedDB) recordSavepoint(height *version.Height) error {
 		return nil
 	}
 
-	savePoint := &SysState{ID: savePointKey, Value: base64.StdEncoding.EncodeToString(height.ToBytes())}
+	savePoint := &SysState{ID: savePointKey, Value: height.ToBytes()}
 	err := v.metadataDB.DB.Save(savePoint).Error
 	if err != nil {
 		logger.Errorf("Failed to save the savepoint to DB %s", err.Error())
@@ -617,12 +616,12 @@ func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
 		}
 	}
 
-	versionBytes, err := base64.StdEncoding.DecodeString(sp.Value)
-	if err != nil {
-		logger.Errorf("Failed to decode savepoint data %s", err.Error())
-		return nil, err
-	}
-	height, _, err := version.NewHeightFromBytes(versionBytes)
+	//versionBytes, err := base64.StdEncoding.DecodeString(sp.Value)
+	//if err != nil {
+	//	logger.Errorf("Failed to decode savepoint data %s", err.Error())
+	//	return nil, err
+	//}
+	height, _, err := version.NewHeightFromBytes(sp.Value)
 	return height, err
 }
 

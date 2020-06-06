@@ -3,7 +3,6 @@ package stateormdb
 import (
 	"bytes"
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
@@ -188,9 +187,9 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 
 	savepoint := &SysState{}
 	vdb.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint)
-	savepointHeightBytes, err := base64.StdEncoding.DecodeString(savepoint.Value)
-	assert.NoError(t, err)
-	savepointHeight, _, err := version.NewHeightFromBytes(savepointHeightBytes)
+	//savepointHeightBytes, err := base64.StdEncoding.DecodeString(savepoint.Value)
+	//assert.NoError(t, err)
+	savepointHeight, _, err := version.NewHeightFromBytes(savepoint.Value)
 	assert.NotNil(t, savepointHeight)
 	assert.Equal(t, uint64(2), savepointHeight.BlockNum)
 	assert.Equal(t, uint64(5), savepointHeight.TxNum)
@@ -267,9 +266,9 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 
 	savepoint1 := &SysState{}
 	vdb1.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint1)
-	savepoint1HeightBytes, err := base64.StdEncoding.DecodeString(savepoint1.Value)
-	assert.NoError(t, err)
-	savepoint1Height, _, err := version.NewHeightFromBytes(savepoint1HeightBytes)
+	//savepoint1HeightBytes, err := base64.StdEncoding.DecodeString(savepoint1.Value)
+	//assert.NoError(t, err)
+	savepoint1Height, _, err := version.NewHeightFromBytes(savepoint1.Value)
 	assert.NotNil(t, savepoint1Height)
 	assert.Equal(t, uint64(3), savepoint1Height.BlockNum)
 	assert.Equal(t, uint64(5), savepoint1Height.TxNum)
@@ -385,9 +384,9 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 
 	savepoint := &SysState{}
 	vdb.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint)
-	savepointHeightBytes, err := base64.StdEncoding.DecodeString(savepoint.Value)
-	assert.NoError(t, err)
-	savepointHeight, _, err := version.NewHeightFromBytes(savepointHeightBytes)
+	//savepointHeightBytes, err := base64.StdEncoding.DecodeString(savepoint.Value)
+	//assert.NoError(t, err)
+	savepointHeight, _, err := version.NewHeightFromBytes(savepoint.Value)
 	assert.NotNil(t, savepointHeight)
 	assert.Equal(t, uint64(2), savepointHeight.BlockNum)
 	assert.Equal(t, uint64(5), savepointHeight.TxNum)
@@ -464,9 +463,9 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 
 	savepoint1 := &SysState{}
 	vdb1.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(savepoint1)
-	savepoint1HeightBytes, err := base64.StdEncoding.DecodeString(savepoint1.Value)
-	assert.NoError(t, err)
-	savepoint1Height, _, err := version.NewHeightFromBytes(savepoint1HeightBytes)
+	//savepoint1HeightBytes, err := base64.StdEncoding.DecodeString(savepoint1.Value)
+	//assert.NoError(t, err)
+	savepoint1Height, _, err := version.NewHeightFromBytes(savepoint1.Value)
 	assert.NotNil(t, savepoint1Height)
 	assert.Equal(t, uint64(3), savepoint1Height.BlockNum)
 	assert.Equal(t, uint64(5), savepoint1Height.TxNum)

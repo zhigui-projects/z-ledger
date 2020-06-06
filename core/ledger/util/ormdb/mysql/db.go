@@ -6,7 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -17,13 +19,13 @@ import (
 func CreateIfNotExistAndOpen(config *config.ORMDBConfig, dbName string) (db *gorm.DB, err error) {
 	con := fmt.Sprintf("%s:%s@(%s:%d)/", config.Username, config.Password, config.Host, config.Port)
 	fmt.Println(con)
-	cdb, err := gorm.Open("mysql", con)
+	cdb, err := sql.Open("mysql", con)
 	if err != nil {
 		panic(errors.WithMessage(err, "error connect mysql"))
 	}
 
 	createDBStatement := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARACTER SET %s COLLATE %s", dbName, config.MysqlConfig.Charset, config.MysqlConfig.Collate)
-	err = cdb.Exec(createDBStatement).Error
+	_,err = cdb.Exec(createDBStatement)
 	if err != nil {
 		panic(errors.WithMessage(err, "error creating mysql db"))
 	}
