@@ -189,6 +189,11 @@ Application: &ApplicationDefaults
         # ACL policy for qscc's "GetBlockByTxID" function
         qscc/GetBlockByTxID: /Channel/Application/Readers
 
+        #---Configuration System Chaincode (ascc) function to policy mapping for access control---#
+
+        # ACL policy for ascc's "ArchiveByDate" function
+        ascc/ArchiveByDate: /Channel/Application/Admins
+
         #---Configuration System Chaincode (cscc) function to policy mapping for access control---#
 
         # ACL policy for cscc's "GetConfigBlock" function

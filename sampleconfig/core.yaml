@@ -568,6 +568,7 @@ chaincode:
         escc: enable
         vscc: enable
         qscc: enable
+        ascc: enable
 
     # Logging section for the chaincode container
     logging:
@@ -585,6 +586,17 @@ chaincode:
 #
 ###############################################################################
 ledger:
+  archive:
+    enable: false
+    # type - options are "hdfs", "ipfs"
+    type: hdfs
+    hdfsConfig:
+      nameNodes:
+        - 47.52.139.52:9000
+      # It specifies which HDFS user the client will act as.
+      user: hdfs
+      useDatanodeHostname: false
+    ipfsConfig:
 
   blockchain:
 

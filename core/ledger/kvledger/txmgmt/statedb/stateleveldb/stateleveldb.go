@@ -8,11 +8,12 @@ package stateleveldb
 
 import (
 	"bytes"
-	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
 	"github.com/hyperledger/fabric/common/ledger/util/leveldbhelper"
+	"github.com/hyperledger/fabric/core/ledger/archive/eventbus"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/pkg/errors"
@@ -194,6 +195,11 @@ func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version
 					return err
 				}
 				dbBatch.Put(dataKey, encodedVal)
+
+				if ns == "ascc" && k == "byTxDate" {
+					logger.Infof("Publishing event[archive-by-tx-date] with channel[%s] date[%s]", vdb.dbName, string(vv.Value))
+					eventbus.Get(vdb.dbName).Publish("archive-by-tx-date", vdb.dbName, string(vv.Value))
+				}
 			}
 		}
 	}

@@ -118,12 +118,28 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
+  branch = "master"
+  digest = "1:596f2c77ec02df6755d5983073dcce743d77b3dd933288b6b4b14aa6b5d21c35"
+  name = "github.com/asaskevich/EventBus"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "4fc0642a29f392d9caa94cdb7503d2b676e3f442"
+
+[[projects]]
   digest = "1:707ebe952a8b3d00b343c01536c79c73771d100f63ec6babeaed5c79e2b8a8dd"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
   pruneopts = "NUT"
   revision = "4b2b341e8d7715fae06375aa633dbb6e91b3fb46"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:ebe1e510bc2d3e0340af52b46e69393a2233c651eeb0d8b00f9f9ac3371115d3"
+  name = "github.com/btcsuite/btcd"
+  packages = ["btcec"]
+  pruneopts = "NUT"
+  revision = "f3ec13030e4e828869954472cbc51ac36bee5c1d"
+  version = "v0.20.1-beta"
 
 [[projects]]
   digest = "1:0c31fa2fb2c809d61d640e28cc400087fe205df6ec9623dd1eb91a7de8d4f5d6"
@@ -249,6 +265,14 @@
   pruneopts = "NUT"
   revision = "44cc805cf13205b55f69e14bcb69867d1ae92f98"
   version = "v1.1.0"
+
+[[projects]]
+  digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
+  name = "github.com/fsnotify/fsnotify"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "45d7d09e39ef4ac08d493309fa031790c15bfe8a"
+  version = "v1.4.9"
 
 [[projects]]
   digest = "1:5c1e2d8db21d3dd43627f0da5aab03e14a2bf04addb49d5e8385a2168c828c13"
@@ -430,6 +454,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:9a3cfd8ec5bea622c87774a058bbd52a656fa7da9dfe8db329b859fb4e11e54d"
+  name = "github.com/hashicorp/go-uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6195a4f20692188e0a389def25559731d1e130f9"
+  version = "v1.0.2"
+
+[[projects]]
   digest = "1:53a4ebb0e1eb24a4644a3eec9457ba6ead5476a9ea5af43bf2c8b8b1a8ce47f2"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
@@ -504,13 +536,14 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:395a5f977a65907f61b64aff820dcdeb250deacf27f9ebffe3b3f516a1e98d4e"
+  branch = "archive-v2.0.0"
+  digest = "1:9799120d75597ced2a212e9c6888698a7a81a11a908792ee25480b82a9104b05"
   name = "github.com/hyperledger/fabric-protos-go"
   packages = [
     "common",
     "discovery",
     "gossip",
+    "ledger/archive",
     "ledger/queryresult",
     "ledger/rwset",
     "ledger/rwset/kvrwset",
@@ -522,7 +555,8 @@
     "transientstore",
   ]
   pruneopts = "NUT"
-  revision = "e9cfc186ba7b712d582dfce320b7441e50e18b4e"
+  revision = "2b830642091e409467f8660c4ba87b7e6d919726"
+  source = "github.com/zhigui-projects/fabric-protos-go"
 
 [[projects]]
   branch = "master"
@@ -539,6 +573,25 @@
   pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
+
+[[projects]]
+  digest = "1:4f96fa1e6816dd27ebbd4d8e2228357c0646998ca2fc2715bda4c71ba1bb97d3"
+  name = "github.com/itchyny/base58-go"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "53c1f055dd808e73e305cfc0468ba0e8343727f4"
+  version = "v0.1.0"
+
+[[projects]]
+  digest = "1:efc693dbcbe885796a3d46bd1817646d713996bcc2893d42f5434141afc1a86f"
+  name = "github.com/jcmturner/gofork"
+  packages = [
+    "encoding/asn1",
+    "x/crypto/pbkdf2",
+  ]
+  pruneopts = "NUT"
+  revision = "dc7c13fece037a4a36e2b3c69db4991498d30692"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:336a39ef5ee737445da620ffc7daf23fb5a939fb0d850bbe7a5a3c66d1ebb56e"
@@ -714,6 +767,20 @@
   version = "v1.5.0"
 
 [[projects]]
+  digest = "1:fb0a3457e6c6055f01620912110b36529d63f623a1c2d92c29b4db8d887e1de8"
+  name = "github.com/ontio/ontology-crypto"
+  packages = [
+    "ec",
+    "keypair",
+    "sm2",
+    "sm3",
+    "vrf",
+  ]
+  pruneopts = "NUT"
+  revision = "7eba89bbe29bb640f7525b936ce5687593156ec9"
+  version = "v1.0.9"
+
+[[projects]]
   digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
   name = "github.com/opencontainers/go-digest"
   packages = ["."]
@@ -739,6 +806,20 @@
   pruneopts = "NUT"
   revision = "425e105d5a03fabd737a126ad93d62a9eeede87f"
   version = "v1.0.0-rc8"
+
+[[projects]]
+  digest = "1:67338c538475b9ebe38866d23f19ab10200fdfed896131edc2bdf95b194a9225"
+  name = "github.com/pengisgood/hdfs"
+  packages = [
+    ".",
+    "hadoopconf",
+    "internal/protocol/hadoop_common",
+    "internal/protocol/hadoop_hdfs",
+    "internal/rpc",
+  ]
+  pruneopts = "NUT"
+  revision = "1deca13b03e362226537771a54cad40dacaad833"
+  version = "v2.1.1-dep"
 
 [[projects]]
   digest = "1:1bf95fa61209ea03139b5708ea26a364209f99a4fb70990a2697070588c156ab"
@@ -1023,9 +1104,16 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9c4fed825c10231651e81bf0ab2c12e3a6cc349dcc62a78f8d3a9dfb6744855e"
+  digest = "1:28fed84a6e705e880813c76a150a86eb5fd5ea86fe6aee04e34676114af92aa7"
   name = "golang.org/x/crypto"
-  packages = ["sha3"]
+  packages = [
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "pbkdf2",
+    "scrypt",
+    "md4",
+    "sha3",
+  ]
   pruneopts = "NUT"
   revision = "cc06ce4a13d484c0101a9e92913248488a75786d"
 
@@ -1207,6 +1295,82 @@
   version = "v1.4.7"
 
 [[projects]]
+  digest = "1:fea88a1a5c4cf1101d2e0f9d985ad996a1e1dfd4f3df948e12fcf7cf2baf23dc"
+  name = "gopkg.in/jcmturner/aescts.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f6abebb3171c4c1b1fea279cb7c7325020a26290"
+  version = "v1.0.1"
+
+[[projects]]
+  digest = "1:807e17e89614e6af666dc08855a88e5f1e3c54afb73c10d4b9d28f3b8f48c63c"
+  name = "gopkg.in/jcmturner/dnsutils.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "13eeb8d49ffb74d7a75784c35e4d900607a3943c"
+  version = "v1.0.1"
+
+[[projects]]
+  digest = "1:3f63acca591fa839cb08aefaf76f272b079b6193de8b52f97bd2c8672d3fc145"
+  name = "gopkg.in/jcmturner/goidentity.v3"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "3a6fd63c09116f950c952b5cb82d039acc7545b1"
+  version = "v3.0.0"
+
+[[projects]]
+  digest = "1:047be9d0ec2740546f6e849b34babffbe947c1f63a4d4e67d66af042ff3b30db"
+  name = "gopkg.in/jcmturner/gokrb5.v7"
+  packages = [
+    "asn1tools",
+    "client",
+    "config",
+    "credentials",
+    "crypto",
+    "crypto/common",
+    "crypto/etype",
+    "crypto/rfc3961",
+    "crypto/rfc3962",
+    "crypto/rfc4757",
+    "crypto/rfc8009",
+    "gssapi",
+    "iana",
+    "iana/addrtype",
+    "iana/adtype",
+    "iana/asnAppTag",
+    "iana/chksumtype",
+    "iana/errorcode",
+    "iana/etypeID",
+    "iana/flags",
+    "iana/keyusage",
+    "iana/msgtype",
+    "iana/nametype",
+    "iana/patype",
+    "kadmin",
+    "keytab",
+    "krberror",
+    "messages",
+    "pac",
+    "service",
+    "spnego",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "0b0d9d762bbc834e1e14f3f39dcea984364e9d63"
+  version = "v7.5.0"
+
+[[projects]]
+  digest = "1:0f16d9c577198e3b8d3209f5a89aabe679525b2aba2a7548714e973035c0e232"
+  name = "gopkg.in/jcmturner/rpc.v1"
+  packages = [
+    "mstypes",
+    "ndr",
+  ]
+  pruneopts = "NUT"
+  revision = "99a8ce2fbf8b8087b6ed12a37c61b10f04070043"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "v1"
   digest = "1:8fb1ccb16a6cfecbfdfeb84d8ea1cc7afa8f9ef16526bc2326f72d993e32cef1"
   name = "gopkg.in/tomb.v1"
@@ -1232,7 +1396,9 @@
     "github.com/Shopify/sarama",
     "github.com/Shopify/sarama/mocks",
     "github.com/VictoriaMetrics/fastcache",
+    "github.com/asaskevich/EventBus",
     "github.com/davecgh/go-spew/spew",
+    "github.com/fsnotify/fsnotify",
     "github.com/fsouza/go-dockerclient",
     "github.com/go-kit/kit/metrics",
     "github.com/go-kit/kit/metrics/prometheus",
@@ -1259,6 +1425,7 @@
     "github.com/hyperledger/fabric-protos-go/common",
     "github.com/hyperledger/fabric-protos-go/discovery",
     "github.com/hyperledger/fabric-protos-go/gossip",
+    "github.com/hyperledger/fabric-protos-go/ledger/archive",
     "github.com/hyperledger/fabric-protos-go/ledger/queryresult",
     "github.com/hyperledger/fabric-protos-go/ledger/rwset",
     "github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset",
@@ -1282,6 +1449,10 @@
     "github.com/onsi/gomega/gstruct",
     "github.com/onsi/gomega/matchers",
     "github.com/onsi/gomega/types",
+    "github.com/ontio/ontology-crypto/ec",
+    "github.com/ontio/ontology-crypto/keypair",
+    "github.com/ontio/ontology-crypto/vrf",
+    "github.com/pengisgood/hdfs",
     "github.com/pkg/errors",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promhttp",

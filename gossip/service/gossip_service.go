@@ -16,6 +16,9 @@ import (
 	"github.com/hyperledger/fabric/core/committer/txvalidator"
 	"github.com/hyperledger/fabric/core/common/privdata"
 	"github.com/hyperledger/fabric/core/deliverservice"
+	"github.com/hyperledger/fabric/core/ledger/archive"
+	archiveservice "github.com/hyperledger/fabric/core/ledger/archive/service"
+	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
 	"github.com/hyperledger/fabric/core/transientstore"
 	"github.com/hyperledger/fabric/gossip/api"
 	"github.com/hyperledger/fabric/gossip/comm"
@@ -163,6 +166,9 @@ type GossipService struct {
 	privateHandlers map[string]privateHandler
 	chains          map[string]state.GossipStateProvider
 	leaderElection  map[string]election.LeaderElectionService
+	ledgerMgr       *ledgermgmt.LedgerMgr
+	archiveConfig   *archive.Config
+	archiveService  map[string]*archiveservice.ArchiveService
 	deliveryService map[string]deliverservice.DeliverService
 	deliveryFactory DeliveryServiceFactory
 	lock            sync.RWMutex
@@ -200,20 +206,7 @@ func (jcm *joinChannelMessage) AnchorPeersOf(org api.OrgIdentityType) []api.Anch
 var logger = util.GetLogger(util.ServiceLogger, "")
 
 // New creates the gossip service.
-func New(
-	peerIdentity identity.SignerSerializer,
-	gossipMetrics *gossipmetrics.GossipMetrics,
-	endpoint string,
-	s *grpc.Server,
-	mcs api.MessageCryptoService,
-	secAdv api.SecurityAdvisor,
-	secureDialOpts api.PeerSecureDialOpts,
-	credSupport *corecomm.CredentialSupport,
-	deliverGRPCClient *corecomm.GRPCClient,
-	gossipConfig *gossip.Config,
-	serviceConfig *ServiceConfig,
-	deliverServiceConfig *deliverservice.DeliverServiceConfig,
-) (*GossipService, error) {
+func New(peerIdentity identity.SignerSerializer, gossipMetrics *gossipmetrics.GossipMetrics, endpoint string, s *grpc.Server, mcs api.MessageCryptoService, secAdv api.SecurityAdvisor, secureDialOpts api.PeerSecureDialOpts, credSupport *corecomm.CredentialSupport, deliverGRPCClient *corecomm.GRPCClient, gossipConfig *gossip.Config, serviceConfig *ServiceConfig, deliverServiceConfig *deliverservice.DeliverServiceConfig, ledgerMgr *ledgermgmt.LedgerMgr, archiveConfig *archive.Config) (*GossipService, error) {
 	serializedIdentity, err := peerIdentity.Serialize()
 	if err != nil {
 		return nil, err
@@ -237,6 +230,9 @@ func New(
 		privateHandlers: make(map[string]privateHandler),
 		chains:          make(map[string]state.GossipStateProvider),
 		leaderElection:  make(map[string]election.LeaderElectionService),
+		ledgerMgr:       ledgerMgr,
+		archiveConfig:   archiveConfig,
+		archiveService:  make(map[string]*archiveservice.ArchiveService),
 		deliveryService: make(map[string]deliverservice.DeliverService),
 		deliveryFactory: &deliveryFactoryImpl{
 			signer:               peerIdentity,
@@ -349,6 +345,12 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 		g.deliveryService[channelID] = g.deliveryFactory.Service(g, ordererSource, g.mcs, g.serviceConfig.OrgLeader)
 	}
 
+	if g.archiveService[channelID] == nil && g.archiveConfig.Enabled {
+		logger.Infof("Initializing archive service instance for channel: %s", channelID)
+		PKIid := g.mcs.GetPKIidOfCert(g.peerIdentity)
+		g.archiveService[channelID], _ = archiveservice.New(g, g.ledgerMgr, channelID, string(PKIid), g.archiveConfig)
+	}
+
 	// Delivery service might be nil only if it was not able to get connected
 	// to the ordering service
 	if g.deliveryService[channelID] != nil {
@@ -372,6 +374,11 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 		} else if isStaticOrgLeader {
 			logger.Debug("This peer is configured to connect to ordering service for blocks delivery, channel", channelID)
 			g.deliveryService[channelID].StartDeliverForChannel(channelID, support.Committer, func() {})
+
+			if g.archiveService[channelID] != nil {
+				logger.Info("This peer is configured to start a ledger watcher for channel", channelID)
+				g.archiveService[channelID].StartWatcherForChannel(channelID)
+			}
 		} else {
 			logger.Debug("This peer is not configured to connect to ordering service for blocks delivery, channel", channelID)
 		}
@@ -444,6 +451,11 @@ func (g *GossipService) Stop() {
 		if g.deliveryService[chainID] != nil {
 			g.deliveryService[chainID].Stop()
 		}
+
+		if g.archiveService[chainID] != nil {
+			logger.Infof("Stopping the archive service for channel: %s", chainID)
+			g.archiveService[chainID].Stop()
+		}
 	}
 	g.gossipSvc.Stop()
 }
@@ -483,10 +495,24 @@ func (g *GossipService) onStatusChangeFactory(channelID string, committer blocks
 			if err := g.deliveryService[channelID].StartDeliverForChannel(channelID, committer, yield); err != nil {
 				logger.Errorf("Delivery service is not able to start blocks delivery for chain, due to %+v", err)
 			}
+
+			if g.archiveService[channelID] != nil {
+				logger.Info("Elected as a leader, starting archive service ledger watcher for channel", channelID)
+				if err := g.archiveService[channelID].StartWatcherForChannel(channelID); err != nil {
+					logger.Errorf("Archive service watcher is not able to start for chain, due to %+v", err)
+				}
+			}
 		} else {
 			logger.Info("Renounced leadership, stopping delivery service for channel", channelID)
 			if err := g.deliveryService[channelID].StopDeliverForChannel(channelID); err != nil {
 				logger.Errorf("Delivery service is not able to stop blocks delivery for chain, due to %+v", err)
+			}
+
+			if g.archiveService[channelID] != nil {
+				logger.Info("Renounced leadership, stopping archive service ledger watcher for channel", channelID)
+				if err := g.archiveService[channelID].StopWatcherForChannel(channelID); err != nil {
+					logger.Errorf("Archive service watcher is not able to stop for chain, due to %+v", err)
+				}
 			}
 		}
 	}

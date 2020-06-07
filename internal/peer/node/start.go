@@ -64,6 +64,7 @@ import (
 	"github.com/hyperledger/fabric/core/handlers/library"
 	validation "github.com/hyperledger/fabric/core/handlers/validation/api"
 	"github.com/hyperledger/fabric/core/ledger"
+	"github.com/hyperledger/fabric/core/ledger/archive"
 	"github.com/hyperledger/fabric/core/ledger/cceventmgmt"
 	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
@@ -71,6 +72,7 @@ import (
 	"github.com/hyperledger/fabric/core/peer"
 	"github.com/hyperledger/fabric/core/policy"
 	"github.com/hyperledger/fabric/core/scc"
+	"github.com/hyperledger/fabric/core/scc/ascc"
 	"github.com/hyperledger/fabric/core/scc/cscc"
 	"github.com/hyperledger/fabric/core/scc/lscc"
 	"github.com/hyperledger/fabric/core/scc/qscc"
@@ -321,25 +323,6 @@ func serve(args []string) error {
 		logger.Panicf("Could not create the deliver grpc client: [%+v]", err)
 	}
 
-	// FIXME: Creating the gossip service has the side effect of starting a bunch
-	// of go routines and registration with the grpc server.
-	gossipService, err := initGossipService(
-		policyMgr,
-		metricsProvider,
-		peerServer,
-		signingIdentity,
-		cs,
-		coreConfig.PeerAddress,
-		deliverGRPCClient,
-		deliverServiceConfig,
-	)
-	if err != nil {
-		return errors.WithMessage(err, "failed to initialize gossip service")
-	}
-	defer gossipService.Stop()
-
-	peerInstance.GossipService = gossipService
-
 	policyChecker := policy.NewPolicyChecker(
 		policies.PolicyManagerGetterFunc(peerInstance.GetPolicyManager),
 		mgmt.GetLocalMSP(factory.GetDefault()),
@@ -425,6 +408,7 @@ func serve(args []string) error {
 		common.HeaderType_CONFIG: &peer.ConfigTxProcessor{},
 	}
 
+	ledgerConfig := ledgerConfig()
 	peerInstance.LedgerMgr = ledgermgmt.NewLedgerMgr(
 		&ledgermgmt.Initializer{
 			CustomTxProcessors:              txProcessors,
@@ -434,11 +418,32 @@ func serve(args []string) error {
 			MetricsProvider:                 metricsProvider,
 			HealthCheckRegistry:             opsSystem,
 			StateListeners:                  []ledger.StateListener{lifecycleCache},
-			Config:                          ledgerConfig(),
+			Config:                          ledgerConfig,
 			Hasher:                          factory.GetDefault(),
 			EbMetadataProvider:              ebMetadataProvider,
 		},
 	)
+
+	// FIXME: Creating the gossip service has the side effect of starting a bunch
+	// of go routines and registration with the grpc server.
+	gossipService, err := initGossipService(
+		policyMgr,
+		metricsProvider,
+		peerServer,
+		signingIdentity,
+		cs,
+		coreConfig.PeerAddress,
+		deliverGRPCClient,
+		deliverServiceConfig,
+		peerInstance.LedgerMgr,
+		ledgerConfig.ArchiveConfig,
+	)
+	if err != nil {
+		return errors.WithMessage(err, "failed to initialize gossip service")
+	}
+	defer gossipService.Stop()
+
+	peerInstance.GossipService = gossipService
 
 	// Configure CC package storage
 	lsccInstallPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "chaincodes")
@@ -565,6 +570,7 @@ func serve(args []string) error {
 		"qscc":       {},
 		"cscc":       {},
 		"_lifecycle": {},
+		"ascc":       {},
 	}
 
 	lsccInst := &lscc.SCC{
@@ -668,6 +674,13 @@ func serve(args []string) error {
 		peerInstance,
 		factory.GetDefault(),
 	)
+
+	// New Archive system chaincode
+	asccInst := ascc.New(
+		aclProvider,
+		policyChecker,
+	)
+
 	qsccInst := scc.SelfDescribingSysCC(qscc.New(aclProvider, peerInstance))
 	if maxConcurrency := coreConfig.LimitsConcurrencyQSCC; maxConcurrency != 0 {
 		qsccInst = scc.Throttle(maxConcurrency, qsccInst)
@@ -719,7 +732,7 @@ func serve(args []string) error {
 	}
 
 	// deploy system chaincodes
-	for _, cc := range []scc.SelfDescribingSysCC{lsccInst, csccInst, qsccInst, lifecycleSCC} {
+	for _, cc := range []scc.SelfDescribingSysCC{lsccInst, csccInst, asccInst, qsccInst, lifecycleSCC} {
 		if enabled, ok := chaincodeConfig.SCCWhitelist[cc.Name()]; !ok || !enabled {
 			logger.Infof("not deploying chaincode %s as it is not enabled", cc.Name())
 			continue
@@ -1125,16 +1138,7 @@ func secureDialOpts(credSupport *comm.CredentialSupport) func() []grpc.DialOptio
 // 2. Init the message crypto service;
 // 3. Init the security advisor;
 // 4. Init gossip related struct.
-func initGossipService(
-	policyMgr policies.ChannelPolicyManagerGetter,
-	metricsProvider metrics.Provider,
-	peerServer *comm.GRPCServer,
-	signer msp.SigningIdentity,
-	credSupport *comm.CredentialSupport,
-	peerAddress string,
-	deliverGRPCClient *comm.GRPCClient,
-	deliverServiceConfig *deliverservice.DeliverServiceConfig,
-) (*gossipservice.GossipService, error) {
+func initGossipService(policyMgr policies.ChannelPolicyManagerGetter, metricsProvider metrics.Provider, peerServer *comm.GRPCServer, signer msp.SigningIdentity, credSupport *comm.CredentialSupport, peerAddress string, deliverGRPCClient *comm.GRPCClient, deliverServiceConfig *deliverservice.DeliverServiceConfig, ledgerMgr *ledgermgmt.LedgerMgr, archiveConfig *archive.Config) (*gossipservice.GossipService, error) {
 
 	var certs *gossipcommon.TLSCertificates
 	if peerServer.TLSEnabled() {
@@ -1179,6 +1183,8 @@ func initGossipService(
 		gossipConfig,
 		serviceConfig,
 		deliverServiceConfig,
+		ledgerMgr,
+		archiveConfig,
 	)
 }
 

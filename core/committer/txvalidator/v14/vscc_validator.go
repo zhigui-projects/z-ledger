@@ -409,9 +409,9 @@ func IsSysCCAndNotInvokableExternal(name string) bool {
 }
 
 func IsSysCC(name string) bool {
-	return name == "vscc" || name == "escc" || name == "lscc" || name == "qscc" || name == "cscc"
+	return name == "vscc" || name == "escc" || name == "lscc" || name == "qscc" || name == "cscc" || name == "ascc"
 }
 
 func IsSysCCAndNotInvokableCC2CC(name string) bool {
-	return name == "vscc" || name == "escc" || name == "cscc"
+	return name == "vscc" || name == "escc" || name == "cscc" || name == "ascc"
 }

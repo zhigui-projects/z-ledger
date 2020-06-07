@@ -18,6 +18,7 @@ import (
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
 	"github.com/hyperledger/fabric/common/metrics"
 	"github.com/hyperledger/fabric/core/common/ccprovider"
+	"github.com/hyperledger/fabric/core/ledger/archive/eventbus"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
@@ -660,6 +661,16 @@ func (vdb *VersionedDB) applyUpdates(updates *statedb.UpdateBatch, height *versi
 	namespaces := updates.GetUpdatedNamespaces()
 	if err := vdb.postCommitProcessing(committers, namespaces, height); err != nil {
 		return err
+	}
+
+	for _, ns := range namespaces {
+		updates := updates.GetUpdates(ns)
+		for k, vv := range updates {
+			if ns == "ascc" && k == "byTxDate" {
+				logger.Infof("Publishing event[archive-by-tx-date] with channel[%s] date[%s]", vdb.chainName, string(vv.Value))
+				eventbus.Get(vdb.chainName).Publish("archive-by-tx-date", vdb.chainName, string(vv.Value))
+			}
+		}
 	}
 
 	return nil

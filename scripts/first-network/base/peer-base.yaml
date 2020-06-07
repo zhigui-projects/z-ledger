@@ -8,14 +8,20 @@ version: '2'
 services:
   peer-base:
     image: hyperledger/fabric-peer:$IMAGE_TAG
+#    dns:
+#      - 100.100.2.136
+#      - 100.100.2.138
+#      - 8.8.8.8
+#      - 8.8.4.4
     environment:
+      - CORE_LEDGER_ARCHIVE_ENABLE=true
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       # the following setting starts chaincode containers on the same
       # bridge network as the peers
       # https://docs.docker.com/compose/networking/
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_byfn
       - FABRIC_LOGGING_SPEC=INFO
-      #- FABRIC_LOGGING_SPEC=DEBUG
+#      - FABRIC_LOGGING_SPEC=DEBUG
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_GOSSIP_USELEADERELECTION=true
       - CORE_PEER_GOSSIP_ORGLEADER=false

@@ -1,0 +1,23 @@
+/*
+Copyright Zhigui.com. All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
+syntax = "proto3";
+
+option go_package = "github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage/msgs";
+
+package msgs;
+
+message txIDIndexValProto {
+    bytes blk_location = 1;
+    bytes tx_location = 2;
+    int32 tx_validation_code = 3;
+}
+
+message txDateIndexValProto {
+    int64 blk_number = 1;
+    bytes blk_location = 2;
+    bytes tx_location = 3;
+}
