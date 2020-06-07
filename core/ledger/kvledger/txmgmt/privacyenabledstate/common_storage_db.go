@@ -8,6 +8,7 @@ package privacyenabledstate
 
 import (
 	"encoding/base64"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb/stateormdb"
 	"strings"
 
 	"github.com/hyperledger/fabric-lib-go/healthz"
@@ -32,6 +33,7 @@ const (
 	pvtDataPrefix  = "p"
 	hashDataPrefix = "h"
 	couchDB        = "CouchDB"
+	ormDB          = "ORMDB"
 )
 
 // StateDBConfig encapsulates the configuration for stateDB on the ledger.
@@ -66,6 +68,11 @@ func NewCommonStorageDBProvider(
 	if stateDBConf != nil && stateDBConf.StateDatabase == couchDB {
 		cache := statedb.NewCache(stateDBConf.CouchDB.UserCacheSizeMBs, sysNamespaces)
 		if vdbProvider, err = statecouchdb.NewVersionedDBProvider(stateDBConf.CouchDB, metricsProvider, cache); err != nil {
+			return nil, err
+		}
+	} else if stateDBConf != nil && stateDBConf.StateDatabase == ormDB {
+		cache := statedb.NewCache(stateDBConf.ORMDB.UserCacheSizeMBs, sysNamespaces)
+		if vdbProvider, err = stateormdb.NewVersionedDBProvider(stateDBConf.ORMDB, metricsProvider, cache); err != nil {
 			return nil, err
 		}
 	} else {

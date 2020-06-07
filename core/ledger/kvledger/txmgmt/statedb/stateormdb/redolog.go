@@ -25,8 +25,8 @@ type redoLogger struct {
 }
 
 type redoRecord struct {
-	updateBatch *statedb.UpdateBatch
-	version     *version.Height
+	UpdateBatch *statedb.UpdateBatch
+	Version     *version.Height
 }
 
 func newRedoLoggerProvider(dirPath string) (*redoLoggerProvider, error) {

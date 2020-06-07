@@ -7,14 +7,13 @@ package stateormdb
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
-	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/util/ormdb"
 	"github.com/pkg/errors"
 	"reflect"
 	"sort"
-	"strings"
 	"sync"
 )
 
@@ -32,10 +31,18 @@ type batchableEntityFieldDefinition struct {
 	EntityFieldDefinitions []entitydefinition.EntityFieldDefinition
 }
 
+type batchableSysState struct {
+	Key        string
+	Value      []byte
+	VerAndMeta string
+	Deleted    bool
+}
+
 type committer struct {
 	db             *ormdb.ORMDatabase
 	batchUpdateMap []*batchableEntity
 	efdMap         []*batchableEntityFieldDefinition
+	sysMap         []*batchableSysState
 	namespace      string
 	cacheKVs       statedb.CacheKVs
 	cacheEnabled   bool
@@ -95,43 +102,49 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 	}
 
 	for key, vv := range nsUpdates {
-		keys, err := parseKey(key)
-		if err != nil {
-			return nil, err
-		}
-
-		entityName := keys[0]
-		entityKey := keys[1]
 		verAndMeta, err := encodeVersionAndMetadata(vv.Version, vv.Metadata)
 		if err != nil {
 			return nil, err
 		}
-		if entityName == "EntityFieldDefinition" {
-			if vv.Value == nil {
-				return nil, errors.New("create table value cannot nil")
-			} else {
-				efds := make([]entitydefinition.EntityFieldDefinition, 0)
-				err = json.Unmarshal(vv.Value, &efds)
-				if err != nil {
-					return nil, err
-				}
 
-				var seq int
-				var aefds []entitydefinition.EntityFieldDefinition
-				for i, efd := range efds {
-					efdr := &efd
-					if i == 0 {
-						seq = efd.Seq
-					}
-					efdr.ID = strings.ReplaceAll(util.GenerateUUID(), "-", "")
-					efdr.VerAndMeta = verAndMeta
-					aefds = append(aefds, *efdr)
-				}
+		keys, err, isORMkey := parseKey(key)
+		if err != nil {
+			return nil, err
+		}
 
-				committer.efdMap = append(committer.efdMap, &batchableEntityFieldDefinition{EntityName: entityKey, EntityFieldDefinitions: aefds, Seq: seq})
-			}
+		if !isORMkey {
+			committer.sysMap = append(committer.sysMap, &batchableSysState{Key: key, Value: vv.Value, VerAndMeta: verAndMeta, Deleted: vv.Value == nil})
 		} else {
-			committer.batchUpdateMap = append(committer.batchUpdateMap, &batchableEntity{EntityName: entityName, Value: vv.Value, EntityKey: entityKey, VerAndMeta: verAndMeta, Deleted: vv.Value == nil})
+			entityName := keys[0]
+			entityKey := keys[1]
+
+			if entityName == "EntityFieldDefinition" {
+				if vv.Value == nil {
+					return nil, errors.New("create table value cannot nil")
+				} else {
+					efds := make([]entitydefinition.EntityFieldDefinition, 0)
+					err = json.Unmarshal(vv.Value, &efds)
+					if err != nil {
+						return nil, err
+					}
+
+					var seq int
+					var aefds []entitydefinition.EntityFieldDefinition
+					for i, efd := range efds {
+						efdr := &efd
+						if i == 0 {
+							seq = efd.Seq
+						}
+						efdr.ID = fmt.Sprintf("%s/%s", efd.Owner, efd.Name)
+						efdr.VerAndMeta = verAndMeta
+						aefds = append(aefds, *efdr)
+					}
+
+					committer.efdMap = append(committer.efdMap, &batchableEntityFieldDefinition{EntityName: entityKey, EntityFieldDefinitions: aefds, Seq: seq})
+				}
+			} else {
+				committer.batchUpdateMap = append(committer.batchUpdateMap, &batchableEntity{EntityName: entityName, Value: vv.Value, EntityKey: entityKey, VerAndMeta: verAndMeta, Deleted: vv.Value == nil})
+			}
 		}
 
 		committer.addToCacheUpdate(key, vv)
@@ -187,6 +200,19 @@ func (c *committer) commitUpdates() error {
 	sort.SliceStable(c.efdMap, func(i, j int) bool {
 		return c.efdMap[i].Seq < c.efdMap[j].Seq
 	})
+
+	for _, update := range c.sysMap {
+		if update.Deleted {
+			if err = c.db.DB.Delete(&SysState{ID: update.Key}).Error; err != nil {
+				return err
+			}
+		} else {
+			sysState := &SysState{ID: update.Key, Value: update.Value, VerAndMeta: update.VerAndMeta}
+			if err = c.db.DB.Save(sysState).Error; err != nil {
+				return err
+			}
+		}
+	}
 
 	for _, update := range c.efdMap {
 		for _, efd := range update.EntityFieldDefinitions {

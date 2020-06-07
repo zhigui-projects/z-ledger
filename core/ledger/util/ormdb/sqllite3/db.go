@@ -24,6 +24,9 @@ func CreateIfNotExistAndOpen(config *config.ORMDBConfig, dbName string) (db *gor
 	}
 	file := fmt.Sprintf("%s%c%s.db", config.Sqlite3Config.Path, filepath.Separator, dbName)
 	db, err = gorm.Open("sqlite3", file)
+	if err != nil {
+		panic(fmt.Sprintf("error open sqlite3 db dir if missing: %s", err))
+	}
 	return
 }
 

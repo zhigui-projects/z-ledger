@@ -320,6 +320,14 @@
   version = "v0.19.9"
 
 [[projects]]
+  digest = "1:24f20a61b3d084137d13cf53aba7365862b850fe4f30b733ed0e3c7ade9ca86d"
+  name = "github.com/go-sql-driver/mysql"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "17ef3dd9d98b69acec3e85878995ada9533a9370"
+  version = "v1.5.0"
+
+[[projects]]
   digest = "1:91358b3a314c1ddfd4d6445ca9c1fb846842c31c153e626730594b3c95f73f4a"
   name = "github.com/go-stack/stack"
   packages = ["."]
@@ -456,7 +464,7 @@
 
 [[projects]]
   branch = "ormdb"
-  digest = "1:153c92be2e845cc057cbce11fcd5a80af84c946b7fad67da510aa69b500bd873"
+  digest = "1:2f0ad8c01d4857b5cf3100c72025f4c74653a619bb8123004505f22c6c0e7eb8"
   name = "github.com/hyperledger/fabric-chaincode-go"
   packages = [
     "pkg/attrmgr",
@@ -468,7 +476,7 @@
     "shimtest",
   ]
   pruneopts = "NUT"
-  revision = "86e8ed49983548b8f46d60c6b4d42d90236538b7"
+  revision = "981117021e72bb8d2c162f7889875784c20c35ec"
   source = "github.com/zhigui-projects/fabric-chaincode-go"
 
 [[projects]]
@@ -533,10 +541,11 @@
   version = "v1.0"
 
 [[projects]]
-  digest = "1:c24d4cac0c313bee5aa05f12cacf4f966a47af133cad229ca537090829ef7bd9"
+  digest = "1:336a39ef5ee737445da620ffc7daf23fb5a939fb0d850bbe7a5a3c66d1ebb56e"
   name = "github.com/jinzhu/gorm"
   packages = [
     ".",
+    "dialects/mysql",
     "dialects/sqlite",
   ]
   pruneopts = "NUT"
@@ -1260,6 +1269,7 @@
     "github.com/hyperledger/fabric-protos-go/peer/lifecycle",
     "github.com/hyperledger/fabric-protos-go/transientstore",
     "github.com/jinzhu/gorm",
+    "github.com/jinzhu/gorm/dialects/mysql",
     "github.com/jinzhu/gorm/dialects/sqlite",
     "github.com/kr/pretty",
     "github.com/miekg/pkcs11",
