@@ -21,17 +21,17 @@ type SimpleChaincode struct {
 }
 
 type User struct {
-	ID        string
-	Name      string
-	Email     string    `gorm:"type:varchar(100);unique_index"`
-	Accounts  []Account `ormdb:"entity"`
+	ID       string
+	Name     string
+	Email    string    `gorm:"type:varchar(100);unique_index"`
+	Accounts []Account `ormdb:"entity"`
 }
 
 type Account struct {
-	ID        string
-	Number    string
-	Amount    sql.NullFloat64 `ormdb:"datatype"`
-	UserId    string
+	ID     string
+	Number string
+	Amount sql.NullFloat64 `ormdb:"datatype"`
+	UserId string
 }
 
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
@@ -73,7 +73,7 @@ func (t *SimpleChaincode) invoke(stub shim.ChaincodeStubInterface, args []string
 		account.ID = args[4] + strconv.Itoa(i)
 		account.Number = args[2] + strconv.Itoa(i)
 		account.UserId = user.ID
-		account.Amount = sql.NullFloat64{Float64: 100.00}
+		account.Amount = sql.NullFloat64{Float64: 100.00, Valid: true}
 		accounts[i] = *account
 		err := stub.Save(account)
 		if err != nil {
