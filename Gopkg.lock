@@ -464,7 +464,7 @@
 
 [[projects]]
   branch = "ormdb"
-  digest = "1:0e604314ec2502f9dfec370d66f6732486f8c2d319b83ecbf147ffd80c72e130"
+  digest = "1:2f0ad8c01d4857b5cf3100c72025f4c74653a619bb8123004505f22c6c0e7eb8"
   name = "github.com/hyperledger/fabric-chaincode-go"
   packages = [
     "pkg/attrmgr",
@@ -476,7 +476,7 @@
     "shimtest",
   ]
   pruneopts = "NUT"
-  revision = "7604dd48bb7a679d7261aa3cdf66eea9d3f0653c"
+  revision = "981117021e72bb8d2c162f7889875784c20c35ec"
   source = "github.com/zhigui-projects/fabric-chaincode-go"
 
 [[projects]]
@@ -1237,7 +1237,6 @@
     "github.com/go-kit/kit/metrics",
     "github.com/go-kit/kit/metrics/prometheus",
     "github.com/go-kit/kit/metrics/statsd",
-    "github.com/go-sql-driver/mysql",
     "github.com/gogo/protobuf/proto",
     "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
