@@ -15,7 +15,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=test
     ports:
-      - 3306
+      - 3306:3306
     networks:
       - byfn
 
