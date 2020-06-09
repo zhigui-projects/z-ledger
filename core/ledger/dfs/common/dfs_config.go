@@ -13,4 +13,5 @@ type HdfsConfig struct {
 }
 
 type IpfsConfig struct {
+	Url string
 }

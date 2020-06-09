@@ -63,7 +63,7 @@ func ledgerConfig() *ledger.Config {
 				UseDatanodeHostname: viper.GetBool("ledger.archive.hdfsConfig.useDatanodeHostname"),
 			},
 			IpfsConf: &config.IpfsConfig{
-				//TODO maxpeng
+				Url: viper.GetString("ledger.archive.ipfsConfig.url"),
 			},
 		},
 		StateDBConfig: &ledger.StateDBConfig{
