@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package hybridblkstorage
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math"
 	"os"
@@ -86,28 +85,28 @@ func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo,
 	//Checks if the file suffix of where the last block was written exists
 	filePath := deriveBlockfilePath(rootDir, int(amInfo.LastSentFileSuffix))
 	if _, err := client.Stat(filePath); err != nil {
-		panic(fmt.Sprintf("Error in checking whether file [%s] exists: %s", filePath, err))
-	}
+		logger.Errorf("Error in checking whether file [%s] exists: %s", filePath, err)
+	} else {
+		var lastSentFileNum int
+		var lastArchiveFileNum int
+		var err error
+		if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, client); err != nil {
+			logger.Errorf("Error in retrieve last file suffix from dfs: %s", err)
+		}
+		if lastSentFileNum == int(amInfo.LastSentFileSuffix) {
+			// archive meta info is in sync with the file on dfs
+			return
+		}
 
-	var lastSentFileNum int
-	var lastArchiveFileNum int
-	var err error
-	if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, client); err != nil {
-		panic(fmt.Sprintf("Error in retrieve last file suffix from dfs: %s", err))
+		//Scan the dfs to sync the archive meta info
+		if lastArchiveFileNum, err = retrieveLastArchiveFileNum(rootDir); err != nil {
+			logger.Errorf("Error in retrieve first file suffix from file system: %s", err)
+		}
+		amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum)
+		amInfo.LastSentFileSuffix = int32(lastSentFileNum)
+		//TODO：calculate checksum
+		//amInfo.FileProofs[]
 	}
-	if lastSentFileNum == int(amInfo.LastSentFileSuffix) {
-		// archive meta info is in sync with the file on dfs
-		return
-	}
-
-	//Scan the dfs to sync the archive meta info
-	if lastArchiveFileNum, err = retrieveLastArchiveFileNum(rootDir); err != nil {
-		panic(fmt.Sprintf("Error in retrieve first file suffix from file system: %s", err))
-	}
-	amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum)
-	amInfo.LastSentFileSuffix = int32(lastSentFileNum)
-	//TODO：calculate checksum
-	//amInfo.FileProofs[]
 }
 
 func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client dc.FsClient) (*archive.ArchiveMetaInfo, error) {
@@ -122,10 +121,10 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client dc.FsClien
 	}
 
 	if lastArchiveFileNum, err = retrieveLastArchiveFileNum(rootDir); err != nil {
-		return nil, err
+		return amInfo, err
 	}
 	if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, client); err != nil {
-		return nil, err
+		return amInfo, err
 	}
 
 	amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum)
