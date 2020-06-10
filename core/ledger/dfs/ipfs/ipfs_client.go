@@ -87,7 +87,7 @@ func (c *FsClient) Stat(name string) (os.FileInfo, error) {
 		return nil, err
 	}
 
-	return &fileInfo{nil, 0, int64(stat.Size), stat.Hash}, nil
+	return &fileInfo{name, 0, int64(stat.Size), stat.Hash}, nil
 }
 
 func (c *FsClient) CopyToRemote(src string, dst string) error {
