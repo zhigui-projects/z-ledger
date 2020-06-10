@@ -586,7 +586,7 @@ ledger:
   archive:
     enable: false
     # type - options are "hdfs", "ipfs"
-    type: hdfs
+    type: ipfs
     hdfsConfig:
       nameNodes:
         - 47.52.139.52:9000
