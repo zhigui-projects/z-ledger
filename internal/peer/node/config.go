@@ -8,7 +8,6 @@ package node
 
 import (
 	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
-	"github.com/mitchellh/mapstructure"
 	"path/filepath"
 
 	coreconfig "github.com/hyperledger/fabric/core/config"
@@ -98,8 +97,25 @@ func ledgerConfig() *ledger.Config {
 	}
 
 	if conf.StateDBConfig.StateDatabase == "ORMDB" {
-		config := &ormdbconfig.ORMDBConfig{Sqlite3Config: &ormdbconfig.Sqlite3Config{}}
-		_ = mapstructure.Decode(viper.Get("ledger.state.ormDBConfig"), config)
+		config := &ormdbconfig.ORMDBConfig{}
+		config.RedoLogPath = filepath.Join(rootFSPath, "ormdbRedoLogs")
+		config.DbType = viper.GetString("ledger.state.ormDBConfig.dbtype")
+		config.Host = viper.GetString("ledger.state.ormDBConfig.host")
+		config.Port = viper.GetInt("ledger.state.ormDBConfig.port")
+		config.UserCacheSizeMBs = viper.GetInt("ledger.state.ormDBConfig.userCacheSizeMBs")
+		config.Username = viper.GetString("ledger.state.ormDBConfig.username")
+		config.Password = viper.GetString("ledger.state.ormDBConfig.password")
+		if config.DbType == "sqlite3" {
+			sqlite3Config := &ormdbconfig.Sqlite3Config{}
+			sqlite3Config.Path = filepath.Join(rootFSPath, "ormdb")
+			config.Sqlite3Config = sqlite3Config
+		}
+		if config.DbType == "mysql" {
+			mysqlConfig := &ormdbconfig.MysqlConfig{}
+			mysqlConfig.Charset = viper.GetString("ledger.state.ormDBConfig.mysqlConfig.charset")
+			mysqlConfig.Collate = viper.GetString("ledger.state.ormDBConfig.mysqlConfig.collate")
+			config.MysqlConfig = mysqlConfig
+		}
 		conf.StateDBConfig.ORMDB = config
 	}
 	return conf

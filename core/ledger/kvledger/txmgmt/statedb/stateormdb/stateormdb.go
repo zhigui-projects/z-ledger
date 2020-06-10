@@ -6,11 +6,12 @@ SPDX-License-Identifier: Apache-2.0
 package stateormdb
 
 import (
-	"encoding/base64"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	ormdbconfig "github.com/hyperledger/fabric/core/ledger/util/ormdb/config"
+	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	"reflect"
 	"strings"
@@ -27,9 +28,10 @@ var logger = flogging.MustGetLogger("stateormdb")
 
 const savePointKey = "savepoint"
 
-type SavePoint struct {
-	Key    string
-	Height string
+type SysState struct {
+	ID         string
+	Value      []byte `gorm:"size:65535"`
+	VerAndMeta string `json:"-"`
 }
 
 // VersionedDBProvider implements interface VersionedDBProvider
@@ -100,7 +102,7 @@ func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, redoLog *
 		logger.Errorf("create meta database failed [%v]", err)
 		return nil, errors.WithMessage(err, "create meta database failed")
 	}
-	savepoint := &SavePoint{}
+	savepoint := &SysState{}
 	if !metadataDB.DB.HasTable(savepoint) {
 		err = metadataDB.DB.CreateTable(savepoint).Error
 		if err != nil {
@@ -139,11 +141,11 @@ func newVersionedDB(ormDBInstance *ormdb.ORMDBInstance, dbName string, redoLog *
 	}
 
 	logger.Debugf("chain [%s]: save point = %#v, version of redolog record = %#v",
-		chainName, savepoint, redologRecord.version)
+		chainName, savepoint, redologRecord.Version)
 
-	if redologRecord.version.BlockNum-latestSavepoint.BlockNum == 1 {
+	if redologRecord.Version.BlockNum-latestSavepoint.BlockNum == 1 {
 		logger.Debugf("chain [%s]: Re-applying last batch", chainName)
-		if err := vdb.applyUpdates(redologRecord.updateBatch, redologRecord.version); err != nil {
+		if err := vdb.applyUpdates(redologRecord.UpdateBatch, redologRecord.Version); err != nil {
 			return nil, err
 		}
 	}
@@ -202,46 +204,69 @@ func (v *VersionedDB) readFromDB(namespace, key string) (*statedb.VersionedValue
 		return nil, errors.WithMessage(err, "get namespaced database failed")
 	}
 
-	keys, err := parseKey(key)
+	keys, err, isORMKey := parseKey(key)
 	if err != nil {
 		logger.Errorf("parse ormdb key failed [%v]", err)
 		return nil, errors.WithMessage(err, "parse ormdb key failed")
 	}
 
-	entityName := keys[0]
-	entityId := keys[1]
+	if !isORMKey {
+		sysState := &SysState{}
+		if err = db.DB.Where("id = ?", key).Find(sysState).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, nil
+			}
+			return nil, errors.WithMessage(err, "query sys state failed")
+		}
 
-	db.RWMutex.RLock()
-	entity := db.ModelTypes[entityName].Interface()
-	id, exist := db.ModelTypes[entityName].FieldByName("ID")
-	if !exist {
-		return nil, errors.New("entity no ID field")
-	}
-	_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
-	if !exist {
-		return nil, errors.New("entity no VerAndMeta field")
-	}
-	db.RWMutex.RUnlock()
-
-	if id.Type.Kind() == reflect.String {
-		db.DB.Table(ormdb.ToTableName(entityName)).Where("id = ?", entityId).Find(entity)
+		returnVersion, returnMetadata, err := DecodeVersionAndMetadata(sysState.VerAndMeta)
+		if err != nil {
+			logger.Errorf("marshal version and meta failed [%v]", err)
+			return nil, errors.WithMessage(err, "marshal version and meta failed")
+		}
+		return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: sysState.Value}, nil
 	} else {
-		return nil, errors.New("not supported entity ID field type")
+		entityName := keys[0]
+		entityId := keys[1]
+
+		db.RWMutex.RLock()
+		entity := db.ModelTypes[entityName].Interface()
+		id, exist := db.ModelTypes[entityName].FieldByName("ID")
+		if !exist {
+			return nil, errors.New("entity no ID field")
+		}
+		_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
+		if !exist {
+			return nil, errors.New("entity no VerAndMeta field")
+		}
+		db.RWMutex.RUnlock()
+
+		if id.Type.Kind() == reflect.String {
+			if err = db.DB.Table(ormdb.ToTableName(entityName)).Where("id = ?", entityId).Find(entity).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return nil, nil
+				}
+				return nil, errors.WithMessage(err, "query entity failed")
+			}
+		} else {
+			return nil, errors.New("not supported entity ID field type")
+		}
+
+		verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
+		returnVersion, returnMetadata, err := DecodeVersionAndMetadata(verAndMeta)
+		if err != nil {
+			logger.Errorf("marshal version and meta failed [%v]", err)
+			return nil, errors.WithMessage(err, "marshal version and meta failed")
+		}
+
+		entityBytes, err := json.Marshal(entity)
+		if err != nil {
+			logger.Errorf("marshal entity failed [%v]", err)
+			return nil, errors.WithMessage(err, "marshal entity failed")
+		}
+		return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: entityBytes}, nil
 	}
 
-	if entity == nil {
-		return nil, nil
-	}
-
-	verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
-	returnVersion, returnMetadata, err := DecodeVersionAndMetadata(verAndMeta)
-
-	entityBytes, err := json.Marshal(entity)
-	if err != nil {
-		logger.Errorf("marshal entity failed [%v]", err)
-		return nil, errors.WithMessage(err, "marshal entity failed")
-	}
-	return &statedb.VersionedValue{Version: returnVersion, Metadata: returnMetadata, Value: entityBytes}, nil
 }
 
 // GetVersion implements method in VersionedDB interface
@@ -273,12 +298,198 @@ func (v *VersionedDB) GetStateMultipleKeys(namespace string, keys []string) ([]*
 
 // GetStateRangeScanIterator implements method in VersionedDB interface
 func (v *VersionedDB) GetStateRangeScanIterator(namespace string, startKey string, endKey string) (statedb.ResultsIterator, error) {
-	return nil, errors.New("GetStateRangeScanIterator not supported for ormdb")
+	return v.GetStateRangeScanIteratorWithMetadata(namespace, startKey, endKey, nil)
+}
+
+type kvScanner struct {
+	namespace            string
+	dbItr                *sql.Rows
+	requestedLimit       int32
+	totalRecordsReturned int32
+	entityType           reflect.Type
+	isSysState           bool
+}
+
+func newKVScanner(namespace string, dbItr *sql.Rows, requestedLimit int32, entityType reflect.Type, isSysState bool) *kvScanner {
+	return &kvScanner{namespace, dbItr, requestedLimit, 0, entityType, isSysState}
+}
+
+func (scanner *kvScanner) Next() (statedb.QueryResult, error) {
+	if scanner.requestedLimit > 0 && scanner.totalRecordsReturned >= scanner.requestedLimit {
+		return nil, nil
+	}
+	if !scanner.dbItr.Next() {
+		return nil, nil
+	}
+
+	if scanner.isSysState {
+		sysState := &SysState{}
+		if err := scanner.dbItr.Scan(sysState); err != nil {
+			return nil, err
+		}
+
+		ver, meta, err := DecodeVersionAndMetadata(sysState.VerAndMeta)
+		if err != nil {
+			return nil, err
+		}
+
+		value, err := json.Marshal(sysState)
+		if err != nil {
+			return nil, err
+		}
+
+		scanner.totalRecordsReturned++
+		return &statedb.VersionedKV{
+			CompositeKey: statedb.CompositeKey{Namespace: scanner.namespace, Key: sysState.ID},
+			// TODO remove dereferrencing below by changing the type of the field
+			// `VersionedValue` in `statedb.VersionedKV` to a pointer
+			VersionedValue: statedb.VersionedValue{Value: value, Metadata: meta, Version: ver}}, nil
+	} else {
+		id, exist := scanner.entityType.FieldByName("ID")
+		if !exist {
+			return nil, errors.New("entity no ID field")
+		}
+		_, exist = scanner.entityType.FieldByName("VerAndMeta")
+		if !exist {
+			return nil, errors.New("entity no VerAndMeta field")
+		}
+		entity := reflect.New(scanner.entityType).Interface()
+		if id.Type.Kind() == reflect.String {
+			if err := scanner.dbItr.Scan(entity); err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New("not supported entity ID field type")
+		}
+
+		key := reflect.ValueOf(entity).Elem().FieldByName("ID").String()
+		verAndMeta := reflect.ValueOf(entity).Elem().FieldByName("VerAndMeta").String()
+		returnVersion, returnMetadata, err := DecodeVersionAndMetadata(verAndMeta)
+		if err != nil {
+			logger.Errorf("marshal version and meta failed [%v]", err)
+			return nil, errors.WithMessage(err, "marshal version and meta failed")
+		}
+
+		entityBytes, err := json.Marshal(entity)
+		if err != nil {
+			logger.Errorf("marshal entity failed [%v]", err)
+			return nil, errors.WithMessage(err, "marshal entity failed")
+		}
+		scanner.totalRecordsReturned++
+		return &statedb.VersionedKV{
+			CompositeKey: statedb.CompositeKey{Namespace: scanner.namespace, Key: key},
+			// TODO remove dereferrencing below by changing the type of the field
+			// `VersionedValue` in `statedb.VersionedKV` to a pointer
+			VersionedValue: statedb.VersionedValue{Value: entityBytes, Metadata: returnMetadata, Version: returnVersion}}, nil
+	}
+}
+
+func (scanner *kvScanner) Close() {
+	err := scanner.dbItr.Close()
+	if err != nil {
+		logger.Errorf("close scanner failed [%v]", err)
+	}
+}
+
+func (scanner *kvScanner) GetBookmarkAndClose() string {
+	retval := ""
+
+	if !scanner.dbItr.Next() {
+		return retval
+	}
+
+	if scanner.isSysState {
+		sysState := &SysState{}
+		if err := scanner.dbItr.Scan(sysState); err != nil {
+			logger.Errorf("scan sys state failed [%v]", err)
+			return retval
+		}
+
+		retval = sysState.ID
+	} else {
+		id, exist := scanner.entityType.FieldByName("ID")
+		if !exist {
+			logger.Error("entity no ID field")
+			return retval
+		}
+		_, exist = scanner.entityType.FieldByName("VerAndMeta")
+		if !exist {
+			logger.Error("entity no VerAndMeta field")
+			return retval
+		}
+		entity := reflect.New(scanner.entityType).Interface()
+		if id.Type.Kind() == reflect.String {
+			if err := scanner.dbItr.Scan(entity); err != nil {
+				logger.Errorf("scan entity failed [%v]", err)
+				return retval
+			}
+		} else {
+			logger.Error("not supported entity ID field type")
+			return retval
+		}
+
+		key := reflect.ValueOf(entity).Elem().FieldByName("ID").String()
+		retval = key
+	}
+	scanner.Close()
+	return retval
 }
 
 // GetStateRangeScanIteratorWithMetadata implements method in VersionedDB interface
 func (v *VersionedDB) GetStateRangeScanIteratorWithMetadata(namespace string, startKey string, endKey string, metadata map[string]interface{}) (statedb.QueryResultsIterator, error) {
-	return nil, errors.New("GetStateRangeScanIteratorWithMetadata not supported for ormdb")
+	db, err := v.getNamespaceDBHandle(namespace)
+	if err != nil {
+		logger.Errorf("get namespaced database failed [%v]", err)
+		return nil, errors.WithMessage(err, "get namespaced database failed")
+	}
+
+	startKeys, err, isORMKey := parseKey(startKey)
+	if err != nil {
+		logger.Errorf("parse ormdb start key failed [%v]", err)
+		return nil, errors.WithMessage(err, "parse ormdb start key failed")
+	}
+
+	endKeys, err, _ := parseKey(endKey)
+	if err != nil {
+		logger.Errorf("parse ormdb end key failed [%v]", err)
+		return nil, errors.WithMessage(err, "parse ormdb end key failed")
+	}
+
+	if !isORMKey {
+		rows, err := db.DB.Table("sys_states").Where("id >= ? AND id < ?", startKey, endKey).Rows()
+		if err != nil {
+			return nil, errors.WithMessage(err, "rang query sys state failed")
+		}
+
+		return &kvScanner{isSysState: true, dbItr: rows, requestedLimit: 0, totalRecordsReturned: 0, entityType: reflect.TypeOf(&SysState{}), namespace: namespace}, nil
+	} else {
+		entityName := startKeys[0]
+		entityStartId := startKeys[1]
+		entityEndId := endKeys[1]
+
+		db.RWMutex.RLock()
+		id, exist := db.ModelTypes[entityName].FieldByName("ID")
+		if !exist {
+			return nil, errors.New("entity no ID field")
+		}
+		_, exist = db.ModelTypes[entityName].FieldByName("VerAndMeta")
+		if !exist {
+			return nil, errors.New("entity no VerAndMeta field")
+		}
+		db.RWMutex.RUnlock()
+
+		if id.Type.Kind() == reflect.String {
+			rows, err := db.DB.Table(ormdb.ToTableName(entityName)).Where("id >= ? AND id < ?", entityStartId, entityEndId).Rows()
+			if err != nil {
+				return nil, errors.WithMessage(err, "rang query sys state failed")
+			}
+
+			return &kvScanner{isSysState: false, dbItr: rows, requestedLimit: 0, totalRecordsReturned: 0, entityType: db.ModelTypes[entityName].StructType(), namespace: namespace}, nil
+		} else {
+			return nil, errors.New("not supported entity ID field type")
+		}
+	}
+
 }
 
 // ExecuteQuery implements method in VersionedDB interface
@@ -296,8 +507,8 @@ func (v *VersionedDB) ApplyUpdates(updates *statedb.UpdateBatch, height *version
 	if height != nil && updates.ContainsPostOrderWrites {
 		// height is passed nil when committing missing private data for previously committed blocks
 		r := &redoRecord{
-			updateBatch: updates,
-			version:     height,
+			UpdateBatch: updates,
+			Version:     height,
 		}
 		if err := v.redoLog.persist(r); err != nil {
 			return err
@@ -378,7 +589,7 @@ func (v *VersionedDB) recordSavepoint(height *version.Height) error {
 		return nil
 	}
 
-	savePoint := &SavePoint{Key: savePointKey, Height: base64.StdEncoding.EncodeToString(height.ToBytes())}
+	savePoint := &SysState{ID: savePointKey, Value: height.ToBytes()}
 	err := v.metadataDB.DB.Save(savePoint).Error
 	if err != nil {
 		logger.Errorf("Failed to save the savepoint to DB %s", err.Error())
@@ -389,10 +600,10 @@ func (v *VersionedDB) recordSavepoint(height *version.Height) error {
 }
 
 func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
-	sp := &SavePoint{}
-	err := v.metadataDB.DB.Where(&SavePoint{Key: savePointKey}).Find(sp).Error
+	sp := &SysState{}
+	err := v.metadataDB.DB.Where(&SysState{ID: savePointKey}).Find(sp).Error
 	if err != nil {
-		if err.Error() == "record not found" {
+		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		} else {
 			logger.Errorf("Failed to read savepoint data %s", err.Error())
@@ -400,12 +611,7 @@ func (v *VersionedDB) GetLatestSavePoint() (*version.Height, error) {
 		}
 	}
 
-	versionBytes, err := base64.StdEncoding.DecodeString(sp.Height)
-	if err != nil {
-		logger.Errorf("Failed to decode savepoint data %s", err.Error())
-		return nil, err
-	}
-	height, _, err := version.NewHeightFromBytes(versionBytes)
+	height, _, err := version.NewHeightFromBytes(sp.Value)
 	return height, err
 }
 
@@ -509,6 +715,14 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 			return nil, errors.WithMessage(err, "create orm database failed")
 		}
 		v.namespaceDBs[namespace] = db
+		sysState := &SysState{}
+		if !db.DB.HasTable(sysState) {
+			err = db.DB.CreateTable(sysState).Error
+			if err != nil {
+				logger.Errorf("create sys state table failed [%v]", err)
+				return nil, errors.WithMessage(err, "create sys state table failed")
+			}
+		}
 		edf := &entitydefinition.EntityFieldDefinition{}
 		if !db.DB.HasTable(edf) {
 			err = db.DB.CreateTable(edf).Error
@@ -583,11 +797,14 @@ func constructCacheValue(v *statedb.VersionedValue) *statedb.CacheValue {
 	}
 }
 
-func parseKey(key string) ([]string, error) {
+func parseKey(key string) ([]string, error, bool) {
+	if !strings.Contains(key, entitydefinition.ORMDB_SEPERATOR) {
+		return nil, nil, false
+	}
 	keys := strings.Split(key, entitydefinition.ORMDB_SEPERATOR)
 	if len(keys) < 2 {
 		logger.Errorf("wrong ormdb key [%s]", key)
-		return nil, errors.New("wrong ormdb key")
+		return nil, errors.New("wrong ormdb key"), true
 	}
-	return keys, nil
+	return keys, nil, true
 }
