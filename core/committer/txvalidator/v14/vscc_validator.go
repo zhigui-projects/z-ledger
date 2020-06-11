@@ -413,5 +413,5 @@ func IsSysCC(name string) bool {
 }
 
 func IsSysCCAndNotInvokableCC2CC(name string) bool {
-	return name == "vscc" || name == "escc" || name == "cscc" || name == "ascc"
+	return name == "vscc" || name == "escc" || name == "cscc"
 }
