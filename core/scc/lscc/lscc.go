@@ -9,7 +9,6 @@ package lscc
 import (
 	"bytes"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"regexp"
 	"sync"
 
@@ -342,8 +341,6 @@ func (lscc *SCC) ValidationInfo(channelID, chaincodeName string, qe ledger.Simpl
 
 //create the chaincode on the given chain
 func (lscc *SCC) putChaincodeData(stub shim.ChaincodeStubInterface, cd *ccprovider.ChaincodeData) error {
-	logger.Infof("putChaincodeData: %s", spew.Sdump(cd))
-
 	cdbytes, err := proto.Marshal(cd)
 	if err != nil {
 		return err

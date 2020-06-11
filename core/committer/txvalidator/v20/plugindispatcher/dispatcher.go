@@ -188,6 +188,11 @@ func (v *dispatcherImpl) Dispatch(seq int, payload *common.Payload, envBytes []b
 
 	// validate *EACH* read write set according to its chaincode's endorsement policy
 	for ns := range wrNamespace {
+		if ns == "ascc" {
+			logger.Infof("Skip validation of RW set for ASCC transactions")
+			return nil, peer.TxValidationCode_VALID
+		}
+
 		// Get latest chaincode validation plugin name and policy
 		validationPlugin, args, err := v.GetInfoForValidate(chdr, ns)
 		if err != nil {

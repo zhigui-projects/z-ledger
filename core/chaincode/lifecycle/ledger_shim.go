@@ -12,7 +12,6 @@ import (
 	commonledger "github.com/hyperledger/fabric/common/ledger"
 	validatorstate "github.com/hyperledger/fabric/core/handlers/validation/api/state"
 	"github.com/hyperledger/fabric/core/ledger"
-
 	"github.com/pkg/errors"
 )
 
@@ -98,7 +97,6 @@ func (cls *ChaincodePrivateLedgerShim) GetStateHash(key string) ([]byte, error) 
 
 // PutState sets the value for the key in the configured collection.
 func (cls *ChaincodePrivateLedgerShim) PutState(key string, value []byte) error {
-	logger.Infof("ledger_shim PutState: collection[%s] key[%s], value[%s]", cls.Collection, key, value)
 	return cls.Stub.PutPrivateData(cls.Collection, key, value)
 }
 
