@@ -169,7 +169,9 @@ function networkUp() {
   elif [ "${CONSENSUS_TYPE}" == "etcdraft" ]; then
     COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_RAFT2}"
   elif [ "${CONSENSUS_TYPE}" == "sbft" ]; then
-    COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_SBFT}"
+    COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_BFT}"
+  elif [ "${CONSENSUS_TYPE}" == "hotstuff" ]; then
+    COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_BFT}"
   fi
   if [ "${IF_COUCHDB}" == "couchdb" ]; then
     COMPOSE_FILES="${COMPOSE_FILES} -f ${COMPOSE_FILE_COUCH}"
@@ -194,6 +196,12 @@ function networkUp() {
   fi
 
   if [ "$CONSENSUS_TYPE" == "sbft" ]; then
+    sleep 1
+    echo "Sleeping 10s to allow $CONSENSUS_TYPE cluster to complete booting"
+    sleep 9
+  fi
+
+  if [ "$CONSENSUS_TYPE" == "hotstuff" ]; then
     sleep 1
     echo "Sleeping 10s to allow $CONSENSUS_TYPE cluster to complete booting"
     sleep 9
@@ -290,7 +298,7 @@ function upgradeNetwork() {
 # Tear down running network
 function networkDown() {
   # stop kafka and zookeeper containers in case we're running with kafka consensus-type
-  docker-compose -f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH -f $COMPOSE_FILE_KAFKA -f $COMPOSE_FILE_RAFT2 -f $COMPOSE_FILE_CA down --volumes --remove-orphans
+  docker-compose -f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH -f $COMPOSE_FILE_KAFKA -f $COMPOSE_FILE_RAFT2 -f $COMPOSE_FILE_BFT -f $COMPOSE_FILE_CA down --volumes --remove-orphans
 
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   if [ "$MODE" != "restart" ]; then
@@ -668,8 +676,8 @@ COMPOSE_FILE_COUCH=docker-compose-couch.yaml
 COMPOSE_FILE_KAFKA=docker-compose-kafka.yaml
 # two additional etcd/raft orderers
 COMPOSE_FILE_RAFT2=docker-compose-etcdraft2.yaml
-# sbft compose file
-COMPOSE_FILE_SBFT=docker-compose-sbft.yaml
+# bft compose file, sbft、 hotstuff
+COMPOSE_FILE_BFT=docker-compose-bft.yaml
 # certificate authorities compose file
 COMPOSE_FILE_CA=docker-compose-ca.yaml
 #
