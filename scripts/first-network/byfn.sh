@@ -444,6 +444,8 @@ function generateChannelArtifacts() {
     configtxgen -profile SampleMultiConsensus -channelID $SYS_CHANNEL -outputBlock ./channel-artifacts/genesis.block
   elif [ "$CONSENSUS_TYPE" == "sbft" ]; then
     configtxgen -profile SampleDevModeSbft -channelID $SYS_CHANNEL -outputBlock ./channel-artifacts/genesis.block
+  elif [ "$CONSENSUS_TYPE" == "hotstuff" ]; then
+    configtxgen -profile SampleDevModeHotStuff -channelID $SYS_CHANNEL -outputBlock ./channel-artifacts/genesis.block
   else
     set +x
     echo "unrecognized CONSESUS_TYPE='$CONSENSUS_TYPE'. exiting"
@@ -468,6 +470,8 @@ function generateChannelArtifacts() {
     configtxgen -profile EtcdraftChannel -outputCreateChannelTx ./channel-artifacts/channel.tx -channelID $CHANNEL_NAME
   elif [ "$CONSENSUS_TYPE" == "sbft" ]; then
     configtxgen -profile SbftChannel -outputCreateChannelTx ./channel-artifacts/channel.tx -channelID $CHANNEL_NAME
+  elif [ "$CONSENSUS_TYPE" == "hotstuff" ]; then
+    configtxgen -profile HotStuffChannel -outputCreateChannelTx ./channel-artifacts/channel.tx -channelID $CHANNEL_NAME
   else
     set +x
     echo "unrecognized CONSESUS_TYPE='$CONSENSUS_TYPE'. exiting"
@@ -506,6 +510,15 @@ function generateChannelArtifacts() {
     exit 1
   fi
 
+  set -x
+  configtxgen -profile HotStuffChannel -outputCreateChannelTx ./channel-artifacts/hschannel.tx -channelID hschannel
+  res=$?
+  set +x
+  if [ $res -ne 0 ]; then
+    echo "Failed to generate hotstuff channel configuration transaction..."
+    exit 1
+  fi
+
   echo
   echo "#################################################################"
   echo "#######    Generating anchor peer update for Org1MSP   ##########"
@@ -519,6 +532,8 @@ function generateChannelArtifacts() {
     configtxgen -profile EtcdraftChannel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org1MSP
   elif [ "$CONSENSUS_TYPE" == "sbft" ]; then
     configtxgen -profile SbftChannel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org1MSP
+  elif [ "$CONSENSUS_TYPE" == "hotstuff" ]; then
+    configtxgen -profile HotStuffChannel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org1MSP
   else
     set +x
     echo "unrecognized CONSESUS_TYPE='$CONSENSUS_TYPE'. exiting"
@@ -558,6 +573,15 @@ function generateChannelArtifacts() {
     exit 1
   fi
 
+  set -x
+  configtxgen -profile HotStuffChannel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchorsForHs.tx -channelID hschannel -asOrg Org1MSP
+  res=$?
+  set +x
+  if [ $res -ne 0 ]; then
+    echo "Failed to generate anchor peer update for HotStuff Org1MSP..."
+    exit 1
+  fi
+
   echo
   echo "#################################################################"
   echo "#######    Generating anchor peer update for Org2MSP   ##########"
@@ -571,6 +595,8 @@ function generateChannelArtifacts() {
     configtxgen -profile EtcdraftChannel -outputAnchorPeersUpdate ./channel-artifacts/Org2MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org2MSP
   elif [ "$CONSENSUS_TYPE" == "sbft" ]; then
     configtxgen -profile SbftChannel -outputAnchorPeersUpdate ./channel-artifacts/Org2MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org2MSP
+  elif [ "$CONSENSUS_TYPE" == "hotstuff" ]; then
+    configtxgen -profile HotStuffChannel -outputAnchorPeersUpdate ./channel-artifacts/Org2MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org2MSP
   else
     set +x
     echo "unrecognized CONSESUS_TYPE='$CONSENSUS_TYPE'. exiting"
@@ -607,6 +633,15 @@ function generateChannelArtifacts() {
   set +x
   if [ $res -ne 0 ]; then
     echo "Failed to generate anchor peer update for Sbft Org2MSP..."
+    exit 1
+  fi
+
+  set -x
+  configtxgen -profile HotStuffChannel -outputAnchorPeersUpdate ./channel-artifacts/Org2MSPanchorsForHs.tx -channelID hschannel -asOrg Org2MSP
+  res=$?
+  set +x
+  if [ $res -ne 0 ]; then
+    echo "Failed to generate anchor peer update for HotStuff Org2MSP..."
     exit 1
   fi
 

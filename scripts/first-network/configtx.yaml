@@ -467,6 +467,23 @@ Profiles:
             Capabilities:
                 <<: *ApplicationCapabilities
 
+    HotStuffChannel:
+        Consortium: SampleConsortium
+        <<: *ChannelDefaults
+        ConsensusType: hotstuff
+        OrdererAddresses:
+            - orderer.example.com:7050
+            - orderer2.example.com:8050
+            - orderer3.example.com:9050
+            - orderer4.example.com:10050
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Org1
+                - *Org2
+            Capabilities:
+                <<: *ApplicationCapabilities
+
     TwoOrgsOrdererGenesis:
         <<: *ChannelDefaults
         Orderer:
