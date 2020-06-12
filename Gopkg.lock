@@ -494,8 +494,8 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:395a5f977a65907f61b64aff820dcdeb250deacf27f9ebffe3b3f516a1e98d4e"
+  branch = "release-2.0"
+  digest = "1:6e2671e34a5c317c126099291b3b97ae39a3ddd4f2d144089aa818b6fccc81e2"
   name = "github.com/hyperledger/fabric-protos-go"
   packages = [
     "common",
@@ -507,12 +507,14 @@
     "msp",
     "orderer",
     "orderer/etcdraft",
+    "orderer/hotstuff",
     "peer",
     "peer/lifecycle",
     "transientstore",
   ]
   pruneopts = "NUT"
-  revision = "e9cfc186ba7b712d582dfce320b7441e50e18b4e"
+  revision = "2c67ed860e93eedaa652eac8a34af3a89d02fba4"
+  source = "git@github.com:zhigui-projects/fabric-protos-go.git"
 
 [[projects]]
   branch = "master"
@@ -521,6 +523,14 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "a8b993ba6abdb0e0c12b0125c603323a71c7790c"
+
+[[projects]]
+  digest = "1:8373f79aafa6b04887bc9e4c23753c106e7cf38752d179de3802acff445a93a4"
+  name = "github.com/inconshreveable/log15"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "b30bc20e4fd12cec79a9aae62e91cfcf458bd253"
+  version = "v2.15"
 
 [[projects]]
   digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
@@ -589,6 +599,22 @@
   pruneopts = "NUT"
   revision = "8edcc4e51f39ddbd3505a3386aff3f435a7fd028"
   version = "v0.7.1"
+
+[[projects]]
+  digest = "1:cea51d24307a9a281edaa93801cfcf2883b7c8ed26a1db004f08229a1f1f98e2"
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "68e95eba382c972aafde02ead2cd2426a8a92480"
+  version = "v0.1.6"
+
+[[projects]]
+  digest = "1:4c2c63bfd4c2ae0c5a9d7f75cab1f4fac4e8c2ce58f52a73322cefc9bdb4c5bd"
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "7b513a986450394f7bbf1476909911b3aa3a55ce"
+  version = "v0.0.12"
 
 [[projects]]
   digest = "1:70ef8268170621826f8c111ac1674afe75136f526f449453b4a6631c6dba1946"
@@ -933,6 +959,22 @@
   version = "v1.2.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7dd38c536a7cd1cdd31492da32076d83f4053762f86cd15a621c8f26b386a491"
+  name = "github.com/zhigui-projects/go-hotstuff"
+  packages = [
+    "common/crypto",
+    "common/log",
+    "common/utils",
+    "consensus",
+    "pacemaker",
+    "pb",
+    "transport",
+  ]
+  pruneopts = "NUT"
+  revision = "7f8c60077b3c00201d9f7b4587ac5d29540c3e1a"
+
+[[projects]]
   digest = "1:7994f0511ea39eb049909df41301aabf5e6289b97c1084f7cc8c351d765469e1"
   name = "go.etcd.io/etcd"
   packages = [
@@ -1226,6 +1268,7 @@
     "github.com/hyperledger/fabric-protos-go/msp",
     "github.com/hyperledger/fabric-protos-go/orderer",
     "github.com/hyperledger/fabric-protos-go/orderer/etcdraft",
+    "github.com/hyperledger/fabric-protos-go/orderer/hotstuff",
     "github.com/hyperledger/fabric-protos-go/peer",
     "github.com/hyperledger/fabric-protos-go/peer/lifecycle",
     "github.com/hyperledger/fabric-protos-go/transientstore",
@@ -1259,6 +1302,10 @@
     "github.com/tedsuo/ifrit/ginkgomon",
     "github.com/tedsuo/ifrit/grouper",
     "github.com/willf/bitset",
+    "github.com/zhigui-projects/go-hotstuff/common/crypto",
+    "github.com/zhigui-projects/go-hotstuff/consensus",
+    "github.com/zhigui-projects/go-hotstuff/pacemaker",
+    "github.com/zhigui-projects/go-hotstuff/pb",
     "go.etcd.io/etcd/etcdserver/api/snap",
     "go.etcd.io/etcd/pkg/fileutil",
     "go.etcd.io/etcd/raft",

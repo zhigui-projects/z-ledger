@@ -182,8 +182,9 @@ noverify = [
       non-go = false
 
 [[constraint]]
-  branch = "master"
+  branch = "release-2.0"
   name = "github.com/hyperledger/fabric-protos-go"
+  source = "git@github.com:zhigui-projects/fabric-protos-go.git"
 
 [[constraint]]
   branch = "master"
@@ -192,3 +193,7 @@ noverify = [
 [[constraint]]
   name = "github.com/VictoriaMetrics/fastcache"
   version = "1.4.6"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/zhigui-projects/go-hotstuff"
