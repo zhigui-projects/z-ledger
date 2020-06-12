@@ -7,6 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package hybridblkstorage
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 	"io/ioutil"
 	"math"
 	"os"
@@ -104,8 +107,7 @@ func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo,
 		}
 		amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum)
 		amInfo.LastSentFileSuffix = int32(lastSentFileNum)
-		//TODO：calculate checksum
-		//amInfo.FileProofs[]
+		calcFileProofs(rootDir, amInfo)
 	}
 }
 
@@ -129,8 +131,8 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client dc.FsClien
 
 	amInfo.LastArchiveFileSuffix = int32(lastArchiveFileNum)
 	amInfo.LastSentFileSuffix = int32(lastSentFileNum)
-	//TODO：calculate checksum
-	//amInfo.FileProofs[]
+	calcFileProofs(rootDir, amInfo)
+
 	logger.Infof("Archive meta info constructed from dfs = %s", spew.Sdump(amInfo))
 	return amInfo, nil
 }
@@ -148,8 +150,7 @@ func retrieveLastArchiveFileNum(rootDir string) (int, error) {
 			logger.Infof("Skipping File name = %s", name)
 			continue
 		}
-		fileSuffix := strings.TrimPrefix(name, blockfilePrefix)
-		fileNum, err := strconv.Atoi(fileSuffix)
+		fileNum, err := extractFileNum(name)
 		if err != nil {
 			return -1, err
 		}
@@ -165,6 +166,38 @@ func retrieveLastArchiveFileNum(rootDir string) (int, error) {
 	return smallestFileNum, err
 }
 
+func extractFileNum(name string) (int, error) {
+	fileSuffix := strings.TrimPrefix(name, blockfilePrefix)
+	fileNum, err := strconv.Atoi(fileSuffix)
+	return fileNum, err
+}
+
+func calcFileProofs(rootDir string, amInfo *archive.ArchiveMetaInfo) {
+	fileInfos, err := ioutil.ReadDir(rootDir)
+	if err != nil {
+		logger.Errorf("ReadDir[%s] got err: %s", rootDir, err)
+		return
+	}
+
+	for _, fi := range fileInfos {
+		f, err := os.Open(rootDir + string(os.PathSeparator) + fi.Name())
+		if err != nil {
+			logger.Errorf("Open file[%s] got error: %s", fi.Name(), err)
+			continue
+		}
+		h := sha256.New()
+		if _, err := io.Copy(h, f); err != nil {
+			logger.Errorf("io.Copy file[%s] got error: %s", fi.Name(), err)
+			continue
+		}
+		fileNum, err := extractFileNum(fi.Name())
+		if err != nil {
+			logger.Errorf("extract file num from[%s] got error: %s", fi.Name(), err)
+		}
+		amInfo.FileProofs[int32(fileNum)] = hex.EncodeToString(h.Sum(nil))
+	}
+}
+
 func retrieveLastSentFileNumFromDfs(rootDir string, client dc.FsClient) (int, error) {
 	biggestFileNum := -1
 	filesInfo, err := client.ReadDir(rootDir)
@@ -178,8 +211,7 @@ func retrieveLastSentFileNumFromDfs(rootDir string, client dc.FsClient) (int, er
 			logger.Infof("Skipping File name = %s", name)
 			continue
 		}
-		fileSuffix := strings.TrimPrefix(name, blockfilePrefix)
-		fileNum, err := strconv.Atoi(fileSuffix)
+		fileNum, err := extractFileNum(name)
 		if err != nil {
 			return -1, err
 		}
@@ -254,8 +286,7 @@ func retrieveLastFileSuffix(rootDir string) (int, error) {
 			logger.Debugf("Skipping File name = %s", name)
 			continue
 		}
-		fileSuffix := strings.TrimPrefix(name, blockfilePrefix)
-		fileNum, err := strconv.Atoi(fileSuffix)
+		fileNum, err := extractFileNum(name)
 		if err != nil {
 			return -1, err
 		}

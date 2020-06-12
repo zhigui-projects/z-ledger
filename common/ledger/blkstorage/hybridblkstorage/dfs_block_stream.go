@@ -8,6 +8,8 @@ package hybridblkstorage
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -49,7 +51,7 @@ type dfsBlockStream struct {
 ///////////////////////////////////
 // dfsBlockfileStream functions
 ////////////////////////////////////
-func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, client common.FsClient) (*dfsBlockfileStream, error) {
+func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, client common.FsClient, fileProof string) (*dfsBlockfileStream, error) {
 	var reader common.FsReader
 	var err error
 
@@ -58,6 +60,13 @@ func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, clien
 	if reader, err = client.Open(filePath); err != nil {
 		return nil, errors.Wrapf(err, "error opening dfs block reader %s", filePath)
 	}
+	h := sha256.New()
+	if _, err := io.Copy(h, reader); err != nil {
+		logger.Errorf("io.Copy file[%s] got error: %s", filePath, err)
+	} else if len(fileProof) != 0 && hex.EncodeToString(h.Sum(nil)) != fileProof {
+		logger.Warnf("the checksum of blockfile[%s] in dfs does not match [%s]", filePath, fileProof)
+	}
+
 	var newPosition int64
 	if newPosition, err = reader.Seek(startOffset, 0); err != nil {
 		return nil, errors.Wrapf(err, "error seeking dfs block reader [%s] to startOffset [%d]", filePath, startOffset)
@@ -145,7 +154,7 @@ func (s *dfsBlockfileStream) close() error {
 // dfsBlockStream functions
 ////////////////////////////////////
 func newDfsBlockStream(rootDir string, startFileNum int, startOffset int64, endFileNum int, client common.FsClient) (*dfsBlockStream, error) {
-	startFileStream, err := newDfsBlockfileStream(rootDir, startFileNum, startOffset, client)
+	startFileStream, err := newDfsBlockfileStream(rootDir, startFileNum, startOffset, client, "")
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +167,7 @@ func (s *dfsBlockStream) moveToNextBlockfileStream() error {
 		return err
 	}
 	s.currentFileNum++
-	if s.currentFileStream, err = newDfsBlockfileStream(s.rootDir, s.currentFileNum, 0, s.currentFileStream.client); err != nil {
+	if s.currentFileStream, err = newDfsBlockfileStream(s.rootDir, s.currentFileNum, 0, s.currentFileStream.client, ""); err != nil {
 		return err
 	}
 	return nil

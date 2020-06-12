@@ -599,7 +599,8 @@ func (mgr *hybridBlockfileMgr) fetchBlockBytes(lp *fileLocPointer) ([]byte, erro
 	var err error
 	var stream hybridBlockStream
 	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
-		stream, err = newDfsBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), mgr.dfsClient)
+		stream, err = newDfsBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), mgr.dfsClient, mgr.amInfo.FileProofs[int32(lp.fileSuffixNum)])
+
 	} else {
 		stream, err = newBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset))
 	}
@@ -619,7 +620,7 @@ func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error)
 	var err error
 	filePath := deriveBlockfilePath(mgr.rootDir, lp.fileSuffixNum)
 	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
-		reader, err = newDfsBlockfileReader(filePath, mgr.dfsClient)
+		reader, err = newDfsBlockfileReader(filePath, mgr.dfsClient, mgr.amInfo.FileProofs[int32(lp.fileSuffixNum)])
 	} else {
 		reader, err = newBlockfileReader(filePath)
 	}
@@ -698,7 +699,6 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 				FileProofs:            mgr.amInfo.FileProofs,
 				ChannelId:             mgr.amInfo.ChannelId,
 			}
-			//TODO: update file proofs
 			if err := mgr.saveArchiveMetaInfo(newAmInfo); err != nil {
 				panic(fmt.Sprintf("Could not save archive meta info: %s to db: %+v", spew.Sdump(newAmInfo), err))
 			}

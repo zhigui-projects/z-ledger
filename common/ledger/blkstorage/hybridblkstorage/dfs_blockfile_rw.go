@@ -7,8 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 package hybridblkstorage
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/pkg/errors"
+	"io"
 )
 
 type fileReader interface {
@@ -21,7 +24,7 @@ type dfsBlockfileReader struct {
 	reader common.FsReader
 }
 
-func newDfsBlockfileReader(filePath string, dfsClient common.FsClient) (*dfsBlockfileReader, error) {
+func newDfsBlockfileReader(filePath string, dfsClient common.FsClient, fileProof string) (*dfsBlockfileReader, error) {
 	if dfsClient == nil {
 		return nil, errors.New("dfs client should not be nil")
 	}
@@ -29,6 +32,14 @@ func newDfsBlockfileReader(filePath string, dfsClient common.FsClient) (*dfsBloc
 	if err != nil {
 		return nil, errors.Wrapf(err, "error opening dfs block file reader for file %s with client %+v", filePath, dfsClient)
 	}
+
+	h := sha256.New()
+	if _, err := io.Copy(h, reader); err != nil {
+		logger.Errorf("io.Copy file[%s] got error: %s", filePath, err)
+	} else if len(fileProof) != 0 && hex.EncodeToString(h.Sum(nil)) != fileProof {
+		logger.Warnf("the checksum of blockfile[%s] in dfs does not match [%s]", filePath, fileProof)
+	}
+
 	return &dfsBlockfileReader{reader}, nil
 }
 
