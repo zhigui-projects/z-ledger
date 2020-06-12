@@ -667,8 +667,8 @@ func (vdb *VersionedDB) applyUpdates(updates *statedb.UpdateBatch, height *versi
 		updates := updates.GetUpdates(ns)
 		for k, vv := range updates {
 			if ns == "ascc" && k == "byTxDate" {
-				logger.Infof("Publishing event[archive-by-tx-date] with channel[%s] date[%s]", vdb.chainName, string(vv.Value))
-				eventbus.Get(vdb.chainName).Publish("archive-by-tx-date", vdb.chainName, string(vv.Value))
+				logger.Infof("Publishing event[ARCHIVE_BY_TX_DATE] with channel[%s] date[%s]", vdb.chainName, string(vv.Value))
+				eventbus.Get(vdb.chainName).Publish(eventbus.ArchiveByTxDate, vdb.chainName, string(vv.Value))
 			}
 		}
 	}

@@ -13,6 +13,10 @@ var (
 	lock sync.RWMutex
 )
 
+const (
+	ArchiveByTxDate = "ARCHIVE_BY_TX_DATE"
+)
+
 // Get returns the event bus singleton
 func Get(channelId string) EventBus.Bus {
 	lock.Lock()
