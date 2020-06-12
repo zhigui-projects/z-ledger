@@ -544,7 +544,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "archive-v2.0.0"
+  branch = "icbc-v2.0.0"
   digest = "1:9799120d75597ced2a212e9c6888698a7a81a11a908792ee25480b82a9104b05"
   name = "github.com/hyperledger/fabric-protos-go"
   packages = [
