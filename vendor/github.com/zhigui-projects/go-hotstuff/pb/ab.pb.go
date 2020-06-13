@@ -8,8 +8,6 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -94,14 +92,6 @@ func (x *atomicBroadcastBroadcastClient) Recv() (*Message, error) {
 // AtomicBroadcastServer is the server API for AtomicBroadcast service.
 type AtomicBroadcastServer interface {
 	Broadcast(AtomicBroadcast_BroadcastServer) error
-}
-
-// UnimplementedAtomicBroadcastServer can be embedded to have forward compatible implementations.
-type UnimplementedAtomicBroadcastServer struct {
-}
-
-func (*UnimplementedAtomicBroadcastServer) Broadcast(srv AtomicBroadcast_BroadcastServer) error {
-	return status.Errorf(codes.Unimplemented, "method Broadcast not implemented")
 }
 
 func RegisterAtomicBroadcastServer(s *grpc.Server, srv AtomicBroadcastServer) {

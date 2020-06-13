@@ -194,6 +194,7 @@ noverify = [
   name = "github.com/VictoriaMetrics/fastcache"
   version = "1.4.6"
 
+
 [[constraint]]
-  branch = "master"
+  branch = "multichain"
   name = "github.com/zhigui-projects/go-hotstuff"
