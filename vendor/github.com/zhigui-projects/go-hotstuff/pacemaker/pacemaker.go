@@ -20,6 +20,7 @@ type HotStuff interface {
 	UpdateHighestQC(block *pb.Block, qc *pb.QuorumCert)
 	GetHighQC() *pb.QuorumCert
 	GetConnectStatus(id int64) bool
+	GetChainId() string
 }
 
 type PaceMaker interface {

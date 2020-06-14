@@ -8,6 +8,8 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 	math "math"
 )
 
@@ -808,6 +810,14 @@ func (c *hotstuffClient) Submit(ctx context.Context, in *SubmitRequest, opts ...
 // HotstuffServer is the server API for Hotstuff service.
 type HotstuffServer interface {
 	Submit(context.Context, *SubmitRequest) (*SubmitResponse, error)
+}
+
+// UnimplementedHotstuffServer can be embedded to have forward compatible implementations.
+type UnimplementedHotstuffServer struct {
+}
+
+func (*UnimplementedHotstuffServer) Submit(ctx context.Context, req *SubmitRequest) (*SubmitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Submit not implemented")
 }
 
 func RegisterHotstuffServer(s *grpc.Server, srv HotstuffServer) {

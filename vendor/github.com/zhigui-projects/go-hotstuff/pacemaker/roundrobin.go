@@ -77,7 +77,7 @@ func (r *RoundRobinPM) OnBeat() {
 			}()
 			// OnReceiveNewView
 			atomic.AddInt64(&r.curView, 1)
-			viewMsg := &pb.Message{Type: &pb.Message_NewView{
+			viewMsg := &pb.Message{Chain: r.GetChainId(), Type: &pb.Message_NewView{
 				NewView: &pb.NewView{ViewNumber: atomic.LoadInt64(&r.curView), GenericQc: r.GetHighQC()}}}
 			go r.BroadcastMsg(viewMsg)
 			r.startNewViewTimer()
@@ -111,7 +111,7 @@ func (r *RoundRobinPM) OnNextSyncView() {
 		}
 
 		r.startNewViewTimer()
-		viewMsg := &pb.Message{Type: &pb.Message_NewView{
+		viewMsg := &pb.Message{Chain: r.GetChainId(), Type: &pb.Message_NewView{
 			NewView: &pb.NewView{ViewNumber: atomic.LoadInt64(&r.curView), GenericQc: r.GetHighQC()}}}
 		_ = r.UnicastMsg(viewMsg, leader)
 	} else {
@@ -141,7 +141,7 @@ func (r *RoundRobinPM) OnProposeEvent(proposal *pb.Proposal) {
 	}
 
 	// 出块后，广播区块到其他副本
-	go r.BroadcastMsg(&pb.Message{Type: &pb.Message_Proposal{Proposal: proposal}})
+	go r.BroadcastMsg(&pb.Message{Chain: r.GetChainId(), Type: &pb.Message_Proposal{Proposal: proposal}})
 }
 
 func (r *RoundRobinPM) OnReceiveProposal(proposal *pb.Proposal, vote *pb.Vote) {
@@ -194,7 +194,7 @@ func (r *RoundRobinPM) OnReceiveNewView(id int64, block *pb.Block, newView *pb.N
 		// 副本间同步view number
 		r.stopNewViewTimer()
 		atomic.StoreInt64(&r.curView, newView.ViewNumber)
-		viewMsg := &pb.Message{Type: &pb.Message_NewView{
+		viewMsg := &pb.Message{Chain: r.GetChainId(), Type: &pb.Message_NewView{
 			NewView: &pb.NewView{ViewNumber: atomic.LoadInt64(&r.curView), GenericQc: r.GetHighQC()}}}
 		go r.BroadcastMsg(viewMsg)
 		r.startNewViewTimer()

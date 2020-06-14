@@ -15,6 +15,7 @@ type ChainHotStuff struct {
 	pacemaker.PaceMaker
 	*HotStuffCore
 	*NodeManager
+	chainId string
 }
 
 func (c *ChainHotStuff) Start(ctx context.Context) {
@@ -34,7 +35,7 @@ func (c *ChainHotStuff) ApplyPaceMaker(pm pacemaker.PaceMaker) {
 
 func (c *ChainHotStuff) DoVote(leader int64, vote *pb.Vote) {
 	if leader != c.HotStuffCore.GetID() {
-		if err := c.UnicastMsg(&pb.Message{Type: &pb.Message_Vote{Vote: vote}}, leader); err != nil {
+		if err := c.UnicastMsg(&pb.Message{Chain: c.chainId, Type: &pb.Message_Vote{Vote: vote}}, leader); err != nil {
 			logger.Error("do vote error when unicast msg", "to", leader)
 		}
 	} else {
@@ -42,6 +43,10 @@ func (c *ChainHotStuff) DoVote(leader int64, vote *pb.Vote) {
 			logger.Warn("do vote error when receive vote", "to", leader)
 		}
 	}
+}
+
+func (c *ChainHotStuff) GetChainId() string {
+	return c.chainId
 }
 
 type HotStuffBase struct {
@@ -160,7 +165,7 @@ func (hsb *HotStuffBase) GetHotStuff(chain string) *ChainHotStuff {
 	hsb.rwmutex.Lock()
 	defer hsb.rwmutex.Unlock()
 	hsc := NewHotStuffCore(hsb.id, hsb.signer, hsb.replicas)
-	chs = &ChainHotStuff{HotStuffCore: hsc, NodeManager: hsb.NodeManager}
+	chs = &ChainHotStuff{HotStuffCore: hsc, NodeManager: hsb.NodeManager, chainId: chain}
 	hsb.hscs[chain] = chs
 	return chs
 }

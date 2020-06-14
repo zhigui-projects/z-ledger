@@ -109,6 +109,8 @@ func (hsc *HotStuffCore) OnPropose(curView int64, parentHash, cmds []byte) error
 }
 
 func (hsc *HotStuffCore) OnReceiveProposal(prop *pb.Proposal) error {
+	// TODO 验证proposer交易签名
+
 	block := prop.Block
 	hsc.blockCache.Store(hex.EncodeToString(block.SelfQc.BlockHash), block)
 
