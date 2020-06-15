@@ -105,6 +105,7 @@ func (c *chain) Errored() <-chan struct{} {
 
 func (c *chain) main() {
 	var timer <-chan time.Time
+	var pmTimer <-chan time.Time
 	var err error
 
 	for {
@@ -129,12 +130,10 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go func() {
-						c.pm.Submit(cmds)
-						c.pm.Submit(nil)
-						c.pm.Submit(nil)
-						c.pm.Submit(nil)
-					}()
+					go c.pm.Submit(cmds)
+				}
+				if len(batches) > 0 {
+					pmTimer = time.After(100 * time.Millisecond)
 				}
 
 				switch {
@@ -167,12 +166,9 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go func() {
-						c.pm.Submit(cmds)
-						c.pm.Submit(nil)
-						c.pm.Submit(nil)
-						c.pm.Submit(nil)
-					}()
+					go c.pm.Submit(cmds)
+
+					pmTimer = time.After(100 * time.Millisecond)
 				}
 
 				cmdsReq := &CmdsRequest{
@@ -205,8 +201,11 @@ func (c *chain) main() {
 				Batche:  batch,
 			}
 			cmds, _ := json.Marshal(cmdsReq)
+			go c.pm.Submit(cmds)
+
+			pmTimer = time.After(100 * time.Millisecond)
+		case <-pmTimer:
 			go func() {
-				c.pm.Submit(cmds)
 				c.pm.Submit(nil)
 				c.pm.Submit(nil)
 				c.pm.Submit(nil)
