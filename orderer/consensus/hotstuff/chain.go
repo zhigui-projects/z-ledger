@@ -3,16 +3,25 @@ package hotstuff
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/orderer/consensus"
 	"github.com/pkg/errors"
+	hs "github.com/zhigui-projects/go-hotstuff/consensus"
 	"github.com/zhigui-projects/go-hotstuff/pacemaker"
 )
 
+var (
+	once   sync.Once
+	ctx    context.Context
+	cancel context.CancelFunc
+)
+
 type chain struct {
+	hsb      *hs.HotStuffBase
 	pm       pacemaker.PaceMaker
 	sendChan chan *message
 	exitChan chan struct{}
@@ -38,7 +47,10 @@ type CmdsRequest struct {
 
 // Start instructs the orderer to begin serving the chain and keep it current.
 func (c *chain) Start() {
-	ctx, cancel := context.WithCancel(context.Background())
+	once.Do(func() {
+		ctx, cancel = context.WithCancel(context.Background())
+		go c.hsb.Start(ctx)
+	})
 	c.cancel = cancel
 	go c.pm.Run(ctx)
 	go c.main()
@@ -117,7 +129,12 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go c.pm.Submit(cmds)
+					go func() {
+						c.pm.Submit(cmds)
+						c.pm.Submit(nil)
+						c.pm.Submit(nil)
+						c.pm.Submit(nil)
+					}()
 				}
 
 				switch {
@@ -150,7 +167,12 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go c.pm.Submit(cmds)
+					go func() {
+						c.pm.Submit(cmds)
+						c.pm.Submit(nil)
+						c.pm.Submit(nil)
+						c.pm.Submit(nil)
+					}()
 				}
 
 				cmdsReq := &CmdsRequest{
@@ -158,7 +180,12 @@ func (c *chain) main() {
 					Batche:  []*cb.Envelope{msg.configMsg},
 				}
 				cmds, _ := json.Marshal(cmdsReq)
-				go c.pm.Submit(cmds)
+				go func() {
+					c.pm.Submit(cmds)
+					c.pm.Submit(nil)
+					c.pm.Submit(nil)
+					c.pm.Submit(nil)
+				}()
 
 				timer = nil
 			}
@@ -178,7 +205,12 @@ func (c *chain) main() {
 				Batche:  batch,
 			}
 			cmds, _ := json.Marshal(cmdsReq)
-			go c.pm.Submit(cmds)
+			go func() {
+				c.pm.Submit(cmds)
+				c.pm.Submit(nil)
+				c.pm.Submit(nil)
+				c.pm.Submit(nil)
+			}()
 		case <-c.exitChan:
 			logger.Debugf("Exiting")
 			return

@@ -719,7 +719,7 @@ func initializeMultichannelRegistrar(
 	}
 	// Impl by zig
 	consenters["sbft"] = sbft.New(conf, srvConf)
-	consenters["hotstuff"] = hotstuff.New(srvConf)
+	consenters["hotstuff"] = hotstuff.New(conf, srvConf)
 	registrar.Initialize(consenters)
 	return registrar
 }
