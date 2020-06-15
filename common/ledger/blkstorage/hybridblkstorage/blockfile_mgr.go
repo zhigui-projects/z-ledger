@@ -719,18 +719,18 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 	var blkLoc *fileLocPointer
 	var err error
 	if blkLoc, err = mgr.index.getBlockLocByTxDate(dateStr); err != nil {
-		logger.Errorf("The block location of given date[%s] has not been found in the index", dateStr)
+		logger.Warnf("The block location of given date[%s] has not been found in the index", dateStr)
 		return
 	}
 
 	// keep the block file contains the tx of given tx date
 	fileNum := blkLoc.fileSuffixNum - 1
 	if fileNum < 0 {
-		logger.Errorf("The block files does not need to archive currently[%s], execute archive later", dateStr)
+		logger.Warnf("The block files does not need to archive currently[%s], execute archive later", dateStr)
 	}
 
 	if fileNum > lastSentFileNum {
-		logger.Errorf("The block files of given date[%s] has not been transferred to dfs yet", dateStr)
+		logger.Warnf("The block files of given date[%s] has not been transferred to dfs yet", dateStr)
 		return
 	}
 	if fileNum <= lastArchiveFileNum {
