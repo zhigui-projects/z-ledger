@@ -128,6 +128,9 @@ type Orderer interface {
 	// Impl by zig
 	// SbftMetadata returns the sbft consensus metadata.
 	SbftMetadata() []byte
+
+	// HotStuffMetadata returns the hotstuff consensus metadata.
+	HotStuffMetadata() []byte
 }
 
 // ChannelCapabilities defines the capabilities for a channel

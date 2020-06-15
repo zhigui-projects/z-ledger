@@ -70,6 +70,16 @@ type OrdererConfig struct {
 	consensusTypeReturnsOnCall map[int]struct {
 		result1 string
 	}
+	HotStuffMetadataStub        func() []byte
+	hotStuffMetadataMutex       sync.RWMutex
+	hotStuffMetadataArgsForCall []struct {
+	}
+	hotStuffMetadataReturns struct {
+		result1 []byte
+	}
+	hotStuffMetadataReturnsOnCall map[int]struct {
+		result1 []byte
+	}
 	KafkaBrokersStub        func() []string
 	kafkaBrokersMutex       sync.RWMutex
 	kafkaBrokersArgsForCall []struct {
@@ -426,6 +436,58 @@ func (fake *OrdererConfig) ConsensusTypeReturnsOnCall(i int, result1 string) {
 	}{result1}
 }
 
+func (fake *OrdererConfig) HotStuffMetadata() []byte {
+	fake.hotStuffMetadataMutex.Lock()
+	ret, specificReturn := fake.hotStuffMetadataReturnsOnCall[len(fake.hotStuffMetadataArgsForCall)]
+	fake.hotStuffMetadataArgsForCall = append(fake.hotStuffMetadataArgsForCall, struct {
+	}{})
+	fake.recordInvocation("HotStuffMetadata", []interface{}{})
+	fake.hotStuffMetadataMutex.Unlock()
+	if fake.HotStuffMetadataStub != nil {
+		return fake.HotStuffMetadataStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.hotStuffMetadataReturns
+	return fakeReturns.result1
+}
+
+func (fake *OrdererConfig) HotStuffMetadataCallCount() int {
+	fake.hotStuffMetadataMutex.RLock()
+	defer fake.hotStuffMetadataMutex.RUnlock()
+	return len(fake.hotStuffMetadataArgsForCall)
+}
+
+func (fake *OrdererConfig) HotStuffMetadataCalls(stub func() []byte) {
+	fake.hotStuffMetadataMutex.Lock()
+	defer fake.hotStuffMetadataMutex.Unlock()
+	fake.HotStuffMetadataStub = stub
+}
+
+func (fake *OrdererConfig) HotStuffMetadataReturns(result1 []byte) {
+	fake.hotStuffMetadataMutex.Lock()
+	defer fake.hotStuffMetadataMutex.Unlock()
+	fake.HotStuffMetadataStub = nil
+	fake.hotStuffMetadataReturns = struct {
+		result1 []byte
+	}{result1}
+}
+
+func (fake *OrdererConfig) HotStuffMetadataReturnsOnCall(i int, result1 []byte) {
+	fake.hotStuffMetadataMutex.Lock()
+	defer fake.hotStuffMetadataMutex.Unlock()
+	fake.HotStuffMetadataStub = nil
+	if fake.hotStuffMetadataReturnsOnCall == nil {
+		fake.hotStuffMetadataReturnsOnCall = make(map[int]struct {
+			result1 []byte
+		})
+	}
+	fake.hotStuffMetadataReturnsOnCall[i] = struct {
+		result1 []byte
+	}{result1}
+}
+
 func (fake *OrdererConfig) KafkaBrokers() []string {
 	fake.kafkaBrokersMutex.Lock()
 	ret, specificReturn := fake.kafkaBrokersReturnsOnCall[len(fake.kafkaBrokersArgsForCall)]
@@ -649,6 +711,8 @@ func (fake *OrdererConfig) Invocations() map[string][][]interface{} {
 	defer fake.consensusStateMutex.RUnlock()
 	fake.consensusTypeMutex.RLock()
 	defer fake.consensusTypeMutex.RUnlock()
+	fake.hotStuffMetadataMutex.RLock()
+	defer fake.hotStuffMetadataMutex.RUnlock()
 	fake.kafkaBrokersMutex.RLock()
 	defer fake.kafkaBrokersMutex.RUnlock()
 	fake.maxChannelsCountMutex.RLock()

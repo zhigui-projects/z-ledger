@@ -90,7 +90,7 @@ func (c *consenter) newHotStuff(support consensus.ConsenterSupport) (*hsc.HotStu
 	}
 
 	m := &hs.ConfigMetadata{}
-	if err := proto.Unmarshal(support.SharedConfig().ConsensusMetadata(), m); err != nil {
+	if err := proto.Unmarshal(support.SharedConfig().HotStuffMetadata(), m); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal consensus metadata")
 	}
 	if m.Options == nil {

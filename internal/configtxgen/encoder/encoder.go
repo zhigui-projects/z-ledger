@@ -245,7 +245,7 @@ func NewOrdererGroup(conf *genesisconfig.Orderer) (*cb.ConfigGroup, error) {
 			if consensusMetadata, err := channelconfig.MarshalHotStuffMetadata(conf.HotStuff); err != nil {
 				return nil, errors.Errorf("cannot marshal metadata for orderer type %s: %v", ConsensusTypeHotStuff, err)
 			} else {
-				addValue(ordererGroup, channelconfig.ConsensusTypeValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
+				addValue(ordererGroup, channelconfig.HotStuffMetadataValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
 			}
 		}
 	} else {

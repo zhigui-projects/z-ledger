@@ -349,3 +349,15 @@ func SbftMetadataValue(consensusType string, consensusMetadata []byte) *Standard
 		},
 	}
 }
+
+// HotStuffMetadataValue returns the config definition for the hotstuff metadata.
+// It is a value for the /Channel/Orderer group.
+func HotStuffMetadataValue(consensusType string, consensusMetadata []byte) *StandardConfigValue {
+	return &StandardConfigValue{
+		key: HotStuffConsensusKey,
+		value: &ab.ConsensusType{
+			Type:     consensusType,
+			Metadata: consensusMetadata,
+		},
+	}
+}
