@@ -16,6 +16,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/archive/eventbus"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
+	"github.com/hyperledger/fabric/core/scc/ascc"
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
@@ -196,7 +197,7 @@ func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version
 				}
 				dbBatch.Put(dataKey, encodedVal)
 
-				if ns == "ascc" && k == "byTxDate" {
+				if ns == ascc.ChaincodeName && k == ascc.ArchiveByTxDateKey {
 					logger.Infof("Publishing event[ARCHIVE_BY_TX_DATE] with channel[%s] date[%s]", vdb.dbName, string(vv.Value))
 					eventbus.Get(vdb.dbName).Publish(eventbus.ArchiveByTxDate, vdb.dbName, string(vv.Value))
 				}

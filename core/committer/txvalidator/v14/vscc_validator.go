@@ -18,6 +18,7 @@ import (
 	"github.com/hyperledger/fabric/core/common/sysccprovider"
 	validation "github.com/hyperledger/fabric/core/handlers/validation/api"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
+	"github.com/hyperledger/fabric/core/scc/ascc"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
@@ -409,7 +410,7 @@ func IsSysCCAndNotInvokableExternal(name string) bool {
 }
 
 func IsSysCC(name string) bool {
-	return name == "vscc" || name == "escc" || name == "lscc" || name == "qscc" || name == "cscc" || name == "ascc"
+	return name == "vscc" || name == "escc" || name == "lscc" || name == "qscc" || name == "cscc" || name == ascc.ChaincodeName
 }
 
 func IsSysCCAndNotInvokableCC2CC(name string) bool {

@@ -13,6 +13,10 @@ import (
 const (
 	//invoke functions
 	ArchiveByDate string = "archiveByDate"
+
+	// keys
+	ArchiveByTxDateKey string = "archive_by_tx_date"
+	ChaincodeName      string = "ascc"
 )
 
 var logger = flogging.MustGetLogger("ascc")
@@ -33,7 +37,7 @@ func New(aclProvider aclmgmt.ACLProvider, policyChecker policy.PolicyChecker) *A
 	}
 }
 
-func (a *ArchiveSysCC) Name() string { return "ascc" }
+func (a *ArchiveSysCC) Name() string { return ChaincodeName }
 
 func (a *ArchiveSysCC) Chaincode() shim.Chaincode { return a }
 
@@ -87,7 +91,7 @@ func (a *ArchiveSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 }
 
 func archiveByDate(stub shim.ChaincodeStubInterface, date []byte) pb.Response {
-	if err := stub.PutState("ascc~byTxDate", date); err != nil {
+	if err := stub.PutState(ArchiveByTxDateKey, date); err != nil {
 		logger.Errorf("ASCC - archiveByDate put state got error: %s", err)
 		return shim.Error(fmt.Sprintf("ASCC put state got error: %s", err))
 	}

@@ -11,9 +11,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"sync"
 
+	"github.com/hyperledger/fabric-chaincode-go/shim/entitydefinition"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/ledger/dataformat"
 	"github.com/hyperledger/fabric/common/metrics"
@@ -22,6 +22,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/statedb"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/version"
 	"github.com/hyperledger/fabric/core/ledger/util/couchdb"
+	"github.com/hyperledger/fabric/core/scc/ascc"
 	"github.com/pkg/errors"
 )
 
@@ -666,7 +667,7 @@ func (vdb *VersionedDB) applyUpdates(updates *statedb.UpdateBatch, height *versi
 	for _, ns := range namespaces {
 		updates := updates.GetUpdates(ns)
 		for k, vv := range updates {
-			if ns == "ascc" && k == "byTxDate" {
+			if ns == ascc.ChaincodeName && k == ascc.ArchiveByTxDateKey {
 				logger.Infof("Publishing event[ARCHIVE_BY_TX_DATE] with channel[%s] date[%s]", vdb.chainName, string(vv.Value))
 				eventbus.Get(vdb.chainName).Publish(eventbus.ArchiveByTxDate, vdb.chainName, string(vv.Value))
 			}

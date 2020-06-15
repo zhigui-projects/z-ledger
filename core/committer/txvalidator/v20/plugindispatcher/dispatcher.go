@@ -18,6 +18,7 @@ import (
 	s "github.com/hyperledger/fabric/core/handlers/validation/api/state"
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
+	"github.com/hyperledger/fabric/core/scc/ascc"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
@@ -188,7 +189,7 @@ func (v *dispatcherImpl) Dispatch(seq int, payload *common.Payload, envBytes []b
 
 	// validate *EACH* read write set according to its chaincode's endorsement policy
 	for ns := range wrNamespace {
-		if ns == "ascc" {
+		if ns == ascc.ChaincodeName {
 			logger.Infof("Skip validation of RW set for ASCC transactions")
 			return nil, peer.TxValidationCode_VALID
 		}
