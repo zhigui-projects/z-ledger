@@ -726,7 +726,7 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 	// keep the block file contains the tx of given tx date
 	fileNum := blkLoc.fileSuffixNum - 1
 	if fileNum < 0 {
-		logger.Warnf("The block files does not need to archive currently[%s], execute archive later", dateStr)
+		logger.Warnf("The block files does not need to archive currently, try date after %s later", dateStr)
 	}
 
 	if fileNum > lastSentFileNum {
