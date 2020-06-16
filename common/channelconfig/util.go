@@ -8,6 +8,7 @@ package channelconfig
 
 import (
 	"fmt"
+	hs "github.com/hyperledger/fabric-protos-go/orderer/hotstuff"
 	"io/ioutil"
 	"math"
 
@@ -309,12 +310,51 @@ func MarshalEtcdRaftMetadata(md *etcdraft.ConfigMetadata) ([]byte, error) {
 	return proto.Marshal(copyMd)
 }
 
+// MarshalHotStuffMetadata serializes hotstuff metadata.
+func MarshalHotStuffMetadata(md *hs.ConfigMetadata) ([]byte, error) {
+	copyMd := proto.Clone(md).(*hs.ConfigMetadata)
+	for _, c := range copyMd.Consenters {
+		// Expect the user to set the config value for client/server certs to the
+		// path where they are persisted locally, then load these files to memory.
+		signCert, err := ioutil.ReadFile(string(c.GetSignCert()))
+		if err != nil {
+			return nil, fmt.Errorf("cannot load sign cert for consenter %s:%d: %s", c.GetHost(), c.GetPort(), err)
+		}
+		c.SignCert = signCert
+
+		clientCert, err := ioutil.ReadFile(string(c.GetClientTlsCert()))
+		if err != nil {
+			return nil, fmt.Errorf("cannot load client cert for consenter %s:%d: %s", c.GetHost(), c.GetPort(), err)
+		}
+		c.ClientTlsCert = clientCert
+
+		serverCert, err := ioutil.ReadFile(string(c.GetServerTlsCert()))
+		if err != nil {
+			return nil, fmt.Errorf("cannot load server cert for consenter %s:%d: %s", c.GetHost(), c.GetPort(), err)
+		}
+		c.ServerTlsCert = serverCert
+	}
+	return proto.Marshal(copyMd)
+}
+
 // Impl by zig
 // SbftMetadataValue returns the config definition for the sbft metadata.
 // It is a value for the /Channel/Orderer group.
 func SbftMetadataValue(consensusType string, consensusMetadata []byte) *StandardConfigValue {
 	return &StandardConfigValue{
 		key: SbftConsensusKey,
+		value: &ab.ConsensusType{
+			Type:     consensusType,
+			Metadata: consensusMetadata,
+		},
+	}
+}
+
+// HotStuffMetadataValue returns the config definition for the hotstuff metadata.
+// It is a value for the /Channel/Orderer group.
+func HotStuffMetadataValue(consensusType string, consensusMetadata []byte) *StandardConfigValue {
+	return &StandardConfigValue{
+		key: HotStuffConsensusKey,
 		value: &ab.ConsensusType{
 			Type:     consensusType,
 			Metadata: consensusMetadata,

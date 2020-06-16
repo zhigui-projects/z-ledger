@@ -446,6 +446,10 @@ chaincodeInvoke() {
   fi
   cat log.txt
   verifyResult $res "Invoke execution on $PEERS failed "
+  if [ "${IS_INIT}" -eq "1" ]; then
+    echo "Sleeping 10s to complete chaincode init"
+    sleep 15
+  fi
   echo "===================== Invoke transaction successful on $PEERS on channel '$CHANNEL_NAME' ===================== "
   echo
 }

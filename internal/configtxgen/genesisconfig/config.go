@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/fabric-protos-go/orderer/etcdraft"
+	hs "github.com/hyperledger/fabric-protos-go/orderer/hotstuff"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/common/policies"
 	"github.com/hyperledger/fabric/common/viperutil"
@@ -164,7 +165,8 @@ type Orderer struct {
 	Capabilities  map[string]bool          `yaml:"Capabilities"`
 	Policies      map[string]*Policy       `yaml:"Policies"`
 	// Impl by zig
-	Sbft *sbft.ConfigMetadata `yaml:"Sbft"`
+	Sbft     *sbft.ConfigMetadata `yaml:"Sbft"`
+	HotStuff *hs.ConfigMetadata   `yaml:"HotStuff"`
 }
 
 // BatchSize contains configuration affecting the size of batches.
@@ -206,6 +208,13 @@ var genesisDefaults = TopLevel{
 				N:                  1,
 				F:                  0,
 				RequestTimeoutNsec: 1000000000,
+			},
+		},
+		HotStuff: &hs.ConfigMetadata{
+			Options: &hs.Options{
+				N:                 1,
+				F:                 0,
+				RequestTimeoutSec: 3,
 			},
 		},
 	},
@@ -467,7 +476,7 @@ loop:
 				ord.Sbft.Options.N = genesisDefaults.Orderer.Sbft.Options.N
 
 			case ord.Sbft.Options.RequestTimeoutNsec == 0:
-				logger.Infof("Orderer.EtcdRaft.SbftShared.RequestTimeoutNsec unset, setting to %v", genesisDefaults.Orderer.Sbft.Options.RequestTimeoutNsec)
+				logger.Infof("Orderer.Sbft.SbftShared.RequestTimeoutNsec unset, setting to %v", genesisDefaults.Orderer.Sbft.Options.RequestTimeoutNsec)
 				ord.Sbft.Options.RequestTimeoutNsec = genesisDefaults.Orderer.Sbft.Options.RequestTimeoutNsec
 
 			case len(ord.Sbft.Consenters) == 0:
@@ -494,6 +503,59 @@ loop:
 			clientCertPath := string(c.GetClientSignCert())
 			cf.TranslatePathInPlace(configDir, &clientCertPath)
 			c.ClientSignCert = []byte(clientCertPath)
+			serverCertPath := string(c.GetServerTlsCert())
+			cf.TranslatePathInPlace(configDir, &serverCertPath)
+			c.ServerTlsCert = []byte(serverCertPath)
+		}
+	case "hotstuff":
+		if ord.HotStuff == nil {
+			logger.Panic("hotstuff configuration missing")
+		}
+		if ord.HotStuff.Options == nil {
+			logger.Infof("Orderer.HotStuff.HotStuffShared unset, setting to %v", genesisDefaults.Orderer.HotStuff.Options)
+			ord.HotStuff.Options = genesisDefaults.Orderer.HotStuff.Options
+		}
+	hotstuff_loop:
+		for {
+			switch {
+			case ord.HotStuff.Options.N == 0:
+				logger.Infof("Orderer.HotStuff.HotStuffShared.N unset, setting to %v", genesisDefaults.Orderer.HotStuff.Options.N)
+				ord.HotStuff.Options.N = genesisDefaults.Orderer.HotStuff.Options.N
+
+			case ord.HotStuff.Options.RequestTimeoutSec == 0:
+				logger.Infof("Orderer.HotStuff.HotStuffShared.RequestTimeoutSec unset, setting to %v", genesisDefaults.Orderer.HotStuff.Options.RequestTimeoutSec)
+				ord.HotStuff.Options.RequestTimeoutSec = genesisDefaults.Orderer.HotStuff.Options.RequestTimeoutSec
+
+			case len(ord.HotStuff.Consenters) == 0:
+				logger.Panic("HotStuff configuration did not specify any consenter")
+
+			default:
+				break hotstuff_loop
+			}
+		}
+
+		for _, c := range ord.HotStuff.GetConsenters() {
+			if c.Host == "" {
+				logger.Panic("consenter info in hotstuff configuration did not specify host")
+			}
+			if c.Port == 0 {
+				logger.Panic("consenter info in hotstuff configuration did not specify port")
+			}
+			if c.SignCert == nil {
+				logger.Panic("consenter info in hotstuff configuration did not specify Sign cert")
+			}
+			if c.ClientTlsCert == nil {
+				logger.Panic("consenter info in hotstuff configuration did not specify client TLS cert")
+			}
+			if c.ServerTlsCert == nil {
+				logger.Panic("consenter info in hotstuff configuration did not specify server TLS cert")
+			}
+			signCertPath := string(c.GetSignCert())
+			cf.TranslatePathInPlace(configDir, &signCertPath)
+			c.SignCert = []byte(signCertPath)
+			clientCertPath := string(c.GetClientTlsCert())
+			cf.TranslatePathInPlace(configDir, &clientCertPath)
+			c.ClientTlsCert = []byte(clientCertPath)
 			serverCertPath := string(c.GetServerTlsCert())
 			cf.TranslatePathInPlace(configDir, &serverCertPath)
 			c.ServerTlsCert = []byte(serverCertPath)

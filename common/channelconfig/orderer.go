@@ -46,6 +46,9 @@ const (
 	// Impl by zig
 	// SbftConsensusKey is the cb.ConfigItem type key name for the Sbft consensus metadata message.
 	SbftConsensusKey = "SbftConsensus"
+
+	// HotStuffConsensusKey is the cb.ConfigItem type key name for the HotStuff consensus metadata message.
+	HotStuffConsensusKey = "HotStuffConsensus"
 )
 
 // OrdererProtos is used as the source of the OrdererConfig.
@@ -57,6 +60,7 @@ type OrdererProtos struct {
 	ChannelRestrictions *ab.ChannelRestrictions
 	Capabilities        *cb.Capabilities
 	SbftConsensus       *ab.ConsensusType // Impl by zig
+	HotStuffConsensus   *ab.ConsensusType // Impl by zig
 }
 
 // OrdererConfig holds the orderer configuration information.
@@ -199,6 +203,11 @@ func (oc *OrdererConfig) Capabilities() OrdererCapabilities {
 // SbftMetadata returns the sbft consensus metadata message.
 func (oc *OrdererConfig) SbftMetadata() []byte {
 	return oc.protos.SbftConsensus.Metadata
+}
+
+// HotStuffMetadata returns the hotstuff consensus metadata message.
+func (oc *OrdererConfig) HotStuffMetadata() []byte {
+	return oc.protos.HotStuffConsensus.Metadata
 }
 
 func (oc *OrdererConfig) Validate() error {

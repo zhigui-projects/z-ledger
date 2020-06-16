@@ -45,6 +45,8 @@ const (
 	// Impl by zig
 	// ConsensusTypeSbft identifies the sbft consensus implementation.
 	ConsensusTypeSbft = "sbft"
+	// ConsensusTypeHotStuff identifies the hotstuff consensus implementation.
+	ConsensusTypeHotStuff = "hotstuff"
 
 	// BlockValidationPolicyKey TODO
 	BlockValidationPolicyKey = "BlockValidation"
@@ -220,7 +222,7 @@ func NewOrdererGroup(conf *genesisconfig.Orderer) (*cb.ConfigGroup, error) {
 
 	// Impl by zig
 	if conf.OrdererType == ConsensusTypeSolo || conf.OrdererType == ConsensusTypeKafka ||
-		conf.OrdererType == ConsensusTypeEtcdRaft || conf.OrdererType == ConsensusTypeSbft {
+		conf.OrdererType == ConsensusTypeEtcdRaft || conf.OrdererType == ConsensusTypeSbft || conf.OrdererType == ConsensusTypeHotStuff {
 		if len(conf.Kafka.Brokers) > 0 {
 			addValue(ordererGroup, channelconfig.KafkaBrokersValue(conf.Kafka.Brokers), channelconfig.AdminsPolicyKey)
 		}
@@ -239,6 +241,13 @@ func NewOrdererGroup(conf *genesisconfig.Orderer) (*cb.ConfigGroup, error) {
 				return nil, errors.Errorf("cannot marshal metadata for orderer type %s: %v", ConsensusTypeSbft, err)
 			} else {
 				addValue(ordererGroup, channelconfig.SbftMetadataValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
+			}
+		}
+		if conf.HotStuff != nil {
+			if consensusMetadata, err := channelconfig.MarshalHotStuffMetadata(conf.HotStuff); err != nil {
+				return nil, errors.Errorf("cannot marshal metadata for orderer type %s: %v", ConsensusTypeHotStuff, err)
+			} else {
+				addValue(ordererGroup, channelconfig.HotStuffMetadataValue(conf.OrdererType, consensusMetadata), channelconfig.AdminsPolicyKey)
 			}
 		}
 	} else {

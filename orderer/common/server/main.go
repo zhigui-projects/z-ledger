@@ -47,6 +47,7 @@ import (
 	"github.com/hyperledger/fabric/orderer/common/multichannel"
 	"github.com/hyperledger/fabric/orderer/consensus"
 	"github.com/hyperledger/fabric/orderer/consensus/etcdraft"
+	"github.com/hyperledger/fabric/orderer/consensus/hotstuff"
 	"github.com/hyperledger/fabric/orderer/consensus/kafka"
 	"github.com/hyperledger/fabric/orderer/consensus/sbft"
 	"github.com/hyperledger/fabric/orderer/consensus/solo"
@@ -718,6 +719,7 @@ func initializeMultichannelRegistrar(
 	}
 	// Impl by zig
 	consenters["sbft"] = sbft.New(conf, srvConf)
+	consenters["hotstuff"] = hotstuff.New(conf, srvConf)
 	registrar.Initialize(consenters)
 	return registrar
 }
