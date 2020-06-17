@@ -738,7 +738,8 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 		return
 	}
 
-	filesInfo, err := ioutil.ReadDir(mgr.conf.getLedgerBlockDir(channelId))
+	rootDir := mgr.conf.getLedgerBlockDir(channelId)
+	filesInfo, err := ioutil.ReadDir(rootDir)
 	if err != nil {
 		logger.Errorf("archiveFn read dir got error: %s", err)
 		return
@@ -757,7 +758,7 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 		}
 		if suffix < fileNum {
 			// delete the block file
-			if err := os.Remove(name); err != nil {
+			if err := os.Remove(deriveBlockfilePath(rootDir, suffix)); err != nil {
 				logger.Errorf("archiveFn remove blockfile[%s] got error: %s", name, err)
 				continue
 			}
