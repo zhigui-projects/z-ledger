@@ -834,7 +834,7 @@ func (h *Handler) HandleGetQueryResult(msg *pb.ChaincodeMessage, txContext *Tran
 		return nil, errors.Wrap(err, "unmarshal failed")
 	}
 
-	if getQueryResult.Query == "" {
+	if getQueryResult.Query == "SEARCH" {
 		res, err := handleConditionQuery(getQueryResult, txContext)
 		if err != nil {
 			return nil, errors.WithStack(err)

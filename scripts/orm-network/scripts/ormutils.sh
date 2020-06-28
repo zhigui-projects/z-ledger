@@ -431,7 +431,7 @@ chaincodeInvoke() {
     CCARGS='{"Args":["invoke","username","user@abc.com","abcd1234","A3ED98C6302C467493BBB78F249F457C","2FD3965C38D744FBBEB901EDCDA24487"]}'
     INIT_ARG=""
   else
-    CCARGS='{"Args":["delete","A3ED98C6302C467493BBB78F249F457C"]}'
+    CCARGS='{"Args":["invoke","username","user@abc.com","abcd1234","A3ED98C6302C467493BBB78F249F457C","2FD3965C38D744FBBEB901EDCDA24487"]}'
     INIT_ARG=""
   fi
 
