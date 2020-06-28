@@ -142,6 +142,8 @@ if [ "${NO_CHAINCODE}" != "true" ]; then
 	echo "Querying chaincode on peer0.org1..."
 	chaincodeQuery 0 1 \{\"ID\":\"A3ED98C6302C467493BBB78F249F457C\"\,\"Name\":\"username\"\,\"Email\":\"user@abc.com\"\,\"Accounts\":null\}
 
+	echo "Sending delete transaction on peer0.org1 peer0.org2..."
+	chaincodeInvoke 0 0 1 0 3
 	# Query chaincode on peer0.org1
 #	echo "Querying chaincode on peer0.org1..."
 #	chaincodeQuery 0 1 90
