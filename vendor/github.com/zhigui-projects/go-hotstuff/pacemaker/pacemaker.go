@@ -30,6 +30,8 @@ type PaceMaker interface {
 	Submit(cmds []byte) error
 	// 触发执行cmds
 	OnBeat()
+	// 获取当前view number
+	GetCurView() int64
 	// 获取下一个view的leader
 	GetLeader(view int64) int64
 	// 触发view change
