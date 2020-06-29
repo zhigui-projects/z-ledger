@@ -218,3 +218,7 @@ noverify = [
 [[constraint]]
   name = "github.com/ipfs/go-ipfs-files"
   version = "0.0.8"
+
+[[constraint]]
+  branch = "multichain"
+  name = "github.com/zhigui-projects/go-hotstuff"
