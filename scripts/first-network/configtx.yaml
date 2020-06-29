@@ -334,7 +334,7 @@ Orderer: &OrdererDefaults
             # Fault tolerance
             F: 1
             # Timeout of requests (seconds)
-            RequestTimeoutSec: 3
+            RequestTimeoutSec: 1
 
     # Organizations is the list of orgs which are defined as participants on
     # the orderer side of the network

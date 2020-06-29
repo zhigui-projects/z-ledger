@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	hs "github.com/zhigui-projects/go-hotstuff/consensus"
 	"github.com/zhigui-projects/go-hotstuff/pacemaker"
+	"github.com/zhigui-projects/go-hotstuff/pb"
+	"github.com/zhigui-projects/go-hotstuff/transport"
 )
 
 var (
@@ -27,6 +29,9 @@ type chain struct {
 	exitChan chan struct{}
 	cancel   context.CancelFunc
 	support  consensus.ConsenterSupport
+
+	submitMut     sync.RWMutex
+	submitClients map[int64]pb.HotstuffClient
 }
 
 type message struct {
@@ -130,7 +135,7 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go c.pm.Submit(cmds)
+					go c.submit(cmds)
 				}
 				if len(batches) > 0 {
 					pmTimer = time.After(100 * time.Millisecond)
@@ -166,7 +171,7 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go c.pm.Submit(cmds)
+					go c.submit(cmds)
 
 					pmTimer = time.After(100 * time.Millisecond)
 				}
@@ -177,10 +182,10 @@ func (c *chain) main() {
 				}
 				cmds, _ := json.Marshal(cmdsReq)
 				go func() {
-					c.pm.Submit(cmds)
-					c.pm.Submit(nil)
-					c.pm.Submit(nil)
-					c.pm.Submit(nil)
+					c.submit(cmds)
+					c.submit(nil)
+					c.submit(nil)
+					c.submit(nil)
 				}()
 
 				timer = nil
@@ -201,18 +206,63 @@ func (c *chain) main() {
 				Batche:  batch,
 			}
 			cmds, _ := json.Marshal(cmdsReq)
-			go c.pm.Submit(cmds)
+			go c.submit(cmds)
 
 			pmTimer = time.After(100 * time.Millisecond)
 		case <-pmTimer:
 			go func() {
-				c.pm.Submit(nil)
-				c.pm.Submit(nil)
-				c.pm.Submit(nil)
+				c.submit(nil)
+				c.submit(nil)
+				c.submit(nil)
 			}()
 		case <-c.exitChan:
 			logger.Debugf("Exiting")
 			return
 		}
 	}
+}
+
+func (c *chain) submit(cmds []byte) {
+	chs := c.hsb.GetHotStuff(c.support.ChannelID())
+	leader := chs.GetLeader(chs.GetCurView())
+	hsc := c.getSubmitClient(leader)
+	if hsc == nil {
+		c.pm.Submit(cmds)
+	} else {
+		_, err := hsc.Submit(context.Background(), &pb.SubmitRequest{Chain: c.support.ChannelID(), Cmds: cmds})
+		if err != nil {
+			c.pm.Submit(cmds)
+			c.delSubmitClient(leader)
+		}
+	}
+}
+
+func (c *chain) getSubmitClient(replicaId int64) pb.HotstuffClient {
+	c.submitMut.RLock()
+	sc, ok := c.submitClients[replicaId]
+	c.submitMut.RUnlock()
+	if ok {
+		return sc
+	}
+
+	client, err := transport.NewGrpcClient(nil)
+	if err != nil {
+		return nil
+	}
+	conn, err := client.NewConnection(c.hsb.Nodes[hs.ReplicaID(replicaId)].Addr)
+	if err != nil {
+		return nil
+	}
+	hsc := pb.NewHotstuffClient(conn)
+
+	c.submitMut.Lock()
+	c.submitClients[replicaId] = hsc
+	c.submitMut.Unlock()
+	return hsc
+}
+
+func (c *chain) delSubmitClient(replicaId int64) pb.HotstuffClient {
+	c.submitMut.Lock()
+	defer c.submitMut.Unlock()
+	delete(c.submitClients, replicaId)
 }
