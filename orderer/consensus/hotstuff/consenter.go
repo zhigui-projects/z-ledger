@@ -75,10 +75,11 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 	}
 
 	return &chain{
-		hsb:      c.hsb,
-		pm:       pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
-		sendChan: make(chan *message),
-		support:  support,
+		hsb:           c.hsb,
+		pm:            pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
+		sendChan:      make(chan *message),
+		support:       support,
+		submitClients: make(map[int64]pb.HotstuffClient),
 	}, nil
 }
 
