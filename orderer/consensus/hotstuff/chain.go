@@ -261,7 +261,7 @@ func (c *chain) getSubmitClient(replicaId int64) pb.HotstuffClient {
 	return hsc
 }
 
-func (c *chain) delSubmitClient(replicaId int64) pb.HotstuffClient {
+func (c *chain) delSubmitClient(replicaId int64) {
 	c.submitMut.Lock()
 	defer c.submitMut.Unlock()
 	delete(c.submitClients, replicaId)
