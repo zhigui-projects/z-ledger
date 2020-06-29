@@ -18,6 +18,7 @@ import (
 	"github.com/hyperledger/fabric/core/comm"
 	"github.com/hyperledger/fabric/orderer/common/localconfig"
 	"github.com/hyperledger/fabric/orderer/consensus"
+	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"github.com/zhigui-projects/go-hotstuff/common/crypto"
 	hsc "github.com/zhigui-projects/go-hotstuff/consensus"
@@ -46,6 +47,15 @@ func New(conf *localconfig.TopLevel, srvConf comm.ServerConfig) consensus.Consen
 func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb.Metadata) (consensus.Chain, error) {
 	logger.Infof("Starting a chain: %s", support.ChannelID())
 
+	b := support.Block(support.Height() - 1)
+	if b == nil {
+		return nil, errors.Errorf("failed to get last block")
+	}
+	bc := &blockCreator{
+		hash:   protoutil.BlockHeaderHash(b.Header),
+		number: b.Header.Number,
+	}
+
 	if c.hsb == nil {
 		hsb, err := c.newHotStuff(support)
 		if err != nil {
@@ -64,7 +74,7 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 			return
 		}
 
-		block := support.CreateNextBlock(req.Batche)
+		block := bc.createNextBlock(req.Batche)
 		if req.MsgType == NormalMsg {
 			support.WriteBlock(block, nil)
 			logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
