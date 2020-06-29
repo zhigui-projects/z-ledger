@@ -90,6 +90,10 @@ func (r *RoundRobinPM) OnBeat() {
 	}
 }
 
+func (r *RoundRobinPM) GetCurView() int64 {
+	return atomic.LoadInt64(&r.curView)
+}
+
 func (r *RoundRobinPM) GetLeader(view int64) int64 {
 	return (view + 1) % r.metadata.N
 }
