@@ -99,22 +99,24 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 	accounts := make([]Account, 0)
 	search := &entitydefinition.Search{}
 	err := search.Where("user_id = ?", userId)
-	search.Offset(0).Limit(1)
+	search.Offset(0).Limit(1).Order("id")
 
 	if err != nil {
 		return shim.Error("create search condition failed")
 	}
-	err = stub.ConditionQuery(accounts, search)
+
+	err = stub.ConditionQuery(&accounts, search)
 	if err != nil {
 		return shim.Error("condition query failed")
 	}
-	accountsByte, err := json.Marshal(accounts)
+
+	accountsByte, err := json.Marshal(&accounts)
 	if err != nil {
 		return shim.Error("marshal accounts failed")
 	}
 
 	for _, account := range accounts {
-		err = stub.Delete(account)
+		err = stub.Delete(&account)
 		if err != nil {
 			return shim.Error("delete account failed")
 		}

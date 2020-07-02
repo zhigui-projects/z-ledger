@@ -339,7 +339,7 @@ func (h *queryHelper) executeConditionQuery(namespace string, search entitydefin
 		}
 		key := model.FieldByName("ID").String()
 		if h.rwsetBuilder != nil {
-			h.rwsetBuilder.AddToReadSet(namespace, key, ver)
+			h.rwsetBuilder.AddToReadSet(namespace, search.Entity+entitydefinition.ORMDB_SEPERATOR+key, ver)
 		}
 	}
 

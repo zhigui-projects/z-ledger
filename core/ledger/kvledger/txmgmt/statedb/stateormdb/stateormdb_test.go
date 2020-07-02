@@ -18,6 +18,20 @@ import (
 	"time"
 )
 
+type User struct {
+	ID       string
+	Name     string
+	Email    string    `gorm:"type:varchar(100);unique_index"`
+	Accounts []Account `ormdb:"entity"`
+}
+
+type Account struct {
+	ID     string
+	Number string
+	Amount sql.NullFloat64 `ormdb:"datatype"`
+	UserId string
+}
+
 type TestSubModel struct {
 	ID        string `gorm:"primary_key"`
 	Model     string
@@ -339,12 +353,24 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 	testEfdsBytes, err := json.Marshal(testEfds)
 	assert.NoError(t, err)
 
+	accKey, accEfds, err := entitydefinition.RegisterEntity(&Account{}, 3)
+	assert.NoError(t, err)
+	accEfdsBytes, err := json.Marshal(accEfds)
+	assert.NoError(t, err)
+
+	userKey, userEfds, err := entitydefinition.RegisterEntity(&User{}, 4)
+	assert.NoError(t, err)
+	userEfdsBytes, err := json.Marshal(userEfds)
+	assert.NoError(t, err)
+
 	testsubmodelDel := TestSubModel{ID: "testsubmodelid3", Name: "testsubmodel3", Model: "testmodelid1", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	testsubmodelDelBytes, err := json.Marshal(&testsubmodelDel)
 	assert.NoError(t, err)
 	batchUpdate.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key, testSubEfdsBytes, &version.Height{BlockNum: 1, TxNum: 1})
 	batchUpdate.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key1, testEfdsBytes, &version.Height{BlockNum: 1, TxNum: 2})
 	batchUpdate.Put("mycc", key+entitydefinition.ORMDB_SEPERATOR+"testsubmodelid3", testsubmodelDelBytes, &version.Height{BlockNum: 1, TxNum: 3})
+	batchUpdate.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+accKey, accEfdsBytes, &version.Height{BlockNum: 1, TxNum: 4})
+	batchUpdate.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+userKey, userEfdsBytes, &version.Height{BlockNum: 1, TxNum: 5})
 
 	yaml := "---\n" +
 		"ledger:\n" +
@@ -399,7 +425,7 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 
 	var total []entitydefinition.EntityFieldDefinition
 	myccdb.DB.Find(&total)
-	assert.Equal(t, 20, len(total))
+	assert.Equal(t, 28, len(total))
 
 	vdb.metadataDB.DB.Close()
 	for _, db := range vdb.namespaceDBs {
@@ -436,6 +462,16 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 	testmodelRecBytes, err := json.Marshal(testmodelRec)
 	assert.NoError(t, err)
 
+	acc1Rec := &Account{ID: "2FD3965C38D744FBBEB901EDCDA244870", Number: "abcd12340", Amount: sql.NullFloat64{100.00, true}, UserId: "A3ED98C6302C467493BBB78F249F457C"}
+	acc1RecBytes, err := json.Marshal(&acc1Rec)
+	assert.NoError(t, err)
+	acc2Rec := &Account{ID: "2FD3965C38D744FBBEB901EDCDA244871", Number: "abcd12341", Amount: sql.NullFloat64{100.00, true}, UserId: "A3ED98C6302C467493BBB78F249F457C"}
+	acc2RecBytes, err := json.Marshal(&acc2Rec)
+	assert.NoError(t, err)
+	userRec := &User{ID: "A3ED98C6302C467493BBB78F249F457C", Name: "username", Email: "user@abc.com",}
+	userRecBytes, err := json.Marshal(&userRec)
+	assert.NoError(t, err)
+
 	batchUpdate1.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key2, testEfds1Bytes, &version.Height{BlockNum: 2, TxNum: 1})
 	batchUpdate1.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key3, testEfds2Bytes, &version.Height{BlockNum: 2, TxNum: 2})
 	batchUpdate1.Put("mycc", "EntityFieldDefinition"+entitydefinition.ORMDB_SEPERATOR+key4, testEfds3Bytes, &version.Height{BlockNum: 2, TxNum: 3})
@@ -443,6 +479,9 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 	batchUpdate1.Put("mycc", key+entitydefinition.ORMDB_SEPERATOR+"testsubmodelid2", testsubmodelRec1Bytes, &version.Height{BlockNum: 2, TxNum: 5})
 	batchUpdate1.Delete("mycc", key+entitydefinition.ORMDB_SEPERATOR+"testsubmodelid3", &version.Height{BlockNum: 2, TxNum: 6})
 	batchUpdate1.Put("mycc", key1+entitydefinition.ORMDB_SEPERATOR+"testmodelid1", testmodelRecBytes, &version.Height{BlockNum: 2, TxNum: 7})
+	batchUpdate1.Put("mycc", accKey+entitydefinition.ORMDB_SEPERATOR+"2FD3965C38D744FBBEB901EDCDA244870", acc1RecBytes, &version.Height{BlockNum: 2, TxNum: 8})
+	batchUpdate1.Put("mycc", accKey+entitydefinition.ORMDB_SEPERATOR+"2FD3965C38D744FBBEB901EDCDA244871", acc2RecBytes, &version.Height{BlockNum: 2, TxNum: 9})
+	batchUpdate1.Put("mycc", userKey+entitydefinition.ORMDB_SEPERATOR+"A3ED98C6302C467493BBB78F249F457C", userRecBytes, &version.Height{BlockNum: 2, TxNum: 10})
 
 	provider1, err := NewVersionedDBProvider(config, nil, statedb.NewCache(config.UserCacheSizeMBs, []string{"lscc"}))
 	assert.NoError(t, err)
@@ -481,7 +520,7 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 
 	var total1 []entitydefinition.EntityFieldDefinition
 	myccdb1.DB.Find(&total1)
-	assert.Equal(t, 35, len(total1))
+	assert.Equal(t, 43, len(total1))
 
 	submodels := reflect.New(reflect.SliceOf(myccdb1.ModelTypes[key].StructType())).Interface()
 	//myccdb1.DB.Table(ormdb.ToTableName(key)).Find(submodels)
@@ -528,6 +567,29 @@ func TestVersionedDB_ExecuteConditionQuery(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(models1))
 
+	searchAccounts := &entitydefinition.Search{}
+	err = searchSubModels.Where("user_id = ?", "A3ED98C6302C467493BBB78F249F457C")
+	searchAccounts.Entity = accKey
+	searchAccounts.Limit(10)
+	searchAccounts.Offset(0)
+	assert.NoError(t, err)
+	accounts, err := vdb1.ExecuteConditionQuery("mycc", *searchAccounts)
+	assert.NoError(t, err)
+	for i := 0; i < reflect.ValueOf(accounts).Elem().Len(); i++ {
+		returnVersion, _, err := DecodeVersionAndMetadata(reflect.ValueOf(accounts).Elem().Index(i).FieldByName("VerAndMeta").String())
+		assert.Equal(t, uint64(2), returnVersion.BlockNum)
+		assert.NoError(t, err)
+	}
+	accountsbytes, err := json.Marshal(accounts)
+	assert.NoError(t, err)
+
+	accounts1 := make([]Account, 0)
+	err = json.Unmarshal(accountsbytes, &accounts1)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(accounts1))
+	for _, acc := range accounts1 {
+		assert.Equal(t, "A3ED98C6302C467493BBB78F249F457C", acc.UserId)
+	}
 	ormdb.DeleteORMDatabase(vdb1.metadataDB)
 	for _, db := range vdb1.namespaceDBs {
 		ormdb.DeleteORMDatabase(db)
