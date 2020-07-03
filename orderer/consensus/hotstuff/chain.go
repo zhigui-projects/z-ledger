@@ -8,6 +8,7 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/orderer/consensus"
 	"github.com/pkg/errors"
 	hs "github.com/zhigui-projects/go-hotstuff/consensus"
@@ -29,6 +30,7 @@ type chain struct {
 	exitChan chan struct{}
 	cancel   context.CancelFunc
 	support  consensus.ConsenterSupport
+	logger   *flogging.FabricLogger
 
 	submitMut     sync.RWMutex
 	submitClients map[int64]pb.HotstuffClient
@@ -123,7 +125,7 @@ func (c *chain) main() {
 				if msg.configSeq < seq {
 					_, err = c.support.ProcessNormalMsg(msg.normalMsg)
 					if err != nil {
-						logger.Warningf("Discarding bad normal message: %s", err)
+						c.logger.Warningf("Discarding bad normal message: %s", err)
 						continue
 					}
 				}
@@ -148,7 +150,7 @@ func (c *chain) main() {
 				case timer == nil && pending:
 					// Timer is not already running and there are messages pending, so start it
 					timer = time.After(c.support.SharedConfig().BatchTimeout())
-					logger.Debugf("Just began %s batch timer", c.support.SharedConfig().BatchTimeout().String())
+					c.logger.Debugf("Just began %s batch timer", c.support.SharedConfig().BatchTimeout().String())
 				default:
 					// Do nothing when:
 					// 1. Timer is already running and there are messages pending
@@ -160,7 +162,7 @@ func (c *chain) main() {
 				if msg.configSeq < seq {
 					msg.configMsg, _, err = c.support.ProcessConfigMsg(msg.configMsg)
 					if err != nil {
-						logger.Warningf("Discarding bad config message: %s", err)
+						c.logger.Warningf("Discarding bad config message: %s", err)
 						continue
 					}
 				}
@@ -196,10 +198,10 @@ func (c *chain) main() {
 
 			batch := c.support.BlockCutter().Cut()
 			if len(batch) == 0 {
-				logger.Warningf("Batch timer expired with no pending requests, this might indicate a bug")
+				c.logger.Warningf("Batch timer expired with no pending requests, this might indicate a bug")
 				continue
 			}
-			logger.Debugf("Batch timer expired, creating block")
+			c.logger.Debugf("Batch timer expired, creating block")
 
 			cmdsReq := &CmdsRequest{
 				MsgType: NormalMsg,
@@ -216,7 +218,7 @@ func (c *chain) main() {
 				c.submit(nil)
 			}()
 		case <-c.exitChan:
-			logger.Debugf("Exiting")
+			c.logger.Debugf("Exiting")
 			return
 		}
 	}

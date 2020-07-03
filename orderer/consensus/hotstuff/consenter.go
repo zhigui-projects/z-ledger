@@ -21,12 +21,11 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 	"github.com/zhigui-projects/go-hotstuff/common/crypto"
+	hslog "github.com/zhigui-projects/go-hotstuff/common/log"
 	hsc "github.com/zhigui-projects/go-hotstuff/consensus"
 	"github.com/zhigui-projects/go-hotstuff/pacemaker"
 	"github.com/zhigui-projects/go-hotstuff/pb"
 )
-
-var logger = flogging.MustGetLogger("orderer.consensus.hotstuff")
 
 type consenter struct {
 	nodeId        int64
@@ -34,18 +33,30 @@ type consenter struct {
 	hsb           *hsc.HotStuffBase
 	md            *pb.ConfigMetadata
 	ordererConfig localconfig.TopLevel
+	logger        *flogging.FabricLogger
+}
+
+type hsLogger struct {
+	*flogging.FabricLogger
+}
+
+func (h *hsLogger) New(ctx ...interface{}) hslog.Logger {
+	return &hsLogger{h.With(ctx...)}
 }
 
 // New creates a hotstuff Consenter
 func New(conf *localconfig.TopLevel, srvConf comm.ServerConfig) consensus.Consenter {
+	logger := flogging.MustGetLogger("orderer.consensus.hotstuff")
+	hslog.SetLogger(&hsLogger{logger})
 	return &consenter{
 		cert:          srvConf.SecOpts.Certificate,
 		ordererConfig: *conf,
+		logger:        logger,
 	}
 }
 
 func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb.Metadata) (consensus.Chain, error) {
-	logger.Infof("Starting a chain: %s", support.ChannelID())
+	c.logger.Infof("Starting a chain: %s", support.ChannelID())
 
 	b := support.Block(support.Height() - 1)
 	if b == nil {
@@ -54,6 +65,7 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 	bc := &blockCreator{
 		hash:   protoutil.BlockHeaderHash(b.Header),
 		number: b.Header.Number,
+		logger: c.logger,
 	}
 
 	if c.hsb == nil {
@@ -70,25 +82,27 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 		}
 		var req CmdsRequest
 		if err := json.Unmarshal(cmds, &req); err != nil {
-			logger.Errorf("cmds request unmarshal failed, err:%v", err)
+			c.logger.Errorf("cmds request unmarshal failed, err:%v", err)
 			return
 		}
 
 		block := bc.createNextBlock(req.Batche)
 		if req.MsgType == NormalMsg {
 			support.WriteBlock(block, nil)
-			logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
+			c.logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
 		} else {
 			support.WriteConfigBlock(block, nil)
-			logger.Infof("Writing config block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
+			c.logger.Infof("Writing config block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
 		}
 	}
 
+	logger := c.logger.With("channel", support.ChannelID(), "node", c.nodeId)
 	return &chain{
 		hsb:           c.hsb,
 		pm:            pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
 		sendChan:      make(chan *message),
 		support:       support,
+		logger:        logger,
 		submitClients: make(map[int64]pb.HotstuffClient),
 	}, nil
 }
@@ -132,12 +146,12 @@ func (c *consenter) newHotStuff(support consensus.ConsenterSupport) (*hsc.HotStu
 
 		pk, _, err := validateCert(consenter.SignCert)
 		if err != nil {
-			logger.Errorf("Failed converting PEM to public key, err: %v, cert: %s", err, string(consenter.SignCert))
+			c.logger.Errorf("Failed converting PEM to public key, err: %v, cert: %s", err, string(consenter.SignCert))
 			return nil, err
 		}
 		pubkey, ok := pk.(*ecdsa.PublicKey)
 		if !ok {
-			logger.Error("Invalid key type. It should be *ecdsa.PublicKey")
+			c.logger.Error("Invalid key type. It should be *ecdsa.PublicKey")
 			return nil, errors.New("Invalid key type. It should be *ecdsa.PublicKey")
 		}
 

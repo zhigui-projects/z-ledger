@@ -9,6 +9,7 @@ package hotstuff
 import (
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/protoutil"
 )
 
@@ -17,6 +18,8 @@ import (
 type blockCreator struct {
 	hash   []byte
 	number uint64
+
+	logger *flogging.FabricLogger
 }
 
 func (bc *blockCreator) createNextBlock(envs []*cb.Envelope) *cb.Block {
@@ -28,7 +31,7 @@ func (bc *blockCreator) createNextBlock(envs []*cb.Envelope) *cb.Block {
 	for i, env := range envs {
 		data.Data[i], err = proto.Marshal(env)
 		if err != nil {
-			logger.Panicf("Could not marshal envelope: %s", err)
+			bc.logger.Panicf("Could not marshal envelope: %s", err)
 		}
 	}
 
