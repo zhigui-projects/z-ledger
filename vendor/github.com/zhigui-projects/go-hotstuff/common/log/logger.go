@@ -6,7 +6,7 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-var defaultLogger Logger
+var HotStuffLogger Logger
 
 type Logger interface {
 	// New returns a new Logger that has this logger's context plus the given context
@@ -32,7 +32,8 @@ type Logger interface {
 }
 
 func SetLogger(l Logger) {
-	defaultLogger = l
+	fmt.Println("================================SetLogger")
+	HotStuffLogger = l
 }
 
 func GetLogger(ctx ...interface{}) Logger {
@@ -40,9 +41,9 @@ func GetLogger(ctx ...interface{}) Logger {
 	//	defaultLogger = Logger(&DefaultLogger{New("logger", "hotstuff")})
 	//}
 	if len(ctx) == 0 {
-		return defaultLogger
+		return HotStuffLogger
 	}
-	return defaultLogger.New(ctx...)
+	return HotStuffLogger.New(ctx...)
 }
 
 // DefaultLogger is a default implementation of the Logger interface.
