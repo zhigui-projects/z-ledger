@@ -70,11 +70,11 @@ func (n *NodeManager) ConnectWorkers(queue chan<- MsgExecutor) {
 				<-delay
 				delay = time.After(transport.DefaultConnectionTimeout)
 
-				logger.Info("connecting to replica node", "id", node.Id, "address", node.Addr)
+				logger.Debug("connecting to replica node", "id", node.Id, "address", node.Addr)
 
 				bc, err := transport.NewBroadcastClient(node.Addr, int64(n.Self.Id), node.TlsOpts)
 				if err != nil {
-					logger.Warn("could not connect to replica node", "id", node.Id, "address", node.Addr, "error", err)
+					logger.Warning("could not connect to replica node", "id", node.Id, "address", node.Addr, "error", err)
 					continue
 				}
 				logger.Info("connection to replica node established", "id", node.Id, "address", node.Addr)
@@ -86,7 +86,7 @@ func (n *NodeManager) ConnectWorkers(queue chan<- MsgExecutor) {
 						break
 					}
 					if err != nil {
-						logger.Warn("consensus stream with replica node broke", "id", node.Id, "address", node.Addr, "error", err)
+						logger.Warning("consensus stream with replica node broke", "id", node.Id, "address", node.Addr, "error", err)
 						break
 					}
 

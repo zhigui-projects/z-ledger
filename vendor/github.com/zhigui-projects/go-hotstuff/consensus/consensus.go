@@ -40,7 +40,7 @@ func (c *ChainHotStuff) DoVote(leader int64, vote *pb.Vote) {
 		}
 	} else {
 		if err := c.HotStuffCore.OnReceiveVote(vote); err != nil {
-			logger.Warn("do vote error when receive vote", "to", leader)
+			logger.Warning("do vote error when receive vote", "to", leader)
 		}
 	}
 }
@@ -84,14 +84,14 @@ func (hsb *HotStuffBase) ApplyPaceMaker(pm pacemaker.PaceMaker, chain string) {
 
 func (hsb *HotStuffBase) handleProposal(proposal *pb.Proposal, chain string) {
 	if proposal == nil || proposal.Block == nil {
-		logger.Warn("handle proposal with empty block")
+		logger.Warning("handle proposal with empty block")
 		return
 	}
-	logger.Debug("handle proposal", "proposer", proposal.Block.Proposer,
+	logger.Info("handle proposal", "proposer", proposal.Block.Proposer,
 		"height", proposal.Block.Height, "hash", hex.EncodeToString(proposal.Block.SelfQc.BlockHash))
 
 	if err := hsb.GetHotStuff(chain).HotStuffCore.OnReceiveProposal(proposal); err != nil {
-		logger.Warn("handle proposal catch error", "error", err)
+		logger.Warning("handle proposal catch error", "error", err)
 	}
 }
 
@@ -100,7 +100,7 @@ func (hsb *HotStuffBase) handleVote(vote *pb.Vote, chain string) {
 		return
 	}
 	if err := hsb.GetHotStuff(chain).OnReceiveVote(vote); err != nil {
-		logger.Warn("handle vote catch error", "error", err)
+		logger.Warning("handle vote catch error", "error", err)
 		return
 	}
 }
@@ -142,7 +142,7 @@ func (hsb *HotStuffBase) Submit(ctx context.Context, req *pb.SubmitRequest) (*pb
 			remoteAddress = address.String()
 		}
 	}
-	logger.Debug("receive new submit request", "cmds", string(req.Cmds), "remoteAddress", remoteAddress)
+	logger.Info("receive new submit request", "remoteAddress", remoteAddress)
 	if len(req.Cmds) == 0 {
 		return &pb.SubmitResponse{Status: pb.Status_BAD_REQUEST}, errors.New("request data is empty")
 	}
@@ -171,7 +171,7 @@ func (hsb *HotStuffBase) GetHotStuff(chain string) *ChainHotStuff {
 }
 
 func (hsb *HotStuffBase) receiveMsg(msg *pb.Message, src ReplicaID) {
-	logger.Info("received message", "from", src, "to", hsb.hscs[msg.Chain].GetID(), "msgType", msg.Type)
+	logger.Debug("received message", "from", src, "to", hsb.hscs[msg.Chain].GetID(), "msgType", msg.Type)
 
 	switch msg.GetType().(type) {
 	case *pb.Message_Proposal:
