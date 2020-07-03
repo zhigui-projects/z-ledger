@@ -1293,7 +1293,7 @@
 
 [[projects]]
   branch = "multichain"
-  digest = "1:e22d4ffb6263170d6026cc701fd09cf8dc01caf31fbff7bc408104687627ba53"
+  digest = "1:ce100200bf325692c3a9f9a8a01b61d481652a103e03da97cce6f0bce5ef29c9"
   name = "github.com/zhigui-projects/go-hotstuff"
   packages = [
     "common/crypto",
@@ -1305,7 +1305,7 @@
     "transport",
   ]
   pruneopts = "NUT"
-  revision = "d2946a1610f5a2eb03c83fab7d69efefe5a9a3be"
+  revision = "3b1b748906ba0971d729bb393c6347433091399e"
 
 [[projects]]
   digest = "1:7994f0511ea39eb049909df41301aabf5e6289b97c1084f7cc8c351d765469e1"

@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/zhigui-projects/go-hotstuff/common/log"
 	"github.com/zhigui-projects/go-hotstuff/pacemaker"
 	"github.com/zhigui-projects/go-hotstuff/pb"
 	"google.golang.org/grpc/peer"
@@ -36,11 +37,11 @@ func (c *ChainHotStuff) ApplyPaceMaker(pm pacemaker.PaceMaker) {
 func (c *ChainHotStuff) DoVote(leader int64, vote *pb.Vote) {
 	if leader != c.HotStuffCore.GetID() {
 		if err := c.UnicastMsg(&pb.Message{Chain: c.chainId, Type: &pb.Message_Vote{Vote: vote}}, leader); err != nil {
-			logger.Error("do vote error when unicast msg", "to", leader)
+			c.logger.Error("do vote error when unicast msg", "to", leader)
 		}
 	} else {
 		if err := c.HotStuffCore.OnReceiveVote(vote); err != nil {
-			logger.Warning("do vote error when receive vote", "to", leader)
+			c.logger.Warning("do vote error when receive vote", "to", leader)
 		}
 	}
 }
@@ -58,9 +59,11 @@ type HotStuffBase struct {
 	id       ReplicaID
 	signer   Signer
 	replicas *ReplicaConf
+	logger   log.Logger
 }
 
 func NewHotStuffBase(id ReplicaID, nodes []*NodeInfo, signer Signer, replicas *ReplicaConf) *HotStuffBase {
+	logger := log.GetLogger("module", "consensus")
 	if len(nodes) == 0 {
 		logger.Error("not found hotstuff replica node info")
 		return nil
@@ -68,11 +71,12 @@ func NewHotStuffBase(id ReplicaID, nodes []*NodeInfo, signer Signer, replicas *R
 
 	hsb := &HotStuffBase{
 		hscs:        make(map[string]*ChainHotStuff),
-		NodeManager: NewNodeManager(id, nodes),
+		NodeManager: NewNodeManager(id, nodes, logger),
 		queue:       make(chan MsgExecutor),
 		id:          id,
 		signer:      signer,
 		replicas:    replicas,
+		logger:      logger,
 	}
 	pb.RegisterHotstuffServer(hsb.Server(), hsb)
 	return hsb
@@ -84,14 +88,14 @@ func (hsb *HotStuffBase) ApplyPaceMaker(pm pacemaker.PaceMaker, chain string) {
 
 func (hsb *HotStuffBase) handleProposal(proposal *pb.Proposal, chain string) {
 	if proposal == nil || proposal.Block == nil {
-		logger.Warning("handle proposal with empty block")
+		hsb.logger.Warning("handle proposal with empty block")
 		return
 	}
-	logger.Info("handle proposal", "proposer", proposal.Block.Proposer,
+	hsb.logger.Info("handle proposal", "proposer", proposal.Block.Proposer,
 		"height", proposal.Block.Height, "hash", hex.EncodeToString(proposal.Block.SelfQc.BlockHash))
 
 	if err := hsb.GetHotStuff(chain).HotStuffCore.OnReceiveProposal(proposal); err != nil {
-		logger.Warning("handle proposal catch error", "error", err)
+		hsb.logger.Warning("handle proposal catch error", "error", err)
 	}
 }
 
@@ -100,7 +104,7 @@ func (hsb *HotStuffBase) handleVote(vote *pb.Vote, chain string) {
 		return
 	}
 	if err := hsb.GetHotStuff(chain).OnReceiveVote(vote); err != nil {
-		logger.Warning("handle vote catch error", "error", err)
+		hsb.logger.Warning("handle vote catch error", "error", err)
 		return
 	}
 }
@@ -108,7 +112,7 @@ func (hsb *HotStuffBase) handleVote(vote *pb.Vote, chain string) {
 func (hsb *HotStuffBase) handleNewView(id ReplicaID, newView *pb.NewView, chain string) {
 	block, err := hsb.GetHotStuff(chain).getBlockByHash(newView.GenericQc.BlockHash)
 	if err != nil {
-		logger.Error("Could not find block of new QC", "error", err)
+		hsb.logger.Error("Could not find block of new QC", "error", err)
 		return
 	}
 
@@ -142,7 +146,7 @@ func (hsb *HotStuffBase) Submit(ctx context.Context, req *pb.SubmitRequest) (*pb
 			remoteAddress = address.String()
 		}
 	}
-	logger.Info("receive new submit request", "remoteAddress", remoteAddress)
+	hsb.logger.Info("receive new submit request", "remoteAddress", remoteAddress)
 	if len(req.Cmds) == 0 {
 		return &pb.SubmitResponse{Status: pb.Status_BAD_REQUEST}, errors.New("request data is empty")
 	}
@@ -164,14 +168,14 @@ func (hsb *HotStuffBase) GetHotStuff(chain string) *ChainHotStuff {
 
 	hsb.rwmutex.Lock()
 	defer hsb.rwmutex.Unlock()
-	hsc := NewHotStuffCore(hsb.id, hsb.signer, hsb.replicas)
+	hsc := NewHotStuffCore(hsb.id, hsb.signer, hsb.replicas, hsb.logger)
 	chs = &ChainHotStuff{HotStuffCore: hsc, NodeManager: hsb.NodeManager, chainId: chain}
 	hsb.hscs[chain] = chs
 	return chs
 }
 
 func (hsb *HotStuffBase) receiveMsg(msg *pb.Message, src ReplicaID) {
-	logger.Debug("received message", "from", src, "to", hsb.hscs[msg.Chain].GetID(), "msgType", msg.Type)
+	hsb.logger.Debug("received message", "from", src, "to", hsb.hscs[msg.Chain].GetID(), "msg", msg.String())
 
 	switch msg.GetType().(type) {
 	case *pb.Message_Proposal:
