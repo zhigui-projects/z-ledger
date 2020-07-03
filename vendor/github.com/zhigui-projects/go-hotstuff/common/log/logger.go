@@ -36,9 +36,9 @@ func SetLogger(l Logger) {
 }
 
 func GetLogger(ctx ...interface{}) Logger {
-	if defaultLogger == nil {
-		defaultLogger = Logger(&DefaultLogger{New("logger", "hotstuff")})
-	}
+	//if defaultLogger == nil {
+	//	defaultLogger = Logger(&DefaultLogger{New("logger", "hotstuff")})
+	//}
 	if len(ctx) == 0 {
 		return defaultLogger
 	}
