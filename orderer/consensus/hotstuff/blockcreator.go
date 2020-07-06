@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 package hotstuff
 
 import (
+	"sync"
+
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/flogging"
@@ -18,6 +20,7 @@ import (
 type blockCreator struct {
 	hash   []byte
 	number uint64
+	mut    sync.Mutex
 
 	logger *flogging.FabricLogger
 }
@@ -34,6 +37,9 @@ func (bc *blockCreator) createNextBlock(envs []*cb.Envelope) *cb.Block {
 			bc.logger.Panicf("Could not marshal envelope: %s", err)
 		}
 	}
+
+	bc.mut.Lock()
+	defer bc.mut.Unlock()
 
 	bc.number++
 

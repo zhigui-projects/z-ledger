@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
@@ -25,6 +26,7 @@ import (
 	hsc "github.com/zhigui-projects/go-hotstuff/consensus"
 	"github.com/zhigui-projects/go-hotstuff/pacemaker"
 	"github.com/zhigui-projects/go-hotstuff/pb"
+	"github.com/zhigui-projects/go-hotstuff/transport"
 )
 
 type consenter struct {
@@ -34,6 +36,9 @@ type consenter struct {
 	md            *pb.ConfigMetadata
 	ordererConfig localconfig.TopLevel
 	logger        *flogging.FabricLogger
+	submitMut     sync.RWMutex
+	submitClients map[int64]pb.HotstuffClient
+	bc            *blockCreator
 }
 
 type hsLogger struct {
@@ -52,6 +57,7 @@ func New(conf *localconfig.TopLevel, srvConf comm.ServerConfig) consensus.Consen
 		cert:          srvConf.SecOpts.Certificate,
 		ordererConfig: *conf,
 		logger:        logger,
+		submitClients: make(map[int64]pb.HotstuffClient),
 	}
 }
 
@@ -62,7 +68,7 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 	if b == nil {
 		return nil, errors.Errorf("failed to get last block")
 	}
-	bc := &blockCreator{
+	c.bc = &blockCreator{
 		hash:   protoutil.BlockHeaderHash(b.Header),
 		number: b.Header.Number,
 		logger: c.logger,
@@ -86,7 +92,13 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 			return
 		}
 
-		block := bc.createNextBlock(req.Batche)
+		// TODO: Delete when benchmark
+		for _, env := range req.Batche {
+			chr, _ := unmarshalEnvelope(env)
+			c.logger.Infof("Consensus complete, channelId: %s, txId: %s", chr.ChannelId, chr.TxId)
+		}
+
+		block := c.bc.createNextBlock(req.Batche)
 		if req.MsgType == NormalMsg {
 			support.WriteBlock(block, nil)
 			c.logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
@@ -98,12 +110,12 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 
 	logger := c.logger.With("channel", support.ChannelID(), "node", c.nodeId)
 	return &chain{
-		hsb:           c.hsb,
-		pm:            pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
-		sendChan:      make(chan *message),
-		support:       support,
-		logger:        logger,
-		submitClients: make(map[int64]pb.HotstuffClient),
+		hsb:          c.hsb,
+		pm:           pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
+		sendChan:     make(chan *message),
+		support:      support,
+		logger:       logger,
+		SubmitClient: c,
 	}, nil
 }
 
@@ -132,6 +144,7 @@ func (c *consenter) newHotStuff(support consensus.ConsenterSupport) (*hsc.HotStu
 			MsgWaitTimeout: m.Options.RequestTimeoutSec,
 		},
 		Replicas: make(map[hsc.ReplicaID]*hsc.ReplicaInfo, len(m.Consenters)),
+		Logger:   hslog.GetLogger(),
 	}
 	c.md = replicas.Metadata
 
@@ -178,6 +191,41 @@ func (c *consenter) newHotStuff(support consensus.ConsenterSupport) (*hsc.HotStu
 	return hsc.NewHotStuffBase(hsc.ReplicaID(selfId), nodes, &crypto.ECDSASigner{Pri: priKey}, replicas), nil
 }
 
+type SubmitClient interface {
+	getSubmitClient(replicaId int64) pb.HotstuffClient
+	delSubmitClient(replicaId int64)
+}
+
+func (c *consenter) getSubmitClient(replicaId int64) pb.HotstuffClient {
+	c.submitMut.RLock()
+	sc, ok := c.submitClients[replicaId]
+	c.submitMut.RUnlock()
+	if ok {
+		return sc
+	}
+
+	client, err := transport.NewGrpcClient(nil)
+	if err != nil {
+		return nil
+	}
+	conn, err := client.NewConnection(c.hsb.Nodes[hsc.ReplicaID(replicaId)].Addr)
+	if err != nil {
+		return nil
+	}
+	hsc := pb.NewHotstuffClient(conn)
+
+	c.submitMut.Lock()
+	c.submitClients[replicaId] = hsc
+	c.submitMut.Unlock()
+	return hsc
+}
+
+func (c *consenter) delSubmitClient(replicaId int64) {
+	c.submitMut.Lock()
+	defer c.submitMut.Unlock()
+	delete(c.submitClients, replicaId)
+}
+
 func validateCert(pemData []byte) (interface{}, []byte, error) {
 	bl, _ := pem.Decode(pemData)
 	if bl == nil {
@@ -217,4 +265,16 @@ func loadX509KeyPair(dir string) (*tls.Certificate, error) {
 		return nil, err
 	}
 	return &cert, nil
+}
+
+func unmarshalEnvelope(env *cb.Envelope) (*cb.ChannelHeader, error) {
+	payload, err := protoutil.UnmarshalPayload(env.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if payload.Header == nil {
+		return nil, errors.New("envelope has no header")
+	}
+	return protoutil.UnmarshalChannelHeader(payload.Header.ChannelHeader)
 }
