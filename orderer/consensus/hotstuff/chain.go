@@ -180,7 +180,7 @@ func (c *chain) main() {
 					cmds, _ := json.Marshal(cmdsReq)
 					go c.submit([][]byte{cmds})
 
-					pmTimer = time.After(100 * time.Millisecond)
+					pmTimer = time.After(200 * time.Millisecond)
 				}
 
 				cmdsReq := &CmdsRequest{
@@ -189,7 +189,10 @@ func (c *chain) main() {
 				}
 				cmds, _ := json.Marshal(cmdsReq)
 				go func() {
-					c.submit([][]byte{cmds, nil, nil, nil})
+					c.pm.Submit(cmds)
+					c.pm.Submit(nil)
+					c.pm.Submit(nil)
+					c.pm.Submit(nil)
 				}()
 
 				timer = nil
@@ -212,7 +215,7 @@ func (c *chain) main() {
 			cmds, _ := json.Marshal(cmdsReq)
 			go c.submit([][]byte{cmds})
 
-			pmTimer = time.After(100 * time.Millisecond)
+			pmTimer = time.After(200 * time.Millisecond)
 		case <-pmTimer:
 			go func() {
 				c.submit([][]byte{nil, nil, nil})
