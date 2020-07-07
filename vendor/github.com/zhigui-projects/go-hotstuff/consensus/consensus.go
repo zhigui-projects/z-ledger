@@ -110,7 +110,7 @@ func (hsb *HotStuffBase) handleVote(vote *pb.Vote, chain string) {
 }
 
 func (hsb *HotStuffBase) handleNewView(id ReplicaID, newView *pb.NewView, chain string) {
-	block, err := hsb.GetHotStuff(chain).getBlockByHash(newView.GenericQc.BlockHash)
+	block, err := hsb.GetHotStuff(chain).LoadBlock(newView.GenericQc.BlockHash)
 	if err != nil {
 		hsb.logger.Error("Could not find block of new QC", "error", err)
 		return
