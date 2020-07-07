@@ -1,3 +1,9 @@
+/*
+Copyright Zhigui.com Corp. 2020 All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package hotstuff
 
 import (
@@ -31,6 +37,7 @@ type chain struct {
 	support  consensus.ConsenterSupport
 	logger   *flogging.FabricLogger
 	SubmitClient
+	applyC chan []byte
 }
 
 type message struct {
@@ -121,10 +128,9 @@ func (c *chain) main() {
 	var err error
 
 	for {
-		seq := c.support.Sequence()
-		err = nil
 		select {
 		case msg := <-c.sendChan:
+			seq := c.support.Sequence()
 			if msg.configMsg == nil {
 				// NormalMsg
 				if msg.configSeq < seq {
@@ -189,13 +195,32 @@ func (c *chain) main() {
 				}
 				cmds, _ := json.Marshal(cmdsReq)
 				go func() {
-					c.pm.Submit(cmds)
-					c.pm.Submit(nil)
-					c.pm.Submit(nil)
-					c.pm.Submit(nil)
+					// submit more nil tx to avoid real tx not exec, keep alive
+					c.submit([][]byte{cmds, nil, nil, nil, nil, nil, nil})
 				}()
 
 				timer = nil
+			}
+		case cmds := <-c.applyC:
+			var req CmdsRequest
+			if err := json.Unmarshal(cmds, &req); err != nil {
+				c.logger.Errorf("cmds request unmarshal failed, err:%v", err)
+				return
+			}
+
+			// TODO: Delete when benchmark
+			for _, env := range req.Batche {
+				chr, _ := unmarshalEnvelope(env)
+				c.logger.Infof("Consensus complete for transaction, txId: %s", chr.TxId)
+			}
+
+			block := c.support.CreateNextBlock(req.Batche)
+			if req.MsgType == NormalMsg {
+				c.support.WriteBlock(block, nil)
+				c.logger.Infof("Writing block [%d] to ledger", block.Header.Number)
+			} else {
+				c.support.WriteConfigBlock(block, nil)
+				c.logger.Infof("Writing config block [%d] to ledger", block.Header.Number)
 			}
 		case <-timer:
 			//clear the timer
@@ -218,7 +243,7 @@ func (c *chain) main() {
 			pmTimer = time.After(200 * time.Millisecond)
 		case <-pmTimer:
 			go func() {
-				c.submit([][]byte{nil, nil, nil})
+				c.submit([][]byte{nil, nil, nil, nil, nil, nil})
 			}()
 		case <-c.exitChan:
 			c.logger.Debugf("Exiting")

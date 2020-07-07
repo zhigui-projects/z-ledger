@@ -1,3 +1,9 @@
+/*
+Copyright Zhigui.com Corp. 2020 All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package hotstuff
 
 import (
@@ -5,7 +11,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"io/ioutil"
 	"path/filepath"
@@ -38,7 +43,6 @@ type consenter struct {
 	logger        *flogging.FabricLogger
 	submitMut     sync.RWMutex
 	submitClients map[int64]pb.HotstuffClient
-	bc            *blockCreator
 }
 
 type hsLogger struct {
@@ -64,16 +68,6 @@ func New(conf *localconfig.TopLevel, srvConf comm.ServerConfig) consensus.Consen
 func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb.Metadata) (consensus.Chain, error) {
 	c.logger.Infof("Starting a chain: %s", support.ChannelID())
 
-	b := support.Block(support.Height() - 1)
-	if b == nil {
-		return nil, errors.Errorf("failed to get last block")
-	}
-	c.bc = &blockCreator{
-		hash:   protoutil.BlockHeaderHash(b.Header),
-		number: b.Header.Number,
-		logger: c.logger,
-	}
-
 	if c.hsb == nil {
 		hsb, err := c.newHotStuff(support)
 		if err != nil {
@@ -82,33 +76,15 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 		c.hsb = hsb
 	}
 
+	applyC := make(chan []byte)
 	decideExec := func(cmds []byte) {
 		if len(cmds) == 0 {
 			return
 		}
-		var req CmdsRequest
-		if err := json.Unmarshal(cmds, &req); err != nil {
-			c.logger.Errorf("cmds request unmarshal failed, err:%v", err)
-			return
-		}
-
-		// TODO: Delete when benchmark
-		for _, env := range req.Batche {
-			chr, _ := unmarshalEnvelope(env)
-			c.logger.Infof("Consensus complete, channelId: %s, txId: %s", chr.ChannelId, chr.TxId)
-		}
-
-		block := c.bc.createNextBlock(req.Batche)
-		if req.MsgType == NormalMsg {
-			support.WriteBlock(block, nil)
-			c.logger.Infof("Writing block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
-		} else {
-			support.WriteConfigBlock(block, nil)
-			c.logger.Infof("Writing config block [%d] for channelId: %s to ledger", block.Header.Number, support.ChannelID())
-		}
+		applyC <- cmds
 	}
-
 	logger := c.logger.With("channel", support.ChannelID(), "node", c.nodeId)
+
 	return &chain{
 		hsb:          c.hsb,
 		pm:           pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
@@ -116,6 +92,7 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 		support:      support,
 		logger:       logger,
 		SubmitClient: c,
+		applyC:       applyC,
 	}, nil
 }
 
@@ -197,6 +174,10 @@ type SubmitClient interface {
 }
 
 func (c *consenter) getSubmitClient(replicaId int64) pb.HotstuffClient {
+	if replicaId == c.nodeId {
+		return nil
+	}
+
 	c.submitMut.RLock()
 	sc, ok := c.submitClients[replicaId]
 	c.submitMut.RUnlock()
