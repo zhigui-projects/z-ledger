@@ -570,15 +570,22 @@ func ChaincodeInvokeOrQuery(
 		funcName = "query"
 	}
 
+transactionReplay:
 	resps, proposalResp, prop, txid, err := proposalProcess(spec, signer, endorserClients, cID, txID, funcName, invoke)
 	if err != nil {
 		return nil, err
 	}
 	if proposalResp == nil {
-		return nil, errors.New("no invalid proposal responses received")
+		if invoke {
+			logger.Info("no valid proposal responses received for vrfEndorsements, start transaction replay!!!")
+			invoke = false
+			goto transactionReplay
+		} else {
+			return nil, errors.New("no valid proposal responses received")
+		}
 	}
 
-	if invoke {
+	if funcName == "invoke" {
 		// assemble a signed transaction (it's an Envelope message)
 		env, err := protoutil.CreateSignedTx(prop, signer, resps...)
 		if err != nil {
