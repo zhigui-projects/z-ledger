@@ -206,6 +206,15 @@ func TestVersionedDB_ApplyUpdates(t *testing.T) {
 	assert.Equal(t, uint64(2), savepointHeight.BlockNum)
 	assert.Equal(t, uint64(5), savepointHeight.TxNum)
 
+	rows, err := vdb.metadataDB.DB.Table("sys_states").Where("id BETWEEN ? AND ?", savePointKey, savePointKey).Rows()
+
+	for rows.Next() {
+		savepoint := &SysState{}
+		vdb.metadataDB.DB.ScanRows(rows, savepoint)
+		assert.NotNil(t, savepointHeight)
+		assert.Equal(t, uint64(2), savepointHeight.BlockNum)
+		assert.Equal(t, uint64(5), savepointHeight.TxNum)
+	}
 	myccdb := vdb.namespaceDBs["mycc"]
 	assert.True(t, myccdb.DB.HasTable(ormdb.ToTableName(key)))
 	assert.True(t, myccdb.DB.HasTable(ormdb.ToTableName(key1)))

@@ -302,6 +302,7 @@ func (v *VersionedDB) GetStateRangeScanIterator(namespace string, startKey strin
 }
 
 type kvScanner struct {
+	db                   *gorm.DB
 	namespace            string
 	dbItr                *sql.Rows
 	requestedLimit       int32
@@ -310,8 +311,8 @@ type kvScanner struct {
 	isSysState           bool
 }
 
-func newKVScanner(namespace string, dbItr *sql.Rows, requestedLimit int32, entityType reflect.Type, isSysState bool) *kvScanner {
-	return &kvScanner{namespace, dbItr, requestedLimit, 0, entityType, isSysState}
+func newKVScanner(db *gorm.DB, namespace string, dbItr *sql.Rows, requestedLimit int32, entityType reflect.Type, isSysState bool) *kvScanner {
+	return &kvScanner{db, namespace, dbItr, requestedLimit, 0, entityType, isSysState}
 }
 
 func (scanner *kvScanner) Next() (statedb.QueryResult, error) {
@@ -324,16 +325,11 @@ func (scanner *kvScanner) Next() (statedb.QueryResult, error) {
 
 	if scanner.isSysState {
 		sysState := &SysState{}
-		if err := scanner.dbItr.Scan(sysState); err != nil {
+		if err := scanner.db.ScanRows(scanner.dbItr, sysState); err != nil {
 			return nil, err
 		}
 
 		ver, meta, err := DecodeVersionAndMetadata(sysState.VerAndMeta)
-		if err != nil {
-			return nil, err
-		}
-
-		value, err := json.Marshal(sysState)
 		if err != nil {
 			return nil, err
 		}
@@ -343,7 +339,7 @@ func (scanner *kvScanner) Next() (statedb.QueryResult, error) {
 			CompositeKey: statedb.CompositeKey{Namespace: scanner.namespace, Key: sysState.ID},
 			// TODO remove dereferrencing below by changing the type of the field
 			// `VersionedValue` in `statedb.VersionedKV` to a pointer
-			VersionedValue: statedb.VersionedValue{Value: value, Metadata: meta, Version: ver}}, nil
+			VersionedValue: statedb.VersionedValue{Value: sysState.Value, Metadata: meta, Version: ver}}, nil
 	} else {
 		id, exist := scanner.entityType.FieldByName("ID")
 		if !exist {
@@ -355,7 +351,7 @@ func (scanner *kvScanner) Next() (statedb.QueryResult, error) {
 		}
 		entity := reflect.New(scanner.entityType).Interface()
 		if id.Type.Kind() == reflect.String {
-			if err := scanner.dbItr.Scan(entity); err != nil {
+			if err := scanner.db.ScanRows(scanner.dbItr, entity); err != nil {
 				return nil, err
 			}
 		} else {
@@ -456,12 +452,14 @@ func (v *VersionedDB) GetStateRangeScanIteratorWithMetadata(namespace string, st
 	}
 
 	if !isORMKey {
-		rows, err := db.DB.Table("sys_states").Where("id >= ? AND id < ?", startKey, endKey).Rows()
+		scanDB := db.DB.Table("sys_states").Where("id BETWEEN ? AND ?", startKey, endKey)
+		rows, err := scanDB.Rows()
 		if err != nil {
+			logger.Errorf("scan sysstates err %v", err)
 			return nil, errors.WithMessage(err, "rang query sys state failed")
 		}
 
-		return &kvScanner{isSysState: true, dbItr: rows, requestedLimit: 0, totalRecordsReturned: 0, entityType: reflect.TypeOf(&SysState{}), namespace: namespace}, nil
+		return newKVScanner(scanDB, namespace, rows, 0, reflect.TypeOf(&SysState{}), true), nil
 	} else {
 		entityName := startKeys[0]
 		entityStartId := startKeys[1]
@@ -479,12 +477,14 @@ func (v *VersionedDB) GetStateRangeScanIteratorWithMetadata(namespace string, st
 		db.RWMutex.RUnlock()
 
 		if id.Type.Kind() == reflect.String {
-			rows, err := db.DB.Table(ormdb.ToTableName(entityName)).Where("id >= ? AND id < ?", entityStartId, entityEndId).Rows()
+			scanDB := db.DB.Table(ormdb.ToTableName(entityName)).Where("id BETWEEN ? AND ?", entityStartId, entityEndId)
+			rows, err := scanDB.Rows()
 			if err != nil {
-				return nil, errors.WithMessage(err, "rang query sys state failed")
+				logger.Errorf("scan entities err %v", err)
+				return nil, errors.WithMessage(err, "rang query entity failed")
 			}
 
-			return &kvScanner{isSysState: false, dbItr: rows, requestedLimit: 0, totalRecordsReturned: 0, entityType: db.ModelTypes[entityName].StructType(), namespace: namespace}, nil
+			return newKVScanner(scanDB, namespace, rows, 0, reflect.TypeOf(&SysState{}), false), nil
 		} else {
 			return nil, errors.New("not supported entity ID field type")
 		}
