@@ -275,14 +275,6 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
-  name = "github.com/fsnotify/fsnotify"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "45d7d09e39ef4ac08d493309fa031790c15bfe8a"
-  version = "v1.4.9"
-
-[[projects]]
   digest = "1:5c1e2d8db21d3dd43627f0da5aab03e14a2bf04addb49d5e8385a2168c828c13"
   name = "github.com/fsouza/go-dockerclient"
   packages = [
@@ -478,7 +470,8 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
+  branch = "master"
+  digest = "1:8d485687c449a7db7d4e8e1d6526036fe38e433232416010fe3970c929134073"
   name = "github.com/hpcloud/tail"
   packages = [
     ".",
@@ -488,8 +481,7 @@
     "winfile",
   ]
   pruneopts = "NUT"
-  revision = "a30252cb686a21eb2d0b98132633053ec2f7f1e5"
-  version = "v1.0.0"
+  revision = "a1dbeea552b7c8df4b542c66073e393de198a800"
 
 [[projects]]
   branch = "master"
@@ -1562,13 +1554,12 @@
   version = "v1.0.28"
 
 [[projects]]
-  digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
-  name = "gopkg.in/fsnotify.v1"
+  digest = "1:0914bf7efc3e3052163e92b859a89f3b407ad353d7c3b7f59a1bbb4fd05bb25d"
+  name = "gopkg.in/fsnotify/fsnotify.v1"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
-  source = "gopkg.in/fsnotify/fsnotify.v1"
-  version = "v1.4.7"
+  revision = "45d7d09e39ef4ac08d493309fa031790c15bfe8a"
+  version = "v1.4.9"
 
 [[projects]]
   digest = "1:fea88a1a5c4cf1101d2e0f9d985ad996a1e1dfd4f3df948e12fcf7cf2baf23dc"
@@ -1674,7 +1665,6 @@
     "github.com/VictoriaMetrics/fastcache",
     "github.com/asaskevich/EventBus",
     "github.com/davecgh/go-spew/spew",
-    "github.com/fsnotify/fsnotify",
     "github.com/fsouza/go-dockerclient",
     "github.com/go-kit/kit/metrics",
     "github.com/go-kit/kit/metrics/prometheus",
