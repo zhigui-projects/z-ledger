@@ -584,9 +584,13 @@ chaincode:
 ###############################################################################
 ledger:
   archive:
-    enable: false
+    enable: true
+    trigger:
+      checkInterval: 5s
+      beginTime: 01:00AM
+      endTime: 11:00PM
     # type - options are "hdfs", "ipfs"
-    type: ipfs
+    type: hdfs
     hdfsConfig:
       nameNodes:
         - 47.52.139.52:9000

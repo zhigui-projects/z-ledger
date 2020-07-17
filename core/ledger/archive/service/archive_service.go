@@ -8,20 +8,16 @@ package service
 
 import (
 	"fmt"
-	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/fsnotify/fsnotify"
 	proto "github.com/hyperledger/fabric-protos-go/gossip"
 	"github.com/hyperledger/fabric/common/flogging"
-	"github.com/hyperledger/fabric/common/ledger/blkstorage/hybridblkstorage"
-	coreconfig "github.com/hyperledger/fabric/core/config"
 	le "github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/ledger/archive"
 	"github.com/hyperledger/fabric/core/ledger/dfs"
 	"github.com/hyperledger/fabric/core/ledger/dfs/common"
-	"github.com/hyperledger/fabric/core/ledger/kvledger"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
 	"github.com/pkg/errors"
 )
@@ -39,13 +35,13 @@ type ArchiveGossip interface {
 }
 
 type archiveSvc interface {
-	// StartWatcherForChannel dynamically starts watcher of ledger files.
-	StartWatcherForChannel(chainID string) error
+	// StartTickerForChannel dynamically starts ticker of ledger files.
+	StartTickerForChannel(chainID string) error
 
-	// StopWatcherForChannel dynamically stops watcher of ledger files.
-	StopWatcherForChannel(chainID string) error
+	// StopTickerForChannel dynamically stops ticker of ledger files.
+	StopTickerForChannel(chainID string) error
 
-	// Stop stops watcher of ledger files.
+	// Stop stops ticker of ledger files.
 	Stop()
 }
 
@@ -57,9 +53,10 @@ type ArchiveService struct {
 	id        peerID
 	ledgerMgr *ledgermgmt.LedgerMgr
 	dfsClient common.FsClient
-	watchers  map[string]*fsnotify.Watcher
+	tickers   map[string]*time.Ticker
 	lock      sync.RWMutex
 	stopCh    chan struct{}
+	conf      *archive.Trigger
 }
 
 // New construction function to create and initialize
@@ -78,84 +75,58 @@ func New(g gossip, ledgerMgr *ledgermgmt.LedgerMgr, channel string, peerId strin
 		id:        peerID(peerId),
 		ledgerMgr: ledgerMgr,
 		dfsClient: client,
-		watchers:  make(map[string]*fsnotify.Watcher),
+		tickers:   make(map[string]*time.Ticker),
 		stopCh:    make(chan struct{}),
+		conf:      conf.Trigger,
 	}
 	go a.handleMessages()
 
 	return a, nil
 }
 
-// StartWatcherForChannel starts ledger watcher for channel
-func (a *ArchiveService) StartWatcherForChannel(chainID string) error {
+// StartTickerForChannel starts a ticker to trigger the block files transfer for channel
+func (a *ArchiveService) StartTickerForChannel(chainID string) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	if _, exist := a.watchers[chainID]; exist {
-		errMsg := fmt.Sprintf("Archive service - ledger watcher already exists for %s found, can't start a new watcher", chainID)
+	if _, exist := a.tickers[chainID]; exist {
+		errMsg := fmt.Sprintf("Archive service - ledger ticker already exists for %s found, can't start a new ticker", chainID)
 		logger.Warn(errMsg)
 		return errors.New(errMsg)
 	}
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		logger.Errorf("Archive service - can't start watcher, due to %+v", err)
-	}
+	ticker := time.NewTicker(a.conf.CheckInterval)
 
 	go a.broadcastMetaInfo(chainID)
 	go func() {
 		for {
 			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					logger.Errorf("Archive service - watcher has been closed")
-					return
-				}
-				if event.Op&fsnotify.Create == fsnotify.Create {
-					logger.Infof("Archive service - new ledger file CREATED event: %s", event.Name)
+			case t := <-ticker.C:
+				logger.Debugf("Archive service - ticker tick at: %s", t)
+				if t.After(a.conf.BeginTime) && t.Before(a.conf.EndTime) {
+					logger.Infof("Archive service - block files transfer triggered at: %s", t)
 					a.transferBlockFiles(chainID)
 					go a.broadcastMetaInfo(chainID)
 				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					logger.Errorf("Archive service - watcher has been closed, due to err: %+v", err)
-					return
-				}
-				logger.Errorf("Archive service - watcher got error: %+v", err)
 			}
 		}
 	}()
 
-	ledgerDir := getLedgerDir(chainID)
-	logger.Infof("Archive service - adding watcher for ledger directory: %s", ledgerDir)
-	err = watcher.Add(ledgerDir)
-	if err != nil {
-		errMsg := fmt.Sprintf("Archive service - add watching directory failed, due to %+v", err)
-		logger.Error(errMsg)
-		return errors.New(errMsg)
-	}
-	a.watchers[chainID] = watcher
-
+	a.tickers[chainID] = ticker
 	return nil
 }
 
-func (a *ArchiveService) StopWatcherForChannel(chainID string) error {
+func (a *ArchiveService) StopTickerForChannel(chainID string) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	watcher, exist := a.watchers[chainID]
+	ticker, exist := a.tickers[chainID]
 	if !exist {
-		errMsg := fmt.Sprintf("Archive service - ledger watcher does not exists for %s found", chainID)
+		errMsg := fmt.Sprintf("Archive service - ledger ticker does not exists for %s found", chainID)
 		logger.Warn(errMsg)
 		return errors.New(errMsg)
 	}
 
-	if err := watcher.Close(); err != nil {
-		errMsg := fmt.Sprintf("Archive service - close watcher failed for channel: %s, due to %+v", chainID, err)
-		logger.Error(errMsg)
-		return errors.New(errMsg)
-	}
-
+	ticker.Stop()
 	return nil
 }
 
@@ -163,11 +134,8 @@ func (a *ArchiveService) Stop() {
 	a.gossip.Stop()
 	close(a.stopCh)
 
-	for _, w := range a.watchers {
-		if err := w.Close(); err != nil {
-			logger.Warnf("Stop watcher[%s] got error: %s", spew.Sdump(w), err)
-			continue
-		}
+	for _, t := range a.tickers {
+		t.Stop()
 	}
 
 	if err := a.dfsClient.Close(); err != nil {
@@ -261,11 +229,4 @@ func (a *ArchiveService) getLedger(chainID string) (le.PeerLedger, error) {
 		}
 	}
 	return ledger, err
-}
-
-func getLedgerDir(chainID string) string {
-	rootFSPath := filepath.Join(coreconfig.GetPath("peer.fileSystemPath"), "ledgersData")
-	chainsDir := filepath.Join(kvledger.BlockStorePath(rootFSPath), hybridblkstorage.ChainsDir)
-	ledgerDir := filepath.Join(chainsDir, chainID)
-	return ledgerDir
 }

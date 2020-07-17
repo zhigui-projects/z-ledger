@@ -55,7 +55,12 @@ func ledgerConfig() *ledger.Config {
 		RootFSPath: rootFSPath,
 		ArchiveConfig: &archive.Config{
 			Enabled: enableArchive,
-			Type:    viper.GetString("ledger.archive.type"),
+			Trigger: &archive.Trigger{
+				CheckInterval: viper.GetDuration("ledger.archive.trigger.checkInterval"),
+				BeginTime:     viper.GetTime("ledger.archive.trigger.beginTime"),
+				EndTime:       viper.GetTime("ledger.archive.trigger.endTime"),
+			},
+			Type: viper.GetString("ledger.archive.type"),
 			HdfsConf: &config.HdfsConfig{
 				User:                viper.GetString("ledger.archive.hdfsConfig.user"),
 				NameNodes:           viper.GetStringSlice("ledger.archive.hdfsConfig.nameNodes"),

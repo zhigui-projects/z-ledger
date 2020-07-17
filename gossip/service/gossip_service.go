@@ -376,8 +376,8 @@ func (g *GossipService) InitializeChannel(channelID string, ordererSource *order
 			g.deliveryService[channelID].StartDeliverForChannel(channelID, support.Committer, func() {})
 
 			if g.archiveService[channelID] != nil {
-				logger.Info("This peer is configured to start a ledger watcher for channel", channelID)
-				g.archiveService[channelID].StartWatcherForChannel(channelID)
+				logger.Info("This peer is configured to start a ledger ticker for channel", channelID)
+				g.archiveService[channelID].StartTickerForChannel(channelID)
 			}
 		} else {
 			logger.Debug("This peer is not configured to connect to ordering service for blocks delivery, channel", channelID)
@@ -497,9 +497,9 @@ func (g *GossipService) onStatusChangeFactory(channelID string, committer blocks
 			}
 
 			if g.archiveService[channelID] != nil {
-				logger.Info("Elected as a leader, starting archive service ledger watcher for channel", channelID)
-				if err := g.archiveService[channelID].StartWatcherForChannel(channelID); err != nil {
-					logger.Errorf("Archive service watcher is not able to start for chain, due to %+v", err)
+				logger.Info("Elected as a leader, starting archive service ledger ticker for channel", channelID)
+				if err := g.archiveService[channelID].StartTickerForChannel(channelID); err != nil {
+					logger.Errorf("Archive service ticker is not able to start for chain, due to %+v", err)
 				}
 			}
 		} else {
@@ -509,9 +509,9 @@ func (g *GossipService) onStatusChangeFactory(channelID string, committer blocks
 			}
 
 			if g.archiveService[channelID] != nil {
-				logger.Info("Renounced leadership, stopping archive service ledger watcher for channel", channelID)
-				if err := g.archiveService[channelID].StopWatcherForChannel(channelID); err != nil {
-					logger.Errorf("Archive service watcher is not able to stop for chain, due to %+v", err)
+				logger.Info("Renounced leadership, stopping archive service ledger ticker for channel", channelID)
+				if err := g.archiveService[channelID].StopTickerForChannel(channelID); err != nil {
+					logger.Errorf("Archive service ticker is not able to stop for chain, due to %+v", err)
 				}
 			}
 		}
