@@ -24,6 +24,11 @@ import (
 
 var logger = flogging.MustGetLogger("archive.service")
 
+const (
+	secPerMin  = 60
+	secPerHour = 60 * 60
+)
+
 type ArchiveGossip interface {
 	// Accept returns a channel that emits messages
 	Accept() <-chan *proto.GossipMessage
@@ -102,7 +107,8 @@ func (a *ArchiveService) StartTickerForChannel(chainID string) error {
 			select {
 			case t := <-ticker.C:
 				logger.Debugf("Archive service - ticker tick at: %s", t)
-				if t.After(a.conf.BeginTime) && t.Before(a.conf.EndTime) {
+				logger.Debugf("Archive service - trigger beginTime: %s, endTime: %s", a.conf.BeginTime, a.conf.EndTime)
+				if isTimeBetween(t, a.conf.BeginTime, a.conf.EndTime) {
 					logger.Infof("Archive service - block files transfer triggered at: %s", t)
 					a.transferBlockFiles(chainID)
 					go a.broadcastMetaInfo(chainID)
@@ -113,6 +119,14 @@ func (a *ArchiveService) StartTickerForChannel(chainID string) error {
 
 	a.tickers[chainID] = ticker
 	return nil
+}
+
+func isTimeBetween(t, begin, end time.Time) bool {
+	th, tm, ts := t.Clock()
+	bh, bm, bs := begin.Clock()
+	eh, em, es := end.Clock()
+	tSeconds := th*secPerHour + tm*secPerMin + ts
+	return tSeconds >= bh*secPerHour+bm*secPerMin+bs && tSeconds <= eh*secPerHour+em*secPerMin+es
 }
 
 func (a *ArchiveService) StopTickerForChannel(chainID string) error {
