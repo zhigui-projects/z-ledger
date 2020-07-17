@@ -157,10 +157,6 @@ noverify = [
 
 # https://github.com/golang/dep/issues/1799
 [[override]]
-  name = "gopkg.in/fsnotify.v1"
-  source = "gopkg.in/fsnotify/fsnotify.v1"
-
-[[override]]
   name = "github.com/opencontainers/runc"
   version = "1.0.0-rc8"
 
@@ -202,10 +198,6 @@ noverify = [
 [[constraint]]
   name = "github.com/pengisgood/hdfs"
   version = "v2.1.1-dep"
-
-[[constraint]]
-  name = "github.com/fsnotify/fsnotify"
-  version = "1.4.9"
 
 [[constraint]]
   branch = "master"
