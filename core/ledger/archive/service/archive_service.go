@@ -107,7 +107,7 @@ func (a *ArchiveService) StartTickerForChannel(chainID string) error {
 			select {
 			case t := <-ticker.C:
 				logger.Debugf("Archive service - ticker tick at: %s", t)
-				logger.Debugf("Archive service - trigger beginTime: %s, endTime: %s", a.conf.BeginTime, a.conf.EndTime)
+				logger.Debugf("Archive service - trigger beginTime: %s, endTime: %s", a.conf.BeginTime.Format("15:04:05"), a.conf.EndTime.Format("15:04:05"))
 				if isTimeBetween(t, a.conf.BeginTime, a.conf.EndTime) {
 					logger.Infof("Archive service - block files transfer triggered at: %s", t)
 					a.transferBlockFiles(chainID)
