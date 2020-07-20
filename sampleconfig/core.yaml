@@ -586,9 +586,9 @@ ledger:
   archive:
     enable: true
     trigger:
-      checkInterval: 5s
+      checkInterval: 10
       beginTime: 01:00AM
-      endTime: 11:00PM
+      endTime: 02:00AM
     # type - options are "hdfs", "ipfs"
     type: hdfs
     hdfsConfig:
