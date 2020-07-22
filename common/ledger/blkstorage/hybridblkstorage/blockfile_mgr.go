@@ -47,6 +47,7 @@ var (
 type hybridBlockfileMgr struct {
 	rootDir           string
 	conf              *Conf
+	archiveConf       *archive.Config
 	db                *leveldbhelper.DBHandle
 	index             index
 	cpInfo            *checkpointInfo
@@ -115,7 +116,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 		logger.Error(fmt.Sprintf("Could not connect to HDFS, due to %+v", err))
 	}
 	// Instantiate the manager, i.e. blockFileMgr structure
-	mgr := &hybridBlockfileMgr{rootDir: rootDir, conf: conf, db: indexStore, dfsClient: client}
+	mgr := &hybridBlockfileMgr{rootDir: rootDir, conf: conf, archiveConf: archiveConf, db: indexStore, dfsClient: client}
 
 	amInfo, err := mgr.loadArchiveMetaInfo()
 	if err != nil {
@@ -123,13 +124,13 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	}
 	if amInfo == nil {
 		logger.Info("Getting archive info from dfs storage")
-		if amInfo, err = constructArchiveMetaInfoFromDfsBlockFiles(rootDir, client); err != nil {
+		if amInfo, err = constructArchiveMetaInfoFromDfsBlockFiles(rootDir, archiveConf, client); err != nil {
 			logger.Errorf("Could not build archive meta info from dfs block files: %+v", err)
 		}
 		logger.Infof("Archive meta info constructed by scanning the dfs blocks dir: %s", spew.Sdump(amInfo))
 	} else {
 		logger.Info("Syncing archive meta info from dfs (if needed)")
-		syncArchiveMetaInfoFromDfs(rootDir, amInfo, client)
+		syncArchiveMetaInfoFromDfs(rootDir, archiveConf, amInfo, client)
 	}
 	amInfo.ChannelId = id
 	mgr.amInfo = amInfo
@@ -599,7 +600,8 @@ func (mgr *hybridBlockfileMgr) fetchBlockBytes(lp *fileLocPointer) ([]byte, erro
 	var err error
 	var stream hybridBlockStream
 	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
-		stream, err = newDfsBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), mgr.dfsClient, mgr.amInfo.FileProofs[int32(lp.fileSuffixNum)])
+		remotePath := mgr.archiveConf.FsRoot + mgr.rootDir
+		stream, err = newDfsBlockfileStream(remotePath, lp.fileSuffixNum, int64(lp.offset), mgr.dfsClient, mgr.amInfo.FileProofs[int32(lp.fileSuffixNum)])
 
 	} else {
 		stream, err = newBlockfileStream(mgr.rootDir, lp.fileSuffixNum, int64(lp.offset))
@@ -620,7 +622,8 @@ func (mgr *hybridBlockfileMgr) fetchRawBytes(lp *fileLocPointer) ([]byte, error)
 	var err error
 	filePath := deriveBlockfilePath(mgr.rootDir, lp.fileSuffixNum)
 	if int32(lp.fileSuffixNum) <= mgr.amInfo.LastArchiveFileSuffix {
-		reader, err = newDfsBlockfileReader(filePath, mgr.dfsClient, mgr.amInfo.FileProofs[int32(lp.fileSuffixNum)])
+		remotePath := mgr.archiveConf.FsRoot + filePath
+		reader, err = newDfsBlockfileReader(remotePath, mgr.dfsClient, mgr.amInfo.FileProofs[int32(lp.fileSuffixNum)])
 	} else {
 		reader, err = newBlockfileReader(filePath)
 	}
@@ -683,14 +686,15 @@ func (mgr *hybridBlockfileMgr) transferBlockFiles() error {
 	for ; latestFileNum >= lastSentFileNum+2; lastSentFileNum++ {
 		logger.Infof("Start transferring the blockfile[%d] to dfs", lastSentFileNum+1)
 		filePath := deriveBlockfilePath(mgr.rootDir, lastSentFileNum+1)
-		if _, notExistErr := mgr.dfsClient.Stat(filePath); notExistErr != nil {
-			logger.Infof("Blockfile[%s] not exits in dfs, error: %+v", filePath, notExistErr)
-			if err := mgr.dfsClient.CopyToRemote(filePath, filePath); err != nil {
+		remotePath := mgr.archiveConf.FsRoot + filePath
+		if _, notExistErr := mgr.dfsClient.Stat(remotePath); notExistErr != nil {
+			logger.Infof("Blockfile[%s] not exits in dfs, error: %+v", remotePath, notExistErr)
+			if err := mgr.dfsClient.CopyToRemote(filePath, remotePath); err != nil {
 				logger.Errorf("Transferring blockfile[%s] failed with error: %+v", filePath, err)
 				return err
 			}
 		} else {
-			logger.Warnf("Blockfile already exists[%s] in dfs", filePath)
+			logger.Warnf("Blockfile already exists[%s] in dfs", remotePath)
 		}
 		if int32(lastSentFileNum+1) > mgr.amInfo.LastSentFileSuffix {
 			newAmInfo := &pb.ArchiveMetaInfo{

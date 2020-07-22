@@ -599,6 +599,7 @@ ledger:
       useDatanodeHostname: false
     ipfsConfig:
       url: 47.52.139.52:5001
+    fsRoot: /blk
 
   blockchain:
 

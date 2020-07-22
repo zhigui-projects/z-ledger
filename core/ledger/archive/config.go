@@ -19,4 +19,5 @@ type Config struct {
 	Type     string
 	HdfsConf *common.HdfsConfig
 	IpfsConf *common.IpfsConfig
+	FsRoot   string
 }

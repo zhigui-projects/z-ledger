@@ -19,6 +19,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/archive"
+	la "github.com/hyperledger/fabric/core/ledger/archive"
 	dc "github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/pkg/errors"
 )
@@ -83,17 +84,18 @@ func constructCheckpointInfoFromBlockFiles(rootDir string) (*checkpointInfo, err
 	return cpInfo, nil
 }
 
-func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo, client dc.FsClient) {
+func syncArchiveMetaInfoFromDfs(rootDir string, conf *la.Config, amInfo *archive.ArchiveMetaInfo, client dc.FsClient) {
 	logger.Infof("syncAMInfoFromDfs amInfo=%s", spew.Sdump(amInfo))
 	//Checks if the file suffix of where the last block was written exists
 	filePath := deriveBlockfilePath(rootDir, int(amInfo.LastSentFileSuffix))
-	if _, err := client.Stat(filePath); err != nil {
-		logger.Errorf("Error in checking whether file [%s] exists: %s", filePath, err)
+	remotePath := conf.FsRoot + filePath
+	if _, err := client.Stat(remotePath); err != nil {
+		logger.Errorf("Error in checking whether file [%s] exists: %s", remotePath, err)
 	} else {
 		var lastSentFileNum int
 		var lastArchiveFileNum int
 		var err error
-		if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, client); err != nil {
+		if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, conf, client); err != nil {
 			logger.Errorf("Error in retrieve last file suffix from dfs: %s", err)
 		}
 		if lastSentFileNum == int(amInfo.LastSentFileSuffix) {
@@ -111,7 +113,7 @@ func syncArchiveMetaInfoFromDfs(rootDir string, amInfo *archive.ArchiveMetaInfo,
 	}
 }
 
-func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client dc.FsClient) (*archive.ArchiveMetaInfo, error) {
+func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, conf *la.Config, client dc.FsClient) (*archive.ArchiveMetaInfo, error) {
 	logger.Info("Retrieving archive meta info from dfs block files")
 	var lastArchiveFileNum int
 	var lastSentFileNum int
@@ -125,7 +127,7 @@ func constructArchiveMetaInfoFromDfsBlockFiles(rootDir string, client dc.FsClien
 	if lastArchiveFileNum, err = retrieveLastArchiveFileNum(rootDir); err != nil {
 		return amInfo, err
 	}
-	if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, client); err != nil {
+	if lastSentFileNum, err = retrieveLastSentFileNumFromDfs(rootDir, conf, client); err != nil {
 		return amInfo, err
 	}
 
@@ -198,12 +200,13 @@ func calcFileProofs(rootDir string, amInfo *archive.ArchiveMetaInfo) {
 	}
 }
 
-func retrieveLastSentFileNumFromDfs(rootDir string, client dc.FsClient) (int, error) {
+func retrieveLastSentFileNumFromDfs(rootDir string, conf *la.Config, client dc.FsClient) (int, error) {
 	biggestFileNum := -1
-	filesInfo, err := client.ReadDir(rootDir)
+	remotePath := conf.FsRoot + rootDir
+	filesInfo, err := client.ReadDir(remotePath)
 	if err != nil {
 		logger.Errorf("retrieveLastSentFileNumFromDfs got error: %s", err)
-		return -1, errors.Wrapf(err, "retrieveLastSentFileNumFromDfs - error reading dir %s", rootDir)
+		return -1, errors.Wrapf(err, "retrieveLastSentFileNumFromDfs - error reading dir %s", remotePath)
 	}
 	for _, fileInfo := range filesInfo {
 		name := fileInfo.Name()
@@ -220,7 +223,7 @@ func retrieveLastSentFileNumFromDfs(rootDir string, client dc.FsClient) (int, er
 		}
 	}
 	if biggestFileNum == -1 {
-		logger.Warnf("retrieveLastSentFileNumFromDfs - no block file found in the dfs dir[%s]", rootDir)
+		logger.Warnf("retrieveLastSentFileNumFromDfs - no block file found in the dfs dir[%s]", remotePath)
 	}
 	logger.Infof("retrieveLastSentFileNumFromDfs() - biggestFileNum = %d", biggestFileNum)
 	return biggestFileNum, err

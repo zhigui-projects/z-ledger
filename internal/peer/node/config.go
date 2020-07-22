@@ -69,6 +69,7 @@ func ledgerConfig() *ledger.Config {
 			IpfsConf: &config.IpfsConfig{
 				Url: viper.GetString("ledger.archive.ipfsConfig.url"),
 			},
+			FsRoot: viper.GetString("ledger.archive.fsRoot"),
 		},
 		StateDBConfig: &ledger.StateDBConfig{
 			StateDatabase: viper.GetString("ledger.state.stateDatabase"),
