@@ -446,7 +446,7 @@ func VrfSetToValidIdentities(vrfData []*protoutil.VrfData, identityDeserializer 
 			continue
 		}
 
-		if ok, _ := utils.VrfSortition(sd.Result, 10, 4); ok {
+		if ok, _ := utils.VrfSortition(sd.Result); ok {
 			selected = append(selected, identity)
 		}
 

@@ -24,7 +24,7 @@ func computeVrf(t *testing.T, kt keypair.KeyType, curve byte) {
 	if err != nil {
 		t.Fatalf("compute vrf: %v", err)
 	}
-	ret, rand := VrfSortition(v, 10, 4)
+	ret, rand := VrfSortition(v)
 	t.Logf("CalcEndorser ret: %v, rand: %v", ret, rand)
 }
 

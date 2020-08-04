@@ -415,7 +415,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 			logger.Infof("Compute vrf error: %v", err)
 			return nil, err
 		}
-		ret, num := utils.VrfSortition(result, 10, 4)
+		ret, num := utils.VrfSortition(result)
 		if !ret {
 			logger.Infof("ProcessProposal vrf endorser election not selected, number: %d", num)
 

@@ -8,7 +8,6 @@ package utils
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"math/big"
 )
 
@@ -32,10 +31,11 @@ type ChaincodeResponsePayload struct {
 	VrfEndorsements []*VrfEndorsement
 }
 
-func VrfSortition(value []byte, candidate, threshold int64) (bool, *big.Int) {
+func VrfSortition(value []byte) (bool, *big.Int) {
+	var candidate, threshold int64 = 10, 4
 	h := sha256.Sum256(value)
 	i := new(big.Int)
-	i.SetString(hex.EncodeToString(h[:]), 16)
+	i.SetBytes(h[:])
 	i.Mul(i, big.NewInt(candidate))
 	i.Rsh(i, 256)
 	return i.Cmp(big.NewInt(threshold)) >= 0, i
