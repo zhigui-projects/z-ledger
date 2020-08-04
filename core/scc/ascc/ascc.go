@@ -74,7 +74,7 @@ func (a *ArchiveSysCC) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 
 	switch function {
 	case ArchiveByDate:
-		if function != ArchiveByDate && len(args) < 3 {
+		if len(args) < 3 {
 			logger.Errorf("ASCC - missing 3rd arg for: %s", function)
 			return shim.Error(fmt.Sprintf("missing 3rd argument for %s", function))
 		}
