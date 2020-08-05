@@ -344,3 +344,7 @@ func (r *RoundRobinPM) startNewViewTimer() {
 func (r *RoundRobinPM) stopNewViewTimer() {
 	r.waitTimer.Stop()
 }
+
+func (r *RoundRobinPM) GetCurView() int64 {
+	return atomic.LoadInt64(&r.curView)
+}
