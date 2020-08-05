@@ -17,8 +17,8 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/orderer/consensus"
 	"github.com/pkg/errors"
+	"github.com/zhigui-projects/go-hotstuff/api"
 	hs "github.com/zhigui-projects/go-hotstuff/consensus"
-	"github.com/zhigui-projects/go-hotstuff/pacemaker"
 	"github.com/zhigui-projects/go-hotstuff/pb"
 )
 
@@ -30,14 +30,15 @@ var (
 
 type chain struct {
 	hsb      *hs.HotStuffBase
-	pm       pacemaker.PaceMaker
+	pm       api.PaceMaker
 	sendChan chan *message
 	exitChan chan struct{}
 	cancel   context.CancelFunc
 	support  consensus.ConsenterSupport
 	logger   *flogging.FabricLogger
 	SubmitClient
-	applyC chan []byte
+	applyC     chan []byte
+	pmWaitNsec int64
 }
 
 type message struct {
@@ -151,7 +152,7 @@ func (c *chain) main() {
 					go c.submit([][]byte{cmds})
 				}
 				if len(batches) > 0 {
-					pmTimer = time.After(100 * time.Millisecond)
+					pmTimer = time.After(time.Duration(c.pmWaitNsec))
 				}
 
 				switch {
@@ -186,7 +187,7 @@ func (c *chain) main() {
 					cmds, _ := json.Marshal(cmdsReq)
 					go c.submit([][]byte{cmds})
 
-					pmTimer = time.After(200 * time.Millisecond)
+					pmTimer = time.After(time.Duration(c.pmWaitNsec))
 				}
 
 				cmdsReq := &CmdsRequest{
@@ -240,7 +241,7 @@ func (c *chain) main() {
 			cmds, _ := json.Marshal(cmdsReq)
 			go c.submit([][]byte{cmds})
 
-			pmTimer = time.After(200 * time.Millisecond)
+			pmTimer = time.After(time.Duration(c.pmWaitNsec))
 		case <-pmTimer:
 			go func() {
 				c.submit([][]byte{nil, nil, nil, nil, nil, nil})

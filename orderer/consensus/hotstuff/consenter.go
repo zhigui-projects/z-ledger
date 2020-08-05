@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/fabric/orderer/consensus"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
+	"github.com/zhigui-projects/go-hotstuff/api"
 	"github.com/zhigui-projects/go-hotstuff/common/crypto"
 	hslog "github.com/zhigui-projects/go-hotstuff/common/log"
 	hsc "github.com/zhigui-projects/go-hotstuff/consensus"
@@ -49,7 +50,7 @@ type hsLogger struct {
 	*flogging.FabricLogger
 }
 
-func (h *hsLogger) New(ctx ...interface{}) hslog.Logger {
+func (h *hsLogger) New(ctx ...interface{}) api.Logger {
 	return &hsLogger{h.With(ctx...)}
 }
 
@@ -93,6 +94,7 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 		logger:       logger,
 		SubmitClient: c,
 		applyC:       applyC,
+		pmWaitNsec:   c.md.MsgWaitTimeoutNsec / int64(10),
 	}, nil
 }
 
@@ -116,9 +118,9 @@ func (c *consenter) newHotStuff(support consensus.ConsenterSupport) (*hsc.HotStu
 
 	replicas := &hsc.ReplicaConf{
 		Metadata: &pb.ConfigMetadata{
-			N:              m.Options.N,
-			F:              m.Options.F,
-			MsgWaitTimeout: m.Options.RequestTimeoutSec,
+			N:                  m.Options.N,
+			F:                  m.Options.F,
+			MsgWaitTimeoutNsec: m.Options.RequestTimeoutSec,
 		},
 		Replicas: make(map[hsc.ReplicaID]*hsc.ReplicaInfo, len(m.Consenters)),
 		Logger:   hslog.GetLogger(),
