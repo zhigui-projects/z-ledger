@@ -1,7 +1,6 @@
 package ipfs
 
 import (
-	"bytes"
 	"errors"
 	"io"
 	"os"
@@ -63,7 +62,7 @@ func NewFsClient(conf *common.IpfsConfig) (*FsClient, error) {
 	}
 
 	shell := sh.NewShell(conf.Url)
-	logger.Infof("Created a dfs client with options: %+v", conf)
+	logger.Infof("Created a dfs client with options: %+v, error: %+v", conf)
 	return &FsClient{shell: shell}, nil
 }
 
@@ -129,11 +128,7 @@ type FsReader struct {
 }
 
 func (r *FsReader) Seek(offset int64, whence int) (int64, error) {
-	output := make([]byte, offset)
-	if _, err := r.readerFile.Read(output); err != nil {
-		return 0, err
-	}
-	return bytes.NewReader(output).Seek(offset, whence)
+	return r.readerFile.Seek(offset, whence)
 }
 
 func (r *FsReader) Read(p []byte) (n int, err error) {
