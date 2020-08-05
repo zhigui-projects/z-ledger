@@ -37,7 +37,7 @@ type RoundRobinPM struct {
 }
 
 func NewRoundRobinPM(hs api.HotStuff, replicaId int64, metadata *pb.ConfigMetadata, decideExec func(cmds []byte)) api.PaceMaker {
-	waitTimer := clock.NewClock().NewTimer(time.Duration(metadata.MsgWaitTimeout) * time.Second)
+	waitTimer := clock.NewClock().NewTimer(time.Duration(metadata.MsgWaitTimeoutNsec))
 	waitTimer.Stop()
 
 	return &RoundRobinPM{
@@ -338,7 +338,7 @@ func (r *RoundRobinPM) DoDecide(block *pb.Block) {
 
 func (r *RoundRobinPM) startNewViewTimer() {
 	r.stopNewViewTimer()
-	r.waitTimer.Reset(time.Duration(r.metadata.MsgWaitTimeout) * time.Second)
+	r.waitTimer.Reset(time.Duration(r.metadata.MsgWaitTimeoutNsec))
 }
 
 func (r *RoundRobinPM) stopNewViewTimer() {
