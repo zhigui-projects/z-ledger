@@ -1,22 +1,8 @@
 /*
- * Copyright (c) 2019. Baidu Inc. All Rights Reserved.
- *
- *
- * lru_cache.go - an implementation of LRU cache
- *
- * DESCRIPTION
- * Usage:
- * // Create lru cache
- * cache := common.NewLRUCache(10000)
- * // Add a key-value pair to cache
- * cache.Add("key1", "val1")
- * // Get value by key
- * value, ok := cache.Get("Key1")
- * // Delete value by key
- * cache.Del("key1")
- * // Get count of items in cache
- * count := cache.Len()
- */
+Copyright Zhigui.com. All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
 
 package memorydb
 
@@ -26,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/zhigui-projects/go-hotstuff/common/db"
+	"github.com/zhigui-projects/go-hotstuff/api"
 )
 
 // LRUCache cache struct
@@ -44,7 +30,7 @@ type Pair struct {
 }
 
 // NewLRUCache New function
-func NewLRUCache(capacity int) db.Database {
+func NewLRUCache(capacity int) api.Database {
 	c := new(LRUCache)
 	c.capacity = capacity
 	c.cache = make(map[interface{}]*list.Element)

@@ -1284,12 +1284,12 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "multichain"
-  digest = "1:0facf416f59eb12943cb0806725e86023969c41a8b026cf0d9be6f9eec93b18b"
+  branch = "multichain-dev"
+  digest = "1:472aab161f20e61dc66308f9b1262aec9c985ffa3eb5bfa71d560d7bb8bf1018"
   name = "github.com/zhigui-projects/go-hotstuff"
   packages = [
+    "api",
     "common/crypto",
-    "common/db",
     "common/db/memorydb",
     "common/log",
     "common/utils",
@@ -1299,7 +1299,7 @@
     "transport",
   ]
   pruneopts = "NUT"
-  revision = "244a4952db5f93b05d99a2965e883e5f807bbb87"
+  revision = "9ec9cd0c877a452a8393a8c2fa29660c8a118990"
 
 [[projects]]
   digest = "1:7994f0511ea39eb049909df41301aabf5e6289b97c1084f7cc8c351d765469e1"

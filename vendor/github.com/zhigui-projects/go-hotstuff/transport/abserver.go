@@ -1,3 +1,9 @@
+/*
+Copyright Zhigui.com. All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package transport
 
 import (
@@ -6,25 +12,20 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/zhigui-projects/go-hotstuff/api"
 	"github.com/zhigui-projects/go-hotstuff/common/log"
 	"github.com/zhigui-projects/go-hotstuff/pb"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
 
-type BroadcastServer interface {
-	pb.AtomicBroadcastServer
-	BroadcastMsg(msg *pb.Message) error
-	UnicastMsg(msg *pb.Message, dest int64) error
-}
-
 type abServer struct {
 	sendChan map[int64]chan<- *pb.Message
 	sendLock *sync.RWMutex
-	logger   log.Logger
+	logger   api.Logger
 }
 
-func NewABServer() BroadcastServer {
+func NewABServer() api.BroadcastServer {
 	return &abServer{
 		sendChan: make(map[int64]chan<- *pb.Message),
 		sendLock: new(sync.RWMutex),
@@ -61,6 +62,9 @@ func (a *abServer) Broadcast(srv pb.AtomicBroadcast_BroadcastServer) error {
 }
 
 func (a *abServer) BroadcastMsg(msg *pb.Message) error {
+	if msg == nil {
+		return errors.New("broadcast msg is null")
+	}
 	a.sendLock.RLock()
 	defer a.sendLock.RUnlock()
 
@@ -71,6 +75,9 @@ func (a *abServer) BroadcastMsg(msg *pb.Message) error {
 }
 
 func (a *abServer) UnicastMsg(msg *pb.Message, dest int64) error {
+	if msg == nil {
+		return errors.New("unicast msg is null")
+	}
 	a.sendLock.RLock()
 	defer a.sendLock.RUnlock()
 

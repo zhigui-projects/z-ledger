@@ -212,5 +212,5 @@ noverify = [
   version = "0.0.8"
 
 [[constraint]]
-  branch = "multichain"
+  branch = "multichain-dev"
   name = "github.com/zhigui-projects/go-hotstuff"

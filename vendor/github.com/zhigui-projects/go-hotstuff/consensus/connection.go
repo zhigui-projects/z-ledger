@@ -1,10 +1,16 @@
+/*
+Copyright Zhigui.com. All Rights Reserved.
+
+SPDX-License-Identifier: Apache-2.0
+*/
+
 package consensus
 
 import (
 	"io"
 	"time"
 
-	"github.com/zhigui-projects/go-hotstuff/common/log"
+	"github.com/zhigui-projects/go-hotstuff/api"
 	"github.com/zhigui-projects/go-hotstuff/pb"
 	"github.com/zhigui-projects/go-hotstuff/transport"
 )
@@ -17,15 +23,15 @@ type NodeInfo struct {
 }
 
 type NodeManager struct {
-	transport.BroadcastServer
+	api.BroadcastServer
 	*transport.GrpcServer
 	Self *NodeInfo
 	// all nodes info contains self
 	Nodes  map[ReplicaID]*NodeInfo
-	Logger log.Logger
+	Logger api.Logger
 }
 
-func NewNodeManager(id ReplicaID, replicas []*NodeInfo, logger log.Logger) *NodeManager {
+func NewNodeManager(id ReplicaID, replicas []*NodeInfo, logger api.Logger) *NodeManager {
 	mgr := &NodeManager{
 		Nodes:  make(map[ReplicaID]*NodeInfo, len(replicas)),
 		Logger: logger,
