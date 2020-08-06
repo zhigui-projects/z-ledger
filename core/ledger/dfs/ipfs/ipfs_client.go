@@ -129,7 +129,7 @@ type FsReader struct {
 }
 
 func (r *FsReader) Seek(offset int64, whence int) (int64, error) {
-	output := make([]byte, offset)
+	output := make([]byte, offset+64)
 	if _, err := r.readerFile.Read(output); err != nil {
 		return 0, err
 	}
