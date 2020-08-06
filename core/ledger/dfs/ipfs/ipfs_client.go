@@ -3,13 +3,11 @@ package ipfs
 import (
 	"bytes"
 	"errors"
-	"io"
 	"os"
 	"time"
 
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/ledger/dfs/common"
-	files "github.com/ipfs/go-ipfs-files"
 	sh "github.com/pengisgood/go-ipfs-api"
 )
 
@@ -114,53 +112,45 @@ func (c *FsClient) Open(name string) (common.FsReader, error) {
 		return nil, err
 	}
 
-	reader, err := c.shell.FilesRead(name)
+	r, err := c.shell.FilesRead(name)
 	if err != nil {
 		logger.Errorf("read file[%s] from ipfs, got error: %s", name, err)
 		return nil, err
 	}
 
-	file := files.NewReaderStatFile(reader, stat)
-	return &FsReader{readerFile: file.(*files.ReaderFile)}, nil
+	output := make([]byte, stat.Size())
+	if _, err := r.Read(output); err != nil && err.Error() != "EOF" {
+		logger.Errorf("reader.Read with stat[%s], got error: %s", stat, err)
+		return nil, err
+	}
+
+	return &FsReader{reader: bytes.NewReader(output), stat: stat}, nil
 }
 
 type FsReader struct {
-	readerFile *files.ReaderFile
+	reader *bytes.Reader
+	stat   os.FileInfo
 }
 
 func (r *FsReader) Seek(offset int64, whence int) (int64, error) {
-	output := make([]byte, offset+64)
-	if _, err := r.readerFile.Read(output); err != nil {
-		return 0, err
-	}
-	return bytes.NewReader(output).Seek(offset, whence)
+	return r.reader.Seek(offset, whence)
 }
 
 func (r *FsReader) Read(p []byte) (n int, err error) {
-	return r.readerFile.Read(p)
+	return r.reader.Read(p)
 }
 
 func (r *FsReader) Close() error {
-	return r.readerFile.Close()
+	// do nothing
+	return nil
 }
 
 func (r *FsReader) Stat() os.FileInfo {
-	return r.readerFile.Stat()
+	return r.stat
 }
 
 func (r *FsReader) ReadAt(b []byte, offset int64) (int, error) {
-	if offset < 0 {
-		logger.Errorf("readAt from ipfs file, got error: negative offset")
-		return 0, &os.PathError{Op: "readat", Path: r.readerFile.AbsPath(), Err: errors.New("negative offset")}
-	}
-
-	_, err := r.readerFile.Seek(offset, 0)
-	if err != nil {
-		logger.Errorf("seek ipfs file, got error: %s", err)
-		return 0, err
-	}
-
-	return io.ReadFull(r.readerFile, b)
+	return r.reader.ReadAt(b, offset)
 }
 
 func (c *FsClient) Close() error {
