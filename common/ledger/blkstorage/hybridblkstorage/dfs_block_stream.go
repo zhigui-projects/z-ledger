@@ -69,6 +69,7 @@ func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, clien
 
 	var newPosition int64
 	if newPosition, err = reader.Seek(startOffset, 0); err != nil {
+		logger.Errorf("reader.Seek file[%s], offset[%d] in dfs got error: %+v", filePath, startOffset, err)
 		return nil, errors.Wrapf(err, "error seeking dfs block reader [%s] to startOffset [%d]", filePath, startOffset)
 	}
 	if newPosition != startOffset {
