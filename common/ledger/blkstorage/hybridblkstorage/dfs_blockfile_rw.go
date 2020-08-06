@@ -40,6 +40,12 @@ func newDfsBlockfileReader(filePath string, dfsClient common.FsClient, fileProof
 		logger.Warnf("the checksum of blockfile[%s] in dfs does not match [%s]", filePath, fileProof)
 	}
 
+	//reset the read position to the beginning
+	if _, err := reader.Seek(0, io.SeekStart); err != nil {
+		logger.Errorf("newDfsBlockfileReader - reset read position of file[%s] got error: %s", filePath, err)
+		return nil, errors.Wrapf(err, "newDfsBlockfileReader - reset read position of file[%s]", filePath)
+	}
+
 	return &dfsBlockfileReader{reader}, nil
 }
 
