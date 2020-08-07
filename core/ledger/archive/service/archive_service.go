@@ -165,7 +165,7 @@ func (a *ArchiveService) transferBlockFiles(chainID string) {
 
 	err = ledger.TransferBlockFiles()
 	if err != nil {
-		logger.Errorf("Archive service - transfer block files for chain: %s failed with error: %s", chainID, err)
+		logger.Warnf("Archive service - transfer block files for chain: %s failed with error: %s", chainID, err)
 	}
 }
 

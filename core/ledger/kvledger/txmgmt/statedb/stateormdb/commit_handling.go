@@ -96,6 +96,7 @@ func (v *VersionedDB) buildCommittersForNs(ns string, nsUpdates map[string]*stat
 		db:             db,
 		batchUpdateMap: make([]*batchableEntity, 0),
 		efdMap:         make([]*batchableEntityFieldDefinition, 0),
+		sysMap:         make([]*batchableSysState, 0),
 		namespace:      ns,
 		cacheKVs:       make(statedb.CacheKVs),
 		cacheEnabled:   cacheEnabled,

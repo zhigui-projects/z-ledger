@@ -67,8 +67,15 @@ func newDfsBlockfileStream(rootDir string, fileNum int, startOffset int64, clien
 		logger.Warnf("the checksum of blockfile[%s] in dfs does not match [%s]", filePath, fileProof)
 	}
 
+	//reset the read position to the beginning
+	if _, err := reader.Seek(0, io.SeekStart); err != nil {
+		logger.Errorf("newDfsBlockfileStream - reset read position of file[%s] got error: %s", filePath, err)
+		return nil, errors.Wrapf(err, "newDfsBlockfileStream - reset read position of file[%s]", filePath)
+	}
+
 	var newPosition int64
-	if newPosition, err = reader.Seek(startOffset, 0); err != nil {
+	if newPosition, err = reader.Seek(startOffset, io.SeekStart); err != nil {
+		logger.Errorf("reader.Seek file[%s], offset[%d] in dfs got error: %+v", filePath, startOffset, err)
 		return nil, errors.Wrapf(err, "error seeking dfs block reader [%s] to startOffset [%d]", filePath, startOffset)
 	}
 	if newPosition != startOffset {

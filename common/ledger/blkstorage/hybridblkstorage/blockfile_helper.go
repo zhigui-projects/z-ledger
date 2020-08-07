@@ -203,6 +203,10 @@ func calcFileProofs(rootDir string, amInfo *archive.ArchiveMetaInfo) {
 func retrieveLastSentFileNumFromDfs(rootDir string, conf *la.Config, client dc.FsClient) (int, error) {
 	biggestFileNum := -1
 	remotePath := conf.FsRoot + rootDir
+	if _, notExistErr := client.Stat(remotePath); notExistErr != nil {
+		logger.Warnf("retrieveLastSentFileNumFromDfs remotePath[%s] not exist", remotePath)
+		return -1, notExistErr
+	}
 	filesInfo, err := client.ReadDir(remotePath)
 	if err != nil {
 		logger.Errorf("retrieveLastSentFileNumFromDfs got error: %s", err)

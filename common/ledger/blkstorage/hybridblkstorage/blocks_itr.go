@@ -47,7 +47,8 @@ func (itr *blocksItr) initStream() error {
 		return err
 	}
 	if int32(lp.fileSuffixNum) <= itr.mgr.amInfo.LastArchiveFileSuffix {
-		itr.stream, err = newDfsBlockStream(itr.mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), -1, itr.mgr.dfsClient)
+		remotePath := itr.mgr.archiveConf.FsRoot + itr.mgr.rootDir
+		itr.stream, err = newDfsBlockStream(remotePath, lp.fileSuffixNum, int64(lp.offset), -1, itr.mgr.dfsClient)
 	} else {
 		itr.stream, err = newBlockStream(itr.mgr.rootDir, lp.fileSuffixNum, int64(lp.offset), -1)
 	}

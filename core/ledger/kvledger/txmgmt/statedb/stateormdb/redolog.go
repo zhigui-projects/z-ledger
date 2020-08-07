@@ -39,6 +39,7 @@ func newRedoLoggerProvider(dirPath string) (*redoLoggerProvider, error) {
 
 func (p *redoLoggerProvider) newRedoLogger(dbName string) *redoLogger {
 	return &redoLogger{
+		dbName:   dbName,
 		dbHandle: p.leveldbProvider.GetDBHandle(dbName),
 	}
 }

@@ -586,11 +586,11 @@ ledger:
   archive:
     enable: true
     trigger:
-      checkInterval: 5s
+      checkInterval: 60s
       beginTime: 01:00AM
       endTime: 11:00PM
     # type - options are "hdfs", "ipfs"
-    type: hdfs
+    type: ipfs
     hdfsConfig:
       nameNodes:
         - 47.52.139.52:9000
