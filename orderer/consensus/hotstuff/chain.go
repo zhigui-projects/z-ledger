@@ -201,7 +201,7 @@ func (c *chain) main() {
 					c.pm.Submit(nil)
 					c.pm.Submit(nil)
 				}()
-				go c.submit([][]byte{nil})
+				go c.submit(nil)
 
 				timer = nil
 			}
@@ -252,7 +252,7 @@ func (c *chain) main() {
 				c.pm.Submit(nil)
 			}()
 
-			go c.submit([][]byte{nil})
+			go c.submit(nil)
 		case <-c.exitChan:
 			c.logger.Debugf("Exiting")
 			return
