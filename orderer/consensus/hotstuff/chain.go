@@ -29,14 +29,13 @@ var (
 )
 
 type chain struct {
-	hsb      *hs.HotStuffBase
-	pm       api.PaceMaker
-	sendChan chan *message
-	exitChan chan struct{}
-	cancel   context.CancelFunc
-	support  consensus.ConsenterSupport
-	logger   *flogging.FabricLogger
-	SubmitClient
+	hsb        *hs.HotStuffBase
+	pm         api.PaceMaker
+	sendChan   chan *message
+	exitChan   chan struct{}
+	cancel     context.CancelFunc
+	support    consensus.ConsenterSupport
+	logger     *flogging.FabricLogger
 	applyC     chan []byte
 	pmWaitNsec int64
 }
@@ -149,7 +148,7 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go c.submit([][]byte{cmds})
+					go c.pm.Submit(cmds)
 				}
 				if len(batches) > 0 {
 					pmTimer = time.After(time.Duration(c.pmWaitNsec))
@@ -185,7 +184,7 @@ func (c *chain) main() {
 						Batche:  batch,
 					}
 					cmds, _ := json.Marshal(cmdsReq)
-					go c.submit([][]byte{cmds})
+					go c.pm.Submit(cmds)
 
 					pmTimer = time.After(time.Duration(c.pmWaitNsec))
 				}
@@ -197,8 +196,12 @@ func (c *chain) main() {
 				cmds, _ := json.Marshal(cmdsReq)
 				go func() {
 					// submit more nil tx to avoid real tx not exec, keep alive
-					c.submit([][]byte{cmds, nil, nil, nil, nil, nil, nil})
+					c.pm.Submit(cmds)
+					c.pm.Submit(nil)
+					c.pm.Submit(nil)
+					c.pm.Submit(nil)
 				}()
+				go c.submit([][]byte{nil})
 
 				timer = nil
 			}
@@ -239,13 +242,17 @@ func (c *chain) main() {
 				Batche:  batch,
 			}
 			cmds, _ := json.Marshal(cmdsReq)
-			go c.submit([][]byte{cmds})
+			go c.pm.Submit(cmds)
 
 			pmTimer = time.After(time.Duration(c.pmWaitNsec))
 		case <-pmTimer:
 			go func() {
-				c.submit([][]byte{nil, nil, nil, nil, nil, nil})
+				c.pm.Submit(nil)
+				c.pm.Submit(nil)
+				c.pm.Submit(nil)
 			}()
+
+			go c.submit([][]byte{nil})
 		case <-c.exitChan:
 			c.logger.Debugf("Exiting")
 			return
@@ -253,19 +260,9 @@ func (c *chain) main() {
 	}
 }
 
-func (c *chain) submit(txs [][]byte) {
+func (c *chain) submit(cmds []byte) {
 	chs := c.hsb.GetHotStuff(c.support.ChannelID())
 	leader := chs.GetLeader(chs.GetCurView())
-	hsc := c.getSubmitClient(leader)
-	for _, cmds := range txs {
-		if hsc == nil {
-			c.pm.Submit(cmds)
-		} else {
-			_, err := hsc.Submit(context.Background(), &pb.SubmitRequest{Chain: c.support.ChannelID(), Cmds: cmds})
-			if err != nil {
-				c.pm.Submit(cmds)
-				c.delSubmitClient(leader)
-			}
-		}
-	}
+	go c.hsb.UnicastMsg(&pb.Message{Chain: c.support.ChannelID(), Type: &pb.Message_Forward{
+		Forward: &pb.Forward{Data: cmds}}}, leader)
 }

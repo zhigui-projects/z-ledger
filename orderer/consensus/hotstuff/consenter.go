@@ -12,11 +12,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
-	"path/filepath"
-	"strconv"
-	"sync"
-
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	hs "github.com/hyperledger/fabric-protos-go/orderer/hotstuff"
@@ -32,7 +27,9 @@ import (
 	hsc "github.com/zhigui-projects/go-hotstuff/consensus"
 	"github.com/zhigui-projects/go-hotstuff/pacemaker"
 	"github.com/zhigui-projects/go-hotstuff/pb"
-	"github.com/zhigui-projects/go-hotstuff/transport"
+	"io/ioutil"
+	"path/filepath"
+	"strconv"
 )
 
 type consenter struct {
@@ -42,8 +39,6 @@ type consenter struct {
 	md            *pb.ConfigMetadata
 	ordererConfig localconfig.TopLevel
 	logger        *flogging.FabricLogger
-	submitMut     sync.RWMutex
-	submitClients map[int64]pb.HotstuffClient
 }
 
 type hsLogger struct {
@@ -62,7 +57,6 @@ func New(conf *localconfig.TopLevel, srvConf comm.ServerConfig) consensus.Consen
 		cert:          srvConf.SecOpts.Certificate,
 		ordererConfig: *conf,
 		logger:        logger,
-		submitClients: make(map[int64]pb.HotstuffClient),
 	}
 }
 
@@ -87,14 +81,13 @@ func (c *consenter) HandleChain(support consensus.ConsenterSupport, metadata *cb
 	logger := c.logger.With("channel", support.ChannelID(), "node", c.nodeId)
 
 	return &chain{
-		hsb:          c.hsb,
-		pm:           pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
-		sendChan:     make(chan *message),
-		support:      support,
-		logger:       logger,
-		SubmitClient: c,
-		applyC:       applyC,
-		pmWaitNsec:   c.md.MsgWaitTimeoutNsec / int64(10),
+		hsb:        c.hsb,
+		pm:         pacemaker.NewRoundRobinPM(c.hsb.GetHotStuff(support.ChannelID()), c.nodeId, c.md, decideExec),
+		sendChan:   make(chan *message),
+		support:    support,
+		logger:     logger,
+		applyC:     applyC,
+		pmWaitNsec: c.md.MsgWaitTimeoutNsec / int64(10),
 	}, nil
 }
 
@@ -168,45 +161,6 @@ func (c *consenter) newHotStuff(support consensus.ConsenterSupport) (*hsc.HotStu
 	priKey := keyCert.PrivateKey.(*ecdsa.PrivateKey)
 
 	return hsc.NewHotStuffBase(hsc.ReplicaID(selfId), nodes, &crypto.ECDSASigner{Pri: priKey}, replicas), nil
-}
-
-type SubmitClient interface {
-	getSubmitClient(replicaId int64) pb.HotstuffClient
-	delSubmitClient(replicaId int64)
-}
-
-func (c *consenter) getSubmitClient(replicaId int64) pb.HotstuffClient {
-	if replicaId == c.nodeId {
-		return nil
-	}
-
-	c.submitMut.RLock()
-	sc, ok := c.submitClients[replicaId]
-	c.submitMut.RUnlock()
-	if ok {
-		return sc
-	}
-
-	client, err := transport.NewGrpcClient(nil)
-	if err != nil {
-		return nil
-	}
-	conn, err := client.NewConnection(c.hsb.Nodes[hsc.ReplicaID(replicaId)].Addr)
-	if err != nil {
-		return nil
-	}
-	hsc := pb.NewHotstuffClient(conn)
-
-	c.submitMut.Lock()
-	c.submitClients[replicaId] = hsc
-	c.submitMut.Unlock()
-	return hsc
-}
-
-func (c *consenter) delSubmitClient(replicaId int64) {
-	c.submitMut.Lock()
-	defer c.submitMut.Unlock()
-	delete(c.submitClients, replicaId)
 }
 
 func validateCert(pemData []byte) (interface{}, []byte, error) {
