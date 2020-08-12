@@ -22,6 +22,7 @@ import (
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/scc"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
+	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
 
@@ -117,6 +118,21 @@ func (s *SupportImpl) GetCurrentBlockHash(channelID string) ([]byte, error) {
 	}
 
 	return info.CurrentBlockHash, nil
+}
+
+// GetBlockHashByNumber retrieves a block by number
+func (s *SupportImpl) GetBlockHashByNumber(channelID string, number uint64) ([]byte, error) {
+	lgr := s.Peer.GetLedger(channelID)
+	if lgr == nil {
+		return nil, errors.Errorf("failed to look up the ledger for Channel %s", channelID)
+	}
+
+	block, err := lgr.GetBlockByNumber(number)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to obtain information for Channel %s", channelID))
+	}
+
+	return protoutil.BlockHeaderHash(block.Header), nil
 }
 
 // IsSysCC returns true if the name matches a system chaincode's

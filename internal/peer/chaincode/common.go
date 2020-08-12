@@ -9,6 +9,7 @@ package chaincode
 import (
 	"context"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,6 +26,7 @@ import (
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/hyperledger/fabric/common/cauthdsl"
 	"github.com/hyperledger/fabric/common/util"
+	"github.com/hyperledger/fabric/core/scc/qscc"
 	"github.com/hyperledger/fabric/internal/peer/common"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/protoutil"
@@ -631,11 +633,53 @@ transactionReplay:
 	return proposalResp, nil
 }
 
+func getBlockChainInfo(signer identity.SignerSerializer, endorserClient pb.EndorserClient) (*pcommon.BlockchainInfo, error) {
+	var err error
+
+	invocation := &pb.ChaincodeInvocationSpec{
+		ChaincodeSpec: &pb.ChaincodeSpec{
+			Type:        pb.ChaincodeSpec_Type(pb.ChaincodeSpec_Type_value["GOLANG"]),
+			ChaincodeId: &pb.ChaincodeID{Name: "qscc"},
+			Input:       &pb.ChaincodeInput{Args: [][]byte{[]byte(qscc.GetChainInfo), []byte(channelID)}},
+		},
+	}
+
+	var prop *pb.Proposal
+	c, _ := signer.Serialize()
+	prop, _, err = protoutil.CreateProposalFromCIS(pcommon.HeaderType_ENDORSER_TRANSACTION, "", invocation, c)
+	if err != nil {
+		return nil, errors.WithMessage(err, "cannot create proposal")
+	}
+
+	var signedProp *pb.SignedProposal
+	signedProp, err = protoutil.GetSignedProposal(prop, signer)
+	if err != nil {
+		return nil, errors.WithMessage(err, "cannot create signed proposal")
+	}
+
+	proposalResp, err := endorserClient.ProcessProposal(context.Background(), signedProp)
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed sending proposal")
+	}
+
+	if proposalResp.Response == nil || proposalResp.Response.Status != 200 {
+		return nil, errors.Errorf("received bad response, status %d: %s", proposalResp.Response.Status, proposalResp.Response.Message)
+	}
+
+	blockChainInfo := &pcommon.BlockchainInfo{}
+	err = proto.Unmarshal(proposalResp.Response.Payload, blockChainInfo)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot read qscc response")
+	}
+
+	return blockChainInfo, nil
+}
+
 func createSignedProposal(
 	spec *pb.ChaincodeSpec,
 	signer identity.SignerSerializer,
 	cID, txID, funcName string,
-	vrfEnabled bool) (*pb.SignedProposal, *pb.Proposal, string, error) {
+	vrfEnabled bool, blockHeight uint64) (*pb.SignedProposal, *pb.Proposal, string, error) {
 	// Build the ChaincodeInvocationSpec message
 	invocation := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
 
@@ -648,6 +692,7 @@ func createSignedProposal(
 		invocation.ChaincodeSpec.Input.Decorations = make(map[string][]byte)
 	}
 	invocation.ChaincodeSpec.Input.Decorations["vrfEnabled"] = []byte(strconv.FormatBool(vrfEnabled))
+	invocation.ChaincodeSpec.Input.Decorations["blockNumber"] = []byte(strconv.FormatUint(blockHeight, 10))
 
 	// extract the transient field if it exists
 	var tMap map[string][]byte
@@ -675,7 +720,18 @@ func proposalProcess(spec *pb.ChaincodeSpec,
 	endorserClients []pb.EndorserClient,
 	cID, txID, funcName string,
 	vrfEnabled bool) ([]*pb.ProposalResponse, *pb.ProposalResponse, *pb.Proposal, string, error) {
-	signedProp, prop, txid, err := createSignedProposal(spec, signer, cID, txID, funcName, vrfEnabled)
+
+	var blockHeight uint64
+	if vrfEnabled {
+		chainInfo, err := getBlockChainInfo(signer, endorserClients[len(endorserClients)-1])
+		if err != nil {
+			return nil, nil, nil, "", errors.WithMessage(err, "error getBlockChainInfo")
+		}
+		blockHeight = chainInfo.Height
+		logger.Infof("proposal process GetChainInfo resp, height: %d, hash: %s", chainInfo.Height, hex.EncodeToString(chainInfo.CurrentBlockHash))
+	}
+
+	signedProp, prop, txid, err := createSignedProposal(spec, signer, cID, txID, funcName, vrfEnabled, blockHeight)
 	if err != nil {
 		return nil, nil, nil, "", errors.WithMessagef(err, "error creating signed proposal for %s", funcName)
 	}

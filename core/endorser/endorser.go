@@ -82,6 +82,9 @@ type Support interface {
 	// GetCurrentBlockHash returns ledger current block Hash for given channelID
 	GetCurrentBlockHash(channelID string) ([]byte, error)
 
+	// GetBlockHashByNumber retrieves a block by number
+	GetBlockHashByNumber(channelID string, number uint64) ([]byte, error)
+
 	// GetDeployedCCInfoProvider returns ledger.DeployedChaincodeInfoProvider
 	GetDeployedCCInfoProvider() ledger.DeployedChaincodeInfoProvider
 }
@@ -405,9 +408,25 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		//}
 		//logger.Infof("Deserialize local peer identity mspId: %s, id: %s", localIdentity.GetIdentifier().Mspid, localIdentity.GetIdentifier().Id)
 
-		msg, err = e.Support.GetCurrentBlockHash(up.ChannelHeader.ChannelId)
-		if err != nil {
+		val, ok := up.Input.Decorations["blockNumber"]
+		if !ok {
+			return nil, errors.New("chaincode invoke need provide latest blocknumber for vrf compute")
+		}
+
+		if num, err := strconv.ParseUint(string(val), 10, 64); err != nil {
 			return nil, err
+		} else {
+			height, err := e.Support.GetLedgerHeight(up.ChannelID())
+			if err != nil {
+				return nil, err
+			}
+			if height-num > 3 {
+				return nil, errors.Errorf("invalid block number [%d] much less than latest height [%d]", num, height)
+			}
+			msg, err = e.Support.GetBlockHashByNumber(up.ChannelID(), num)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		result, proof, err = e.Support.Vrf(msg)

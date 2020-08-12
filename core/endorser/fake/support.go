@@ -91,6 +91,20 @@ type Support struct {
 		result2 *peer.ChaincodeEvent
 		result3 error
 	}
+	GetBlockHashByNumberStub        func(string, uint64) ([]byte, error)
+	getBlockHashByNumberMutex       sync.RWMutex
+	getBlockHashByNumberArgsForCall []struct {
+		arg1 string
+		arg2 uint64
+	}
+	getBlockHashByNumberReturns struct {
+		result1 []byte
+		result2 error
+	}
+	getBlockHashByNumberReturnsOnCall map[int]struct {
+		result1 []byte
+		result2 error
+	}
 	GetCurrentBlockHashStub        func(string) ([]byte, error)
 	getCurrentBlockHashMutex       sync.RWMutex
 	getCurrentBlockHashArgsForCall []struct {
@@ -558,6 +572,70 @@ func (fake *Support) ExecuteLegacyInitReturnsOnCall(i int, result1 *peer.Respons
 		result2 *peer.ChaincodeEvent
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *Support) GetBlockHashByNumber(arg1 string, arg2 uint64) ([]byte, error) {
+	fake.getBlockHashByNumberMutex.Lock()
+	ret, specificReturn := fake.getBlockHashByNumberReturnsOnCall[len(fake.getBlockHashByNumberArgsForCall)]
+	fake.getBlockHashByNumberArgsForCall = append(fake.getBlockHashByNumberArgsForCall, struct {
+		arg1 string
+		arg2 uint64
+	}{arg1, arg2})
+	fake.recordInvocation("GetBlockHashByNumber", []interface{}{arg1, arg2})
+	fake.getBlockHashByNumberMutex.Unlock()
+	if fake.GetBlockHashByNumberStub != nil {
+		return fake.GetBlockHashByNumberStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	fakeReturns := fake.getBlockHashByNumberReturns
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *Support) GetBlockHashByNumberCallCount() int {
+	fake.getBlockHashByNumberMutex.RLock()
+	defer fake.getBlockHashByNumberMutex.RUnlock()
+	return len(fake.getBlockHashByNumberArgsForCall)
+}
+
+func (fake *Support) GetBlockHashByNumberCalls(stub func(string, uint64) ([]byte, error)) {
+	fake.getBlockHashByNumberMutex.Lock()
+	defer fake.getBlockHashByNumberMutex.Unlock()
+	fake.GetBlockHashByNumberStub = stub
+}
+
+func (fake *Support) GetBlockHashByNumberArgsForCall(i int) (string, uint64) {
+	fake.getBlockHashByNumberMutex.RLock()
+	defer fake.getBlockHashByNumberMutex.RUnlock()
+	argsForCall := fake.getBlockHashByNumberArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *Support) GetBlockHashByNumberReturns(result1 []byte, result2 error) {
+	fake.getBlockHashByNumberMutex.Lock()
+	defer fake.getBlockHashByNumberMutex.Unlock()
+	fake.GetBlockHashByNumberStub = nil
+	fake.getBlockHashByNumberReturns = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *Support) GetBlockHashByNumberReturnsOnCall(i int, result1 []byte, result2 error) {
+	fake.getBlockHashByNumberMutex.Lock()
+	defer fake.getBlockHashByNumberMutex.Unlock()
+	fake.GetBlockHashByNumberStub = nil
+	if fake.getBlockHashByNumberReturnsOnCall == nil {
+		fake.getBlockHashByNumberReturnsOnCall = make(map[int]struct {
+			result1 []byte
+			result2 error
+		})
+	}
+	fake.getBlockHashByNumberReturnsOnCall[i] = struct {
+		result1 []byte
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *Support) GetCurrentBlockHash(arg1 string) ([]byte, error) {
@@ -1196,6 +1274,8 @@ func (fake *Support) Invocations() map[string][][]interface{} {
 	defer fake.executeMutex.RUnlock()
 	fake.executeLegacyInitMutex.RLock()
 	defer fake.executeLegacyInitMutex.RUnlock()
+	fake.getBlockHashByNumberMutex.RLock()
+	defer fake.getBlockHashByNumberMutex.RUnlock()
 	fake.getCurrentBlockHashMutex.RLock()
 	defer fake.getCurrentBlockHashMutex.RUnlock()
 	fake.getDeployedCCInfoProviderMutex.RLock()

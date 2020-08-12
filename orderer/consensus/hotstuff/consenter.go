@@ -12,6 +12,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"io/ioutil"
+	"path/filepath"
+	"strconv"
+
 	"github.com/golang/protobuf/proto"
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	hs "github.com/hyperledger/fabric-protos-go/orderer/hotstuff"
@@ -27,9 +31,6 @@ import (
 	hsc "github.com/zhigui-projects/go-hotstuff/consensus"
 	"github.com/zhigui-projects/go-hotstuff/pacemaker"
 	"github.com/zhigui-projects/go-hotstuff/pb"
-	"io/ioutil"
-	"path/filepath"
-	"strconv"
 )
 
 type consenter struct {
