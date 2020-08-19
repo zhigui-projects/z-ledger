@@ -424,6 +424,15 @@ peer:
     concurrency:
       qscc: 5000
 
+  # Used to chaincode endorsement vrf-policy
+  vrf:
+    # Candidate base， minimum value： 10
+    candidates: 10
+    # the selected threshold for endorse
+    threshold: 4
+    # The height difference of the latest block of different nodes
+    blockdelay: 3
+
 ###############################################################################
 #
 #    VM section

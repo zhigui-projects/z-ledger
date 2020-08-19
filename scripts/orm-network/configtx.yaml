@@ -303,7 +303,7 @@ Orderer: &OrdererDefaults
             "N": 4
             # Fault tolerance
             F: 1
-            # Timeout of requests (seconds)
+            # Timeout of requests (nanosecond)
             RequestTimeoutNsec: 1000000000
 
     # Organizations is the list of orgs which are defined as participants on

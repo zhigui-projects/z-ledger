@@ -31,8 +31,7 @@ type ChaincodeResponsePayload struct {
 	VrfEndorsements []*VrfEndorsement
 }
 
-func VrfSortition(value []byte) (bool, *big.Int) {
-	var candidate, threshold int64 = 10, 4
+func VrfSortition(candidate, threshold int64, value []byte) (bool, *big.Int) {
 	h := sha256.Sum256(value)
 	i := new(big.Int)
 	i.SetBytes(h[:])

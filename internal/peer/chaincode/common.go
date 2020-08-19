@@ -727,8 +727,9 @@ func proposalProcess(spec *pb.ChaincodeSpec,
 		if err != nil {
 			return nil, nil, nil, "", errors.WithMessage(err, "error getBlockChainInfo")
 		}
-		blockHeight = chainInfo.Height
 		logger.Infof("proposal process GetChainInfo resp, height: %d, hash: %s", chainInfo.Height, hex.EncodeToString(chainInfo.CurrentBlockHash))
+		// TODO: 由于cli中只能查询一个组织的区块高度，在生产中可通过查询多个组织的节点，取最新高度的最小值，这里最新高度减2，是测试环境中使用
+		blockHeight = chainInfo.Height - 2
 	}
 
 	signedProp, prop, txid, err := createSignedProposal(spec, signer, cID, txID, funcName, vrfEnabled, blockHeight)

@@ -18,6 +18,7 @@ import (
 	mspi "github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -446,7 +447,9 @@ func VrfSetToValidIdentities(vrfData []*protoutil.VrfData, identityDeserializer 
 			continue
 		}
 
-		if ok, _ := utils.VrfSortition(sd.Result); ok {
+		candidates := int64(viper.GetInt("peer.vrf.candidates"))
+		threshold := int64(viper.GetInt("peer.vrf.threshold"))
+		if ok, _ := utils.VrfSortition(candidates, threshold, sd.Result); ok {
 			selected = append(selected, identity)
 		}
 

@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -413,6 +414,10 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 			return nil, errors.New("chaincode invoke need provide latest blocknumber for vrf compute")
 		}
 
+		candidates := int64(viper.GetInt("peer.vrf.candidates"))
+		threshold := int64(viper.GetInt("peer.vrf.threshold"))
+		blockdelay := uint64(viper.GetInt("peer.vrf.blockdelay"))
+
 		if num, err := strconv.ParseUint(string(val), 10, 64); err != nil {
 			return nil, err
 		} else {
@@ -420,7 +425,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 			if err != nil {
 				return nil, err
 			}
-			if height-num > 3 {
+			if height-num > blockdelay {
 				return nil, errors.Errorf("invalid block number [%d] much less than latest height [%d]", num, height)
 			}
 			msg, err = e.Support.GetBlockHashByNumber(up.ChannelID(), num)
@@ -434,7 +439,7 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 			logger.Infof("Compute vrf error: %v", err)
 			return nil, err
 		}
-		ret, num := utils.VrfSortition(result)
+		ret, num := utils.VrfSortition(candidates, threshold, result)
 		if !ret {
 			logger.Infof("ProcessProposal vrf endorser election not selected, number: %d", num)
 
