@@ -21,4 +21,7 @@ type HdfsConfig struct {
 type IpfsConfig struct {
 	// IPFS api url, example: 127.0.0.1:5001
 	Url string
+
+	// Store dir for file name and cid mapping as index
+	CidIndexDir string
 }

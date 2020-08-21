@@ -110,7 +110,8 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	if err != nil {
 		panic(fmt.Sprintf("Error creating block storage root dir [%s]: %s", rootDir, err))
 	}
-	dfsConf := &dc.Config{Type: archiveConf.Type, HdfsConf: archiveConf.HdfsConf, IpfsConf: archiveConf.IpfsConf}
+	ipfsConf := &dc.IpfsConfig{Url: archiveConf.IpfsConf.Url, CidIndexDir: conf.getCidIndexDir()}
+	dfsConf := &dc.Config{Type: archiveConf.Type, HdfsConf: archiveConf.HdfsConf, IpfsConf: ipfsConf}
 	client, err := dfs.NewDfsClient(dfsConf)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Could not connect to HDFS, due to %+v", err))

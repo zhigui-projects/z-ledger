@@ -16,6 +16,8 @@ const (
 	ChainsDir = "chains"
 	// IndexDir is the name of the directory containing all block indexes across ledgers.
 	IndexDir = "index"
+	// CidIndexDir is the name of the directory containing all cid indexes across ledgers.
+	CidIndexDir = "cidIndex"
 )
 
 // Conf encapsulates all the configurations for `FsBlockStore`
@@ -35,6 +37,10 @@ func NewConf(blockStorageDir string, maxBlockfileSize int) *Conf {
 
 func (conf *Conf) getIndexDir() string {
 	return filepath.Join(conf.blockStorageDir, IndexDir)
+}
+
+func (conf *Conf) getCidIndexDir() string {
+	return filepath.Join(conf.blockStorageDir, CidIndexDir)
 }
 
 func (conf *Conf) getChainsDir() string {

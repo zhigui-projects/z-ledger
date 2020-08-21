@@ -3,18 +3,23 @@ package ipfs
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	sh "github.com/pengisgood/go-ipfs-api"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 var logger = flogging.MustGetLogger("dfs.ipfs")
 
 type FsClient struct {
-	shell *sh.Shell
+	shell    *sh.Shell
+	cidStore *leveldb.DB
 }
 
 type fileInfo struct {
@@ -59,10 +64,34 @@ func NewFsClient(conf *common.IpfsConfig) (*FsClient, error) {
 		logger.Error(errMsg)
 		return nil, errors.New(errMsg)
 	}
-
 	shell := sh.NewShell(conf.Url)
+
+	err := createDirIfMissing(conf.CidIndexDir)
+	if err != nil {
+		return nil, err
+	}
+	db, err := leveldb.OpenFile(conf.CidIndexDir, nil)
+	if err != nil {
+		logger.Debugf("Error creating level db [%s]", conf.CidIndexDir)
+		return nil, errors.New(fmt.Sprintf("creating dir [%s] with err: %s", conf.CidIndexDir, err))
+	}
+
 	logger.Infof("Created a dfs client with options: %+v", conf)
-	return &FsClient{shell: shell}, nil
+	return &FsClient{shell: shell, cidStore: db}, nil
+}
+
+func createDirIfMissing(dirPath string) error {
+	// if dirPath does not end with a path separator, it leaves out the last segment while creating directories
+	if !strings.HasSuffix(dirPath, "/") {
+		dirPath = dirPath + "/"
+	}
+	logger.Debugf("CreateDirIfMissing [%s]", dirPath)
+	err := os.MkdirAll(path.Dir(dirPath), 0755)
+	if err != nil {
+		logger.Debugf("Error creating dir [%s]", dirPath)
+		return errors.New(fmt.Sprintf("error creating dir [%s] with err: %s", dirPath, err))
+	}
+	return nil
 }
 
 func (c *FsClient) ReadDir(dirname string) ([]os.FileInfo, error) {
