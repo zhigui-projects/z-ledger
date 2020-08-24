@@ -762,8 +762,20 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 			continue
 		}
 		if suffix < fileNum {
+			filePath := deriveBlockfilePath(rootDir, suffix)
+
+			// update CID index if dfs is IPFS
+			if mgr.archiveConf.Type == "ipfs" {
+				remotePath := mgr.archiveConf.FsRoot + filePath
+				// since IPFS will not duplicate file content in the storage layer, so this copy operation can sync CID index without side effect
+				if err := mgr.dfsClient.CopyToRemote(filePath, remotePath); err != nil {
+					logger.Warnf("Sync CID index for blockfile[%s] failed with error: %+v", filePath, err)
+					continue
+				}
+			}
+
 			// delete the block file
-			if err := os.Remove(deriveBlockfilePath(rootDir, suffix)); err != nil {
+			if err := os.Remove(filePath); err != nil {
 				logger.Errorf("archiveFn remove blockfile[%s] got error: %s", name, err)
 				continue
 			}
