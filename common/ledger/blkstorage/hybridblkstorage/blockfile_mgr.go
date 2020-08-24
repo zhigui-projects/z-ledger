@@ -114,7 +114,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	dfsConf := &dc.Config{Type: archiveConf.Type, HdfsConf: archiveConf.HdfsConf, IpfsConf: ipfsConf}
 	client, err := dfs.NewDfsClient(dfsConf)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Could not connect to HDFS, due to %+v", err))
+		logger.Error(fmt.Sprintf("Could not connect to DFS, due to %+v", err))
 	}
 	// Instantiate the manager, i.e. blockFileMgr structure
 	mgr := &hybridBlockfileMgr{rootDir: rootDir, conf: conf, archiveConf: archiveConf, db: indexStore, dfsClient: client}
@@ -766,6 +766,7 @@ func (mgr *hybridBlockfileMgr) archiveFn(channelId string, dateStr string) {
 
 			// update CID index if dfs is IPFS
 			if mgr.archiveConf.Type == "ipfs" {
+				logger.Infof("Syncing CID index for blockfile[%s]", filePath)
 				remotePath := mgr.archiveConf.FsRoot + filePath
 				// since IPFS will not duplicate file content in the storage layer, so this copy operation can sync CID index without side effect
 				if err := mgr.dfsClient.CopyToRemote(filePath, remotePath); err != nil {

@@ -145,6 +145,7 @@ func (c *FsClient) Stat(name string) (os.FileInfo, error) {
 		return nil, err
 	}
 	cidInfo := decode(value)
+	logger.Infof("stat file[%s], got value[%s]", name, cidInfo)
 	return &fileInfo{cidInfo.Name, 0, cidInfo.Size, cidInfo.Cid}, nil
 }
 
@@ -169,7 +170,8 @@ func (c *FsClient) CopyToRemote(src string, dst string) error {
 	}
 
 	value := &cidInfo{Cid: cid, Name: dst, Size: stat.Size()}
-	if err := c.cidStore.Put([]byte(src), encode(value), nil); err != nil {
+	logger.Infof("cidStore PUT[key: %s, value: %s]", dst, value)
+	if err := c.cidStore.Put([]byte(dst), encode(value), nil); err != nil {
 		logger.Errorf("add file[%s], cid[%s] to cid index store, got error[%s]", src, cid, err)
 		return err
 	}
