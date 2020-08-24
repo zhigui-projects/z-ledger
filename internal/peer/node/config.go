@@ -67,7 +67,8 @@ func ledgerConfig() *ledger.Config {
 				UseDatanodeHostname: viper.GetBool("ledger.archive.hdfsConfig.useDatanodeHostname"),
 			},
 			IpfsConf: &config.IpfsConfig{
-				Url: viper.GetString("ledger.archive.ipfsConfig.url"),
+				Url:        viper.GetString("ledger.archive.ipfsConfig.url"),
+				ClusterUrl: viper.GetString("ledger.archive.ipfsConfig.clusterUrl"),
 			},
 			FsRoot: viper.GetString("ledger.archive.fsRoot"),
 		},

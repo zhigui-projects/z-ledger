@@ -110,7 +110,7 @@ func newBlockfileMgr(id string, conf *Conf, indexConfig *blkstorage.IndexConfig,
 	if err != nil {
 		panic(fmt.Sprintf("Error creating block storage root dir [%s]: %s", rootDir, err))
 	}
-	ipfsConf := &dc.IpfsConfig{Url: archiveConf.IpfsConf.Url, CidIndexDir: conf.getCidIndexDir()}
+	ipfsConf := &dc.IpfsConfig{Url: archiveConf.IpfsConf.Url, ClusterUrl: archiveConf.IpfsConf.ClusterUrl, CidIndexDir: conf.getCidIndexDir()}
 	dfsConf := &dc.Config{Type: archiveConf.Type, HdfsConf: archiveConf.HdfsConf, IpfsConf: ipfsConf}
 	client, err := dfs.NewDfsClient(dfsConf)
 	if err != nil {

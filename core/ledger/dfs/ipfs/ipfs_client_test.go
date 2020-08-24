@@ -9,9 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var conf = &common.IpfsConfig{Url: "47.52.139.52:5001"}
+var conf = &common.IpfsConfig{
+	Url:         "139.224.117.14:5001",
+	ClusterUrl:  "139.224.117.14:9094",
+	CidIndexDir: "/Users/maxpeng/Projects/ipfs/cidIndex",
+}
 
-const filePath = "/blk/var/hyperledger/production/ledgersData/chains/chains/mychannel/blockfile_000002"
+const filePath = "/Users/maxpeng/Projects/ipfs/hello.txt"
 
 func TestSeek(t *testing.T) {
 	fsClient, err := NewFsClient(conf)
@@ -30,6 +34,20 @@ func TestSeek(t *testing.T) {
 	assert.Equal(t, int64(0), newPosition)
 }
 
+func TestOpen(t *testing.T) {
+	fsClient, err := NewFsClient(conf)
+	assert.Nil(t, err)
+
+	reader, err := fsClient.Open(filePath)
+	assert.Nil(t, err)
+
+	out := make([]byte, reader.Stat().Size())
+	n, err := reader.Read(out)
+	assert.Nil(t, err)
+	assert.Equal(t, int(reader.Stat().Size()), n)
+	assert.Equal(t, "hello from postman!\n", string(out))
+}
+
 func TestStat(t *testing.T) {
 	fsClient, err := NewFsClient(conf)
 	assert.Nil(t, err)
@@ -40,4 +58,21 @@ func TestStat(t *testing.T) {
 	stat := r.Stat()
 	assert.NotNil(t, stat)
 	assert.Equal(t, filePath, stat.Name())
+}
+
+func TestCopyToRemote(t *testing.T) {
+	fsClient, err := NewFsClient(conf)
+	assert.Nil(t, err)
+
+	err = fsClient.CopyToRemote(filePath, "")
+	assert.Nil(t, err)
+}
+
+func TestReadDir(t *testing.T) {
+	fsClient, err := NewFsClient(conf)
+	assert.Nil(t, err)
+
+	fileInfos, err := fsClient.ReadDir("/Users/maxpeng/Projects/ipfs")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(fileInfos))
 }

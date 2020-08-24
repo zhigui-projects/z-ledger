@@ -2,6 +2,7 @@ package ipfs
 
 import (
 	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"os"
@@ -13,13 +14,15 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	sh "github.com/pengisgood/go-ipfs-api"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 var logger = flogging.MustGetLogger("dfs.ipfs")
 
 type FsClient struct {
-	shell    *sh.Shell
-	cidStore *leveldb.DB
+	shell         *sh.Shell
+	clusterClient *ClusterClient
+	cidStore      *leveldb.DB
 }
 
 type fileInfo struct {
@@ -58,6 +61,11 @@ func (fi *fileInfo) Sys() interface{} {
 	return fi.hash
 }
 
+// Sys returns the cid from IPFS
+func (fi *fileInfo) Cid() string {
+	return fi.hash
+}
+
 func NewFsClient(conf *common.IpfsConfig) (*FsClient, error) {
 	if len(conf.Url) == 0 {
 		errMsg := "archive service can't be initialized, due to no IPFS url in configuration"
@@ -65,6 +73,7 @@ func NewFsClient(conf *common.IpfsConfig) (*FsClient, error) {
 		return nil, errors.New(errMsg)
 	}
 	shell := sh.NewShell(conf.Url)
+	clusterClient := NewClusterClient(conf.ClusterUrl)
 
 	err := createDirIfMissing(conf.CidIndexDir)
 	if err != nil {
@@ -77,7 +86,7 @@ func NewFsClient(conf *common.IpfsConfig) (*FsClient, error) {
 	}
 
 	logger.Infof("Created a dfs client with options: %+v", conf)
-	return &FsClient{shell: shell, cidStore: db}, nil
+	return &FsClient{shell: shell, clusterClient: clusterClient, cidStore: db}, nil
 }
 
 func createDirIfMissing(dirPath string) error {
@@ -94,43 +103,78 @@ func createDirIfMissing(dirPath string) error {
 	return nil
 }
 
-func (c *FsClient) ReadDir(dirname string) ([]os.FileInfo, error) {
-	entries, err := c.shell.FilesLs(dirname)
-	if err != nil {
-		logger.Errorf("read dir[%s] from MFS, got error[%s]", dirname, err)
-		return nil, err
-	}
+type cidInfo struct {
+	Cid  string
+	Name string
+	Size int64
+}
 
-	var infos []os.FileInfo
-	for _, entry := range entries {
-		infos = append(infos, &fileInfo{entry.Name, entry.Type, int64(entry.Size), entry.Hash})
+func encode(value *cidInfo) []byte {
+	buf := bytes.NewBuffer(nil)
+	encoder := gob.NewEncoder(buf)
+	if err := encoder.Encode(value); err != nil {
+		return nil
 	}
+	return buf.Bytes()
+}
+
+func decode(value []byte) cidInfo {
+	var out cidInfo
+	decoder := gob.NewDecoder(bytes.NewBuffer(value))
+	if err := decoder.Decode(&out); err != nil {
+		return cidInfo{}
+	}
+	return out
+}
+
+func (c *FsClient) ReadDir(dirname string) ([]os.FileInfo, error) {
+	iter := c.cidStore.NewIterator(util.BytesPrefix([]byte(dirname)), nil)
+	var infos []os.FileInfo
+	for iter.Next() {
+		value := decode(iter.Value())
+		infos = append(infos, &fileInfo{value.Name, 0, value.Size, value.Cid})
+	}
+	iter.Release()
 	return infos, nil
 }
 
 func (c *FsClient) Stat(name string) (os.FileInfo, error) {
-	stat, err := c.shell.FilesStat(name)
+	value, err := c.cidStore.Get([]byte(name), nil)
 	if err != nil {
-		logger.Errorf("stat file[%s] from MFS, got error[%s]", name, err)
+		logger.Errorf("stat file[%s], got error[%s]", name, err)
 		return nil, err
 	}
-
-	return &fileInfo{name, 0, int64(stat.Size), stat.Hash}, nil
+	cidInfo := decode(value)
+	return &fileInfo{cidInfo.Name, 0, cidInfo.Size, cidInfo.Cid}, nil
 }
 
+// CopyToRemote copy the file into IPFS, since IPFS is not like HDFS, here the dst param is ignored
 func (c *FsClient) CopyToRemote(src string, dst string) error {
 	var file *os.File
 	var err error
 	if file, err = os.Open(src); err != nil {
-		logger.Errorf("copy file[%s] to ipfs, got error[%s]", src, err)
-		return err
-	}
-	if err = c.shell.FilesWrite(dst, file); err != nil {
-		logger.Errorf("copy file[%s] to ipfs, got error[%s]", src, err)
+		logger.Errorf("open file[%s], got error[%s]", src, err)
 		return err
 	}
 
-	logger.Infof("copy file[%s] to MFS", src)
+	stat, err := file.Stat()
+	if err != nil {
+		logger.Errorf("stat file[%s], got error[%s]", src, err)
+		return err
+	}
+
+	cid, err := c.clusterClient.Add(file)
+	if err != nil {
+		logger.Errorf("add file[%s] to ipfs cluster, got error[%s]", src, err)
+		return err
+	}
+
+	value := &cidInfo{Cid: cid, Name: src, Size: stat.Size()}
+	if err := c.cidStore.Put([]byte(src), encode(value), nil); err != nil {
+		logger.Errorf("add file[%s], cid[%s] to cid index store, got error[%s]", src, cid, err)
+		return err
+	}
+
 	return nil
 }
 
@@ -141,9 +185,10 @@ func (c *FsClient) Open(name string) (common.FsReader, error) {
 		return nil, err
 	}
 
-	r, err := c.shell.FilesRead(name)
+	cid := stat.(*fileInfo).Cid()
+	r, err := c.shell.Cat(cid)
 	if err != nil {
-		logger.Errorf("read file[%s] from ipfs, got error: %s", name, err)
+		logger.Errorf("cat file[%s] from ipfs, got error: %s", cid, err)
 		return nil, err
 	}
 
