@@ -91,14 +91,6 @@
   version = "v1.20.1"
 
 [[projects]]
-  digest = "1:cfb47043214194a06d1db8a472d427659f2fe5153e7e29a5f8c81fbd8641f36e"
-  name = "github.com/Stebalien/go-bitfield"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "a911218965d225c9b5b8ba5e1a8ea539651ca036"
-  version = "v0.0.1"
-
-[[projects]]
   digest = "1:29add35a36be0ef65639a201df2b86e4e3d3b3b2e5eac4e35e02642b23b22405"
   name = "github.com/VictoriaMetrics/fastcache"
   packages = ["."]
@@ -134,28 +126,12 @@
   revision = "4fc0642a29f392d9caa94cdb7503d2b676e3f442"
 
 [[projects]]
-  digest = "1:8c9ad200287a1411245a913aaa2a873e0cb70fae807e5b902223a398533f8f7f"
-  name = "github.com/benbjohnson/clock"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d30813fdb557385ec7cbe73036752baa31e72664"
-  version = "v1.0.3"
-
-[[projects]]
   digest = "1:707ebe952a8b3d00b343c01536c79c73771d100f63ec6babeaed5c79e2b8a8dd"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
   pruneopts = "NUT"
   revision = "4b2b341e8d7715fae06375aa633dbb6e91b3fb46"
   version = "v1.0.0"
-
-[[projects]]
-  digest = "1:08cc9df87ba2ac6a626c88cf321883c2750a49e534dbcda5346c2c03177de9c5"
-  name = "github.com/blang/semver"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "af3461a9cbcf1f3f5889d21b83f5ef63880c33a8"
-  version = "v4.0.0"
 
 [[projects]]
   digest = "1:ebe1e510bc2d3e0340af52b46e69393a2233c651eeb0d8b00f9f9ac3371115d3"
@@ -174,28 +150,12 @@
   version = "v2.1.0"
 
 [[projects]]
-  digest = "1:f438d91be142877c3ad83157992c91de787ddfbddcc2a7da1ef6ef61606cadc4"
-  name = "github.com/cheekybits/genny"
-  packages = ["generic"]
-  pruneopts = "NUT"
-  revision = "d2cf3cdd35ce0d789056c4bc02a4d6349c947caf"
-  version = "v1.0.0"
-
-[[projects]]
   branch = "master"
   digest = "1:e48c63e818c67fbf3d7afe20bba33134ab1a5bf384847385384fd027652a5a96"
   name = "github.com/containerd/continuity"
   packages = ["pathdriver"]
   pruneopts = "NUT"
   revision = "aaeac12a7ffcd198ae25440a9dff125c2e2703a7"
-
-[[projects]]
-  digest = "1:05ffeeed3f0f05520de0679f6aa3219ffee69cfd6d9fb6c194879d4c818ad670"
-  name = "github.com/coreos/go-semver"
-  packages = ["semver"]
-  pruneopts = "NUT"
-  revision = "e214231b295a8ea9479f11b70b35d5acf3556d9b"
-  version = "v0.3.0"
 
 [[projects]]
   digest = "1:bcf36df8d43860bfde913d008301aef27c6e9a303582118a837c4a34c0d18167"
@@ -228,14 +188,6 @@
   pruneopts = "NUT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:ff0db56095c10bcdbf92ce2503f1d0d6e2ee0615184cfb96db2907fcb08d454e"
-  name = "github.com/davidlazar/go-crypto"
-  packages = ["salsa20"]
-  pruneopts = "NUT"
-  revision = "b73af7476f6c55b31aa2797d1f98afc94699548d"
 
 [[projects]]
   digest = "1:699aca47d5af672db37b96102bb088edbf26f84f73d3dafff6fa917026eb6971"
@@ -447,14 +399,6 @@
   version = "v1.3.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:b7cb6054d3dff43b38ad2e92492f220f57ae6087ee797dca298139776749ace8"
-  name = "github.com/golang/groupcache"
-  packages = ["lru"]
-  pruneopts = "NUT"
-  revision = "8c9f03a8e57eb486e42badaed3fb287da51807ba"
-
-[[projects]]
   digest = "1:445011b46c9874de479d56206ffe827ccc712e3507f5e6cfc338debd83f8e063"
   name = "github.com/golang/protobuf"
   packages = [
@@ -486,22 +430,6 @@
   version = "v0.0.1"
 
 [[projects]]
-  digest = "1:b0604541fc99cfb3bcff08500e06db672d6f41dc3429bf99b71644f62efcacb9"
-  name = "github.com/google/gopacket"
-  packages = ["routing"]
-  pruneopts = "NUT"
-  revision = "558173e197d46ae52f0f7c58313c96296ee16a9c"
-  version = "v1.1.18"
-
-[[projects]]
-  digest = "1:ab3ec1fe3e39bac4b3ab63390767766622be35b7cab03f47f787f9ec60522a53"
-  name = "github.com/google/uuid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0cd6bf5da1e1c83f8b45653022c74f71af0538a4"
-  version = "v1.1.1"
-
-[[projects]]
   digest = "1:2a26f9d34f80b0e53dc2d1526649a26d017f5dcd99576f863cb9d3c2021feec3"
   name = "github.com/gorilla/handlers"
   packages = ["."]
@@ -518,35 +446,11 @@
   version = "v1.7.2"
 
 [[projects]]
-  digest = "1:c9c619da0235710875bae079870a396912a475402f9ccd50667f6ad309476259"
-  name = "github.com/gorilla/websocket"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "b65e62901fc1c0d968042419e74789f6af455eb9"
-  version = "v1.4.2"
-
-[[projects]]
   digest = "1:432e8b04365b52add2d6256a42de45cebebf6b7a132d4eacb052602fe199a80a"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = ["."]
   pruneopts = "NUT"
   revision = "dd15ed025b6054e5253963e355991f3070d4e593"
-  version = "v1.1.0"
-
-[[projects]]
-  digest = "1:f0d9d74edbd40fdeada436d5ac9cb5197407899af3fef85ff0137077ffe8ae19"
-  name = "github.com/hashicorp/errwrap"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "8a6fb523712970c966eefc6b39ed2c5e74880354"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:1e7412788dc5a699a81333203f09fcab7fb7b29d1b2b9f43b8cd8162b64ec7d0"
-  name = "github.com/hashicorp/go-multierror"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "2004d9dba6b07a5b8d133209244f376680f9d472"
   version = "v1.1.0"
 
 [[projects]]
@@ -566,17 +470,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:9676627451831e0d8e347007d871eac494ce51d55b95a3fe1fac30ad8d717ab9"
-  name = "github.com/hashicorp/golang-lru"
-  packages = [
-    ".",
-    "simplelru",
-  ]
-  pruneopts = "NUT"
-  revision = "14eae340515388ca95aa8e7b86f0de668e981f54"
-  version = "v0.5.4"
-
-[[projects]]
   branch = "master"
   digest = "1:8d485687c449a7db7d4e8e1d6526036fe38e433232416010fe3970c929134073"
   name = "github.com/hpcloud/tail"
@@ -589,22 +482,6 @@
   ]
   pruneopts = "NUT"
   revision = "a1dbeea552b7c8df4b542c66073e393de198a800"
-
-[[projects]]
-  digest = "1:f55663eb754cb37bb06c990fc76565da01d7175a3549b146948c8b6108a60f5f"
-  name = "github.com/huin/goupnp"
-  packages = [
-    ".",
-    "dcps/internetgateway1",
-    "dcps/internetgateway2",
-    "httpu",
-    "scpd",
-    "soap",
-    "ssdp",
-  ]
-  pruneopts = "NUT"
-  revision = "656e61dfadd241c7cbdd22a023fa81ecb6860ea8"
-  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -707,91 +584,12 @@
   version = "v1.0"
 
 [[projects]]
-  digest = "1:8c67604e889c50bf3bec35faa29f3d076c8cfe9def916f7e92006e675addb2ab"
-  name = "github.com/ipfs/bbloom"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "627bb99eb0f4c49ab3e3276f5574b9b80f8aa3bc"
-  version = "v0.0.4"
-
-[[projects]]
-  digest = "1:736a3ee9d5a9159f7c577e15a16e48a6a6b49d1e4b96d36ab2b925f8c01379f0"
-  name = "github.com/ipfs/go-block-format"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9e46c0dce5d9a041b8ea1eed8ca924b36355c61b"
-  version = "v0.0.2"
-
-[[projects]]
-  digest = "1:be043ce3bebb644adf2c97e26ade3236b0f9a11f0436fa2472dc2c7a5f540de6"
-  name = "github.com/ipfs/go-blockservice"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d582f74c81dd551dbad845abf62d725ac9e0f915"
-  version = "v0.1.3"
-
-[[projects]]
   digest = "1:0fbef6dbb16abd2521710a335a10714fcb4b63d15520afa34f9c53644d2f3836"
   name = "github.com/ipfs/go-cid"
   packages = ["."]
   pruneopts = "NUT"
   revision = "85cd30874e614c61d6dd82d991878d84053fd579"
   version = "v0.0.6"
-
-[[projects]]
-  digest = "1:4367f57eb7e4e90db8cee5e989913f6ea35eb3c00268925ad2ff81d518922788"
-  name = "github.com/ipfs/go-datastore"
-  packages = [
-    ".",
-    "autobatch",
-    "keytransform",
-    "namespace",
-    "query",
-    "sync",
-  ]
-  pruneopts = "NUT"
-  revision = "c27c54e41288e867891e41c92557b32550368443"
-  version = "v0.4.4"
-
-[[projects]]
-  digest = "1:8c912641985d348757d43e32031c498dd54fdf64aa19ecac526a8d6375ed29e0"
-  name = "github.com/ipfs/go-ipfs-blockstore"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9283acfcbb91d89b326ba13da351e84798d729a2"
-  version = "v1.0.1"
-
-[[projects]]
-  digest = "1:d91bd5e467f54896a4669ff60fc8d98ebc5de5a4f984ca3d4cbb7c6e41ffc807"
-  name = "github.com/ipfs/go-ipfs-chunker"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0311814652ac52366ab3f30c1f9066db84c03cce"
-  version = "v0.0.5"
-
-[[projects]]
-  digest = "1:a2fd4ab7873b4d945318f85fdcb173c54e403a8900c3f1e53d00a57110236903"
-  name = "github.com/ipfs/go-ipfs-config"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0b2590596cd46cf3dc5283f9992ca804632f3f80"
-  version = "v0.9.0"
-
-[[projects]]
-  digest = "1:4018139f13ae6adba062119aac35a0411b6dd49c204529a192321eeabb3e70b4"
-  name = "github.com/ipfs/go-ipfs-ds-help"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d26d661c3f47ad68d0e0bbe17786d8d62d2edf26"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:8ab581ccf98cccfeab6fd29fadc6899c4a1e6e7b0749cfeb968749adcfdcabfa"
-  name = "github.com/ipfs/go-ipfs-exchange-interface"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "b6e88260772433e18af18bb3f237d78678e65f0b"
-  version = "v0.0.1"
 
 [[projects]]
   digest = "1:ed49911331fb3756d2e6be2c745520ba1d304ccdb17cca28d1d672096968e3ca"
@@ -802,186 +600,12 @@
   version = "v0.0.8"
 
 [[projects]]
-  digest = "1:a92235602d70aede6d8a7f545ca62f589eef11c79e891b4146519f9644227d95"
-  name = "github.com/ipfs/go-ipfs-posinfo"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "19b0f52f6bd140be93fb568203586a165eb1aadf"
-  version = "v0.0.1"
-
-[[projects]]
-  digest = "1:5a9693f9ff47c88beda08a4999019f0fed78141063fbada14a7c2b831d817316"
-  name = "github.com/ipfs/go-ipfs-util"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f4952d1c5a6a9431d6a4d5ea57c4818e6d199464"
-  version = "v0.0.2"
-
-[[projects]]
-  digest = "1:b02808f0074ec3da14fb475e8d8677d6944c0ac42b303bb45d701bd67bf8b9e8"
-  name = "github.com/ipfs/go-ipld-cbor"
-  packages = [
-    ".",
-    "encoding",
-  ]
-  pruneopts = "NUT"
-  revision = "e38da3943594adf6d8685bb3f4b4116699969006"
-  version = "v0.0.4"
-
-[[projects]]
-  digest = "1:d24ea5ebd7a42c8c8bfc7bb5f1745610c4a1521b1f2529fdd957f81a98c6c101"
-  name = "github.com/ipfs/go-ipld-format"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "c582c36b708672f99752a0b6171adec7820e0049"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:1012e5c3eb714495622c83730dde174f437c3fb542b52e5a13f9ad211045435c"
-  name = "github.com/ipfs/go-ipns"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "1ac4f05db7f99d7989aec3adbdae0055e041967c"
-  version = "v0.0.2"
-
-[[projects]]
-  digest = "1:89c950032cbe2d71f7260f22dc3967141c7efca523fcab99af83fe8e676f45b1"
-  name = "github.com/ipfs/go-log"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9a8513887238baacd9b861518fa38be499e4b560"
-  version = "v2.1.1"
-
-[[projects]]
-  digest = "1:c6444bf41e199405645ef89c7adf01891d25cfdc23033608f30b6dc9a7f274ea"
-  name = "github.com/ipfs/go-merkledag"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "a8d50ff1ca9b16a9d9b78c1dababb86958efd1d8"
-  version = "v0.3.2"
-
-[[projects]]
-  digest = "1:7d527a54ff60ff797e6a37fef8b3bca4db4f1190a6acbee0dad4f79a25da40ff"
-  name = "github.com/ipfs/go-metrics-interface"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "87aa106f53272f064ca7956a6db83f17a553f254"
-  version = "v0.0.1"
-
-[[projects]]
-  digest = "1:866e5656d8f894dee4e289a12fe73d3091d8f119ca25b7c3638212d718dd266b"
-  name = "github.com/ipfs/go-mfs"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9c9a0feabc16e92bbcfd1d4d0873d6a0e28948b9"
-  version = "v0.1.2"
-
-[[projects]]
-  digest = "1:11bad53b1e61e78a2f34d495faf2d6dbb10243fdfb3d4971894633ab9a55816c"
-  name = "github.com/ipfs/go-path"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "466e1ce7a7073faa0af3af8cd95c914ff1b1e945"
-  version = "v0.0.7"
-
-[[projects]]
-  digest = "1:c86bc5da44018b978c4f99ad4b48f428c8ecff150e0db827348695dacef5aa30"
-  name = "github.com/ipfs/go-unixfs"
-  packages = [
-    ".",
-    "hamt",
-    "importer/balanced",
-    "importer/helpers",
-    "importer/trickle",
-    "io",
-    "mod",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "f1728295bdd154753cba3af19728918240a8634c"
-  version = "v0.2.4"
-
-[[projects]]
-  digest = "1:da3b8835ccaefcf6b6609e3b554d44f842d953540eded2eba1de80986c3c3bdd"
-  name = "github.com/ipfs/go-verifcid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "34e41ba962e7ce0211a05915f788486c8db755f1"
-  version = "v0.0.1"
-
-[[projects]]
-  digest = "1:ac8fbc5cd2a4c9a3b7aac88ddb65adca8bcb338eb0af143d5a2a6bbb7e8aa030"
-  name = "github.com/ipfs/interface-go-ipfs-core"
-  packages = [
-    "options",
-    "options/namesys",
-  ]
-  pruneopts = "NUT"
-  revision = "b935dfe5375eac7ea3c65b14b3f9a0242861d0b3"
-  version = "v0.4.0"
-
-[[projects]]
-  digest = "1:b6745c666ce17442edee964702cfb86f0a22327383b9afc3232e0f7b76c4d519"
-  name = "github.com/ipfs/ipfs-cluster"
-  packages = [
-    ".",
-    "adder",
-    "adder/ipfsadd",
-    "adder/sharding",
-    "adder/single",
-    "api",
-    "api/pb",
-    "config",
-    "pstoremgr",
-    "rpcutil",
-    "state",
-    "version",
-  ]
-  pruneopts = "NUT"
-  revision = "3cdcb44af27759cb93999eaadd94fe44b6a910f6"
-  version = "v0.12.1"
-
-[[projects]]
   digest = "1:4f96fa1e6816dd27ebbd4d8e2228357c0646998ca2fc2715bda4c71ba1bb97d3"
   name = "github.com/itchyny/base58-go"
   packages = ["."]
   pruneopts = "NUT"
   revision = "53c1f055dd808e73e305cfc0468ba0e8343727f4"
   version = "v0.1.0"
-
-[[projects]]
-  digest = "1:0bf1fb65b0147856cabcf959a2dffb345caff257c5542537f47f3e544d51d211"
-  name = "github.com/jackpal/go-nat-pmp"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "059203efa1edd7130293a583541b8308e7c640c4"
-  version = "v1.0.2"
-
-[[projects]]
-  digest = "1:6b8bb294e57d73c23f1e5701df4aa4b24b01acf05641d89cab60bb74bce07091"
-  name = "github.com/jbenet/go-temp-err-catcher"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "fa11adda5e7cccb838a208007c9ea79dda63c0c0"
-  version = "v0.1.0"
-
-[[projects]]
-  digest = "1:c1db4d311dde4b9fea941135017ebde6273162d3c02968c6b40d557422ac09e7"
-  name = "github.com/jbenet/goprocess"
-  packages = [
-    ".",
-    "context",
-    "periodic",
-  ]
-  pruneopts = "NUT"
-  revision = "23d20c20149e1f362afda26f4500cb9d6393f0ad"
-  version = "v0.1.4"
 
 [[projects]]
   digest = "1:efc693dbcbe885796a3d46bd1817646d713996bcc2893d42f5434141afc1a86f"
@@ -1023,28 +647,12 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:08c58ac78a8c1f61e9a96350066d30fe194b8779799bd932a79932a5166a173f"
-  name = "github.com/kelseyhightower/envconfig"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0b417c4ec4a8a82eecc22a1459a504aa55163d61"
-  version = "v1.4.0"
-
-[[projects]]
   digest = "1:58999a98719fddbac6303cb17e8d85b945f60b72f48e3a2df6b950b97fa926f1"
   name = "github.com/konsorten/go-windows-terminal-sequences"
   packages = ["."]
   pruneopts = "NUT"
   revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
   version = "v1.0.2"
-
-[[projects]]
-  digest = "1:f01ae730bd8fb978d4470c1dd1590852b2fe6d96628296c37ab7c6a0d016992b"
-  name = "github.com/koron/go-ssdp"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "6d1709049dead37ead37808479f88c9bffa2c4d6"
-  version = "v0.1"
 
 [[projects]]
   branch = "master"
@@ -1071,55 +679,12 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:92569c452eccd336047fde931e37fc80df7645249e39b9f278efa178da7d3f5d"
-  name = "github.com/lanzafame/go-libp2p-ocgorpc"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ccb57472cbdf20290fb13574d1313a93571cb2fe"
-  version = "v0.1.1"
-
-[[projects]]
-  digest = "1:1c761021ad145a16adb4ca4c715dbf155c1c80448ce98352a998d4475170ad03"
-  name = "github.com/libp2p/go-addr-util"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "60fd7d35e24b7852a523453adf4be276aa63c676"
-  version = "v0.0.2"
-
-[[projects]]
   digest = "1:73c55caa8b847b1a3c726865f4534d8ff73457d3bae3af35abd02cafbbe4c731"
   name = "github.com/libp2p/go-buffer-pool"
   packages = ["."]
   pruneopts = "NUT"
   revision = "c4a5988a1e475884367015e1a2d0bd5fa4c491f4"
   version = "v0.0.2"
-
-[[projects]]
-  digest = "1:4c1976feab7e8aff8ed1fe0439daad5f09fb35c6b727bd45569cf9c8c4a039c3"
-  name = "github.com/libp2p/go-cidranger"
-  packages = [
-    ".",
-    "net",
-  ]
-  pruneopts = "NUT"
-  revision = "d8d34a752ee999c9ca938c2c1a97f17a3de3b98d"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:c3d07e4986448446e44dbd5d9369684aada30d525cecf569631962323941e196"
-  name = "github.com/libp2p/go-conn-security-multistream"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ec479ebe7692a96fa730653184a97c176a3ab145"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:8999e004bc1eaa688774112e11faa92b8f0806b2701f368ff7a1d7d1581a1963"
-  name = "github.com/libp2p/go-eventbus"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ccaa483f77eb4d0881e8aafecce91595784d36b6"
-  version = "v0.2.1"
 
 [[projects]]
   digest = "1:193db9c3e9ce90dedb685e38c3a3012a8ec727c9120c14e76da59f2d6b8df42a"
@@ -1130,106 +695,17 @@
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:dad0fe01c6fe060840d5dbf53121eb0c3c716cdfbda61fbd7c82bbd81fc60504"
-  name = "github.com/libp2p/go-libp2p"
-  packages = [
-    ".",
-    "config",
-    "p2p/discovery",
-    "p2p/host/basic",
-    "p2p/host/relay",
-    "p2p/host/routed",
-    "p2p/protocol/identify",
-    "p2p/protocol/identify/pb",
-    "p2p/protocol/ping",
-  ]
-  pruneopts = "NUT"
-  revision = "eb4cca1b04f6da5c2fbce5bec03b0e37db141260"
-  version = "v0.10.3"
-
-[[projects]]
-  branch = "feat/faster"
-  digest = "1:1664e3e6f6aee611d4bac39641b5520c3b6b91ea94aad058820c536a0d259fe9"
-  name = "github.com/libp2p/go-libp2p-asn-util"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "597a90b526fa2a13838f6fb2aa23c2acc0b6c127"
-
-[[projects]]
-  digest = "1:89b580eae2149a9ea8f1a83f470b11059582c27eb05e4c9cfb0e40b072f493c1"
-  name = "github.com/libp2p/go-libp2p-autonat"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "9f8372103d5d6004b959d6a760a023ea6e82d983"
-  version = "v0.3.2"
-
-[[projects]]
-  digest = "1:302c8017a65f3ff0baf16b0f8f9c58490b0d8c69ae8c678729616b9af102e6ca"
-  name = "github.com/libp2p/go-libp2p-autonat-svc"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "d3bcf1adedb4c5d6bf85fff2e2209c95edd6b0b0"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:fc06c63ba22a22d95bf4900c4a00a275264759e34a9dc9124c2abae6facf5f99"
-  name = "github.com/libp2p/go-libp2p-blankhost"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "fd136a8bbe5528e72097ebad4470a34f35d30a62"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:aaf7265c6ea562c3f86313101f18b7fdd49cf90e589512984bbeb105c5791508"
-  name = "github.com/libp2p/go-libp2p-circuit"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "b202d662a7754b4671ce364e0f0723ce651e5d8a"
-  version = "v0.3.1"
-
-[[projects]]
-  digest = "1:bf5f5e958c27258f1e19eb5d7e229e42a1338bba3bab8b7971020839ee363164"
-  name = "github.com/libp2p/go-libp2p-connmgr"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0b84e304477ea344a79ef1b10c047de71003af2f"
-  version = "v0.2.4"
-
-[[projects]]
-  digest = "1:f93ece4be9d5791666e945ffe32651e0d696945b45e27f08073a3b4102111663"
+  digest = "1:5cae92468d34a47d1e608d67606c2ff334058951ed64fa76c30e96f01975d794"
   name = "github.com/libp2p/go-libp2p-core"
   packages = [
-    "connmgr",
-    "control",
     "crypto",
     "crypto/pb",
-    "discovery",
-    "event",
-    "helpers",
-    "host",
-    "introspection",
-    "introspection/pb",
     "metrics",
-    "mux",
-    "network",
     "peer",
     "peer/pb",
-    "peerstore",
-    "pnet",
     "protocol",
     "record",
     "record/pb",
-    "routing",
-    "sec",
-    "sec/insecure",
-    "sec/insecure/pb",
-    "transport",
   ]
   pruneopts = "NUT"
   revision = "9cf214f5019d0aebb1f5dca184db276284e7639e"
@@ -1244,68 +720,6 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:e75b4038b2e1934e0d0a5333fe49510f2a095f424608b3c3557ba497b7023397"
-  name = "github.com/libp2p/go-libp2p-discovery"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "e2618ed10882add884ae4eb0697d6aa22fb27e96"
-  version = "v0.5.0"
-
-[[projects]]
-  digest = "1:cba5158e7a0f401851dd4b0b921dcd4ec13ab1456431fa73d47530ec469cc02c"
-  name = "github.com/libp2p/go-libp2p-gorpc"
-  packages = [
-    ".",
-    "stats",
-  ]
-  pruneopts = "NUT"
-  revision = "7cd5ddd4060f94c90ff7bbb0450b84461e64628a"
-  version = "v0.1.0"
-
-[[projects]]
-  digest = "1:0c7259ffa2c4e37f0449715ccdd4997600907844b601eca7a51aa950ea134309"
-  name = "github.com/libp2p/go-libp2p-host"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "fb741ff65522f904e7d46f527c9a823f32346f83"
-  version = "v0.1.0"
-
-[[projects]]
-  digest = "1:42c6767dfd36643009d873b6a9e0bcffa9dbb292c7592d3b12c521bb907d6418"
-  name = "github.com/libp2p/go-libp2p-kad-dht"
-  packages = [
-    ".",
-    "metrics",
-    "pb",
-    "providers",
-    "qpeerset",
-    "rtrefresh",
-  ]
-  pruneopts = "NUT"
-  revision = "fc3558cc35274f5d1727dad8201f821df1ee6317"
-  version = "v0.8.3"
-
-[[projects]]
-  digest = "1:e92f38554bd38d3c0b45289d7373fb0cd882fc6569acda81fa27e71ac2165b4a"
-  name = "github.com/libp2p/go-libp2p-kbucket"
-  packages = [
-    ".",
-    "keyspace",
-    "peerdiversity",
-  ]
-  pruneopts = "NUT"
-  revision = "6ee418684518d17e734e053b0bc4158b8dcf3f78"
-  version = "v0.4.6"
-
-[[projects]]
-  digest = "1:5f20496bf8de31a62257c6f231408bb6eff57810c8bf485e4f23359049f29bb3"
-  name = "github.com/libp2p/go-libp2p-loggables"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "814642b01726ff6f9302e8ce9eeeb00d25409520"
-  version = "v0.1.0"
-
-[[projects]]
   digest = "1:e7aac6e7852c8e8ebdf18dc7d8a7d56f0147e4d4153d8f2eba76aadf54588412"
   name = "github.com/libp2p/go-libp2p-metrics"
   packages = ["."]
@@ -1314,164 +728,12 @@
   version = "v0.1.0"
 
 [[projects]]
-  digest = "1:942e13651b543e4e60cee9dc8d47c83ba14bcada92f9a29b3ce52a683d8d4af1"
-  name = "github.com/libp2p/go-libp2p-mplex"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "880e035a22e54f9147224e65cceb432788083cd3"
-  version = "v0.2.4"
-
-[[projects]]
-  digest = "1:6a4ab7d114f19ccef11e4b589a9d26445e2cda0b1cfc2ab27ebd07d3fb840bae"
-  name = "github.com/libp2p/go-libp2p-nat"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ab0e3aeb64c9a5101422707874cdccb695b119bb"
-  version = "v0.0.6"
-
-[[projects]]
   digest = "1:aa6bdf5fed5901d99c503c61096f3461d0eb40fb400c8577b02db367ec60dfde"
   name = "github.com/libp2p/go-libp2p-peer"
   packages = ["."]
   pruneopts = "NUT"
   revision = "62676d8fb785a8fc279878cbe8e03b878f005910"
   version = "v0.2.0"
-
-[[projects]]
-  digest = "1:93d20e7153a65b82af6f6786044b046fb63b3c25a3b9c563a04bfa973d8dd74e"
-  name = "github.com/libp2p/go-libp2p-peerstore"
-  packages = [
-    ".",
-    "addr",
-    "pstoremem",
-  ]
-  pruneopts = "NUT"
-  revision = "74ed1a99746340a2a19c1c6aebd7311f84ce6a95"
-  version = "v0.2.6"
-
-[[projects]]
-  digest = "1:877970dd05b7095fa4553a351f8b0fac959190745793dc991dd613c34f746e28"
-  name = "github.com/libp2p/go-libp2p-pnet"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "c4097eb170d1cd749dd6cff5d46a3bd1530cf979"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:e37fec6c2dcbc158af71074e320a614f909defee7abec91a887cf6cd9ac536c6"
-  name = "github.com/libp2p/go-libp2p-protocol"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "25288782ae7dd539248ffa7dc62d521027ea311b"
-  version = "v0.1.0"
-
-[[projects]]
-  digest = "1:ed1e76ab376e1fa1a22eda5ddf418cf4a7c1994990f38f747417b45f94ab434e"
-  name = "github.com/libp2p/go-libp2p-pubsub"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "769831b47814e9369bdb376cd14fe78fbba5ca0c"
-  version = "v0.3.4"
-
-[[projects]]
-  digest = "1:acd0fc3e9aa19edd8cb55e3e293c07af4fa8f242a17e10869f1e599dfd445872"
-  name = "github.com/libp2p/go-libp2p-quic-transport"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0838211b014b8ed3b93346400692640d176befe2"
-  version = "v0.7.1"
-
-[[projects]]
-  digest = "1:27a638a12a5d6f7dc3cd182d97ade321d709614277c4b8d3e1e21be86ea62f8d"
-  name = "github.com/libp2p/go-libp2p-record"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "35352b00cca2d904198f6ea93e0804b78a5a8117"
-  version = "v0.1.3"
-
-[[projects]]
-  digest = "1:9a7f59128e1c2d33c6787b0e8eeea35e1d50aa7bd7d4fc13022f038d49db5367"
-  name = "github.com/libp2p/go-libp2p-secio"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "NUT"
-  revision = "702833a55a53fb6cb0de3362f9d6d6ed5783c046"
-  version = "v0.2.2"
-
-[[projects]]
-  digest = "1:f38e4b409557769a35c482fe4febd3174f6a23262a4148fb3be2875be0257928"
-  name = "github.com/libp2p/go-libp2p-swarm"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "58c167a7b0c3294d416342d781465214d514e70f"
-  version = "v0.2.8"
-
-[[projects]]
-  digest = "1:ef325e818a711ad0a360aa4d978738715bb38f1caca45f50f8d2bc05f95d9b39"
-  name = "github.com/libp2p/go-libp2p-tls"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "702fd537463ac5a1ef209c0b64457da0d1251b3f"
-  version = "v0.1.3"
-
-[[projects]]
-  digest = "1:0ff4254b966247139e868e63b638b15dc213cf2e7498c6fcb24ea9c35579e7ba"
-  name = "github.com/libp2p/go-libp2p-transport-upgrader"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "0c577bb483255c5046677a49624fb45c862d616b"
-  version = "v0.3.0"
-
-[[projects]]
-  digest = "1:668e2ef0b309326a3e61aa4984c47b5af9919d8519424196c22994d0919fea1e"
-  name = "github.com/libp2p/go-libp2p-yamux"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "46dc27136701fd9795054bbb547a5450492b4c1b"
-  version = "v0.2.8"
-
-[[projects]]
-  digest = "1:5b8cdf3d20e8acebf61c09bd4277760827968d597c95bdef60438d5c5bd183ec"
-  name = "github.com/libp2p/go-mplex"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "30712bb879f1c2821ff8bc1b707b3f7120de593b"
-  version = "v0.1.3"
-
-[[projects]]
-  digest = "1:cff1694d3244b4480e530eb6476a935faa3e71509771eca84f3070049f73825c"
-  name = "github.com/libp2p/go-msgio"
-  packages = [
-    ".",
-    "protoio",
-  ]
-  pruneopts = "NUT"
-  revision = "7083218d76fc1304c17bd92c8e001a300cf2c7d6"
-  version = "v0.0.6"
-
-[[projects]]
-  digest = "1:91948e250259b32cdd3c1ef0628f3d534c5f8a86487ff18f5959f9de12f3230d"
-  name = "github.com/libp2p/go-nat"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "e0453a807747b76285439bf8f89f91e7c1d23ed5"
-  version = "v0.0.5"
-
-[[projects]]
-  digest = "1:570012bd4cf3efb0cf4a86ccfaa7fec56bae0ef17c43e58cec081e811b64938e"
-  name = "github.com/libp2p/go-netroute"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "55bb74ebf809dc3157b65a5a07d8f6d488d97a80"
-  version = "v0.1.3"
 
 [[projects]]
   digest = "1:f08bd07eedfe8be0adc6aa68d9e1daf3492d8a711dbdc0de97f93222a2af66d9"
@@ -1483,85 +745,6 @@
   pruneopts = "NUT"
   revision = "050e85000aa2129da1eb1c74ef9489c97f60e3a1"
   version = "v0.0.5"
-
-[[projects]]
-  digest = "1:747ef30ab3b3a3c6850da51050049ce21ab45394d53f1d3c2cf27624aa198b2a"
-  name = "github.com/libp2p/go-reuseport"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "db4166559a608cb2980679d164c6f296cef8c0fe"
-  version = "v0.0.2"
-
-[[projects]]
-  digest = "1:ee6e4744bc6914a600bc73a3cc7db29d965a6b8ff1e4c8f8cac03b0a1e17056a"
-  name = "github.com/libp2p/go-reuseport-transport"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "fb521c6497ccfa40a30d9dad517d3f1aa779d75a"
-  version = "v0.0.4"
-
-[[projects]]
-  digest = "1:2a08908122b0ebb6afe910bb93c85e8d055ba40785eb6c236a342c30c21e3422"
-  name = "github.com/libp2p/go-sockaddr"
-  packages = [
-    ".",
-    "net",
-  ]
-  pruneopts = "NUT"
-  revision = "d0ced09a2826722f0e26d7255f35aaa69dfa80b5"
-  version = "v0.1.0"
-
-[[projects]]
-  digest = "1:0009f7d4dab7a70c81f2344e70e7dbb22690dc95e9a6586633268d9713ec676f"
-  name = "github.com/libp2p/go-stream-muxer-multistream"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "877e544f7149ba0831a1ae7b570db17ebd2861c4"
-  version = "v0.3.0"
-
-[[projects]]
-  digest = "1:5cf61d4e46e5e24d7632f3584ae046126dec636b1f6b4ce729dabcf44be14825"
-  name = "github.com/libp2p/go-tcp-transport"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "fdcfe866abc8cbe7016797bb11f425ccaa459459"
-  version = "v0.2.1"
-
-[[projects]]
-  digest = "1:b16fb93331c8ee8cd41f29770b0f493af8f67897b9956973231738238e4e28d7"
-  name = "github.com/libp2p/go-ws-transport"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "2c77fd7a50d73f40efc38f82a64cb2d88862ea22"
-  version = "v0.3.1"
-
-[[projects]]
-  digest = "1:df8a278415c1eb9c0f26a15c19b575291bfe7687a779e76efee9d8be1d25bb9b"
-  name = "github.com/libp2p/go-yamux"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "c4f881b41f110b6afc98f7b2848b2fb6eeb09317"
-  version = "v1.3.8"
-
-[[projects]]
-  digest = "1:017f06612b13d8941d3c23e077143000d44d0144ac13e62d4d4433e0f0241d1d"
-  name = "github.com/lucas-clemente/quic-go"
-  packages = [
-    ".",
-    "internal/ackhandler",
-    "internal/congestion",
-    "internal/flowcontrol",
-    "internal/handshake",
-    "internal/protocol",
-    "internal/qerr",
-    "internal/utils",
-    "internal/wire",
-    "quictrace",
-    "quictrace/pb",
-  ]
-  pruneopts = "NUT"
-  revision = "038cd1d6800983e105ec49cfbb16810c96e0dd88"
-  version = "v0.14.4"
 
 [[projects]]
   digest = "1:802689c84994b7f2e41ffe7e39d29a8d8227f2121938dc025db44dfaa9633b15"
@@ -1582,25 +765,6 @@
   pruneopts = "NUT"
   revision = "8edcc4e51f39ddbd3505a3386aff3f435a7fd028"
   version = "v0.7.1"
-
-[[projects]]
-  digest = "1:a91626248e5fad81c3416852b456d5770c36ec4fc4099121115a4b7bd1b484dd"
-  name = "github.com/marten-seemann/chacha20"
-  packages = [
-    ".",
-    "internal/subtle",
-  ]
-  pruneopts = "NUT"
-  revision = "36564989294fee5f3957d3e3fbfc655e10786ec0"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:ad7e45f3a2ab356e8f1c72c7955bc3140ffb60fa3e8d59456ff146823bc902dd"
-  name = "github.com/marten-seemann/qtls"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "9ec27f35079121f582027b96cc363817b67d7666"
-  version = "v0.10.0"
 
 [[projects]]
   digest = "1:1d18e7fbb182d4dd3ef9ad3b6a0a5f3d0f86ccee75b2097db59a7631265d084d"
@@ -1641,14 +805,6 @@
   pruneopts = "NUT"
   revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
   version = "v1.0.1"
-
-[[projects]]
-  digest = "1:bc6ea798c52e4c9756c0f32525a6a0b8e0912ac8ccf40804c5f99ef14094c762"
-  name = "github.com/miekg/dns"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "34cecfe1b489442934480cec58277b4b39b1a1cd"
-  version = "v1.1.31"
 
 [[projects]]
   digest = "1:d239a90a19b0e8f2b6f4d9515a8f8e7b2ccdc61c43fe2c9f57cd3fc3d6eee939"
@@ -1723,22 +879,6 @@
   version = "v0.2.2"
 
 [[projects]]
-  digest = "1:f409d317de0ae1223c800e7c1a8f0c642b7969d018e6209fd4e6dab49a538734"
-  name = "github.com/multiformats/go-multiaddr-dns"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "aeb5743691b968cfa3365c9da59ef872a3133c87"
-  version = "v0.2.0"
-
-[[projects]]
-  digest = "1:71eeb47057b73884ff7556171ac783857a387f65bd094cdb3b9cbdb160bf4b7d"
-  name = "github.com/multiformats/go-multiaddr-fmt"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "113ed87ed03cfff94f29fd95236be3ccd933fd36"
-  version = "v0.1.0"
-
-[[projects]]
   digest = "1:8d9b772a9caafadf7d46e453c957a15609e7e9f1c1e4e1bacb44b75438e2d3a9"
   name = "github.com/multiformats/go-multiaddr-net"
   packages = ["."]
@@ -1761,14 +901,6 @@
   pruneopts = "NUT"
   revision = "6b39927dce4869bc1726861b65ada415ee1f7fc7"
   version = "v0.0.13"
-
-[[projects]]
-  digest = "1:65f1549f87b2e0bc45bbe141cd55fbfde00a66ae2d59633dfec631925fb45098"
-  name = "github.com/multiformats/go-multistream"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ff9dcd5c891b3ba194062358d52623047d85192f"
-  version = "v0.1.2"
 
 [[projects]]
   digest = "1:250f767e68df66a2b52abe388c599c355a2126ac29f24aa7701cdbfd0753ebc5"
@@ -1923,23 +1055,6 @@
   pruneopts = "NUT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:7c17ad2e8f86562fc9eb8e39121226ec244a94bb467793dac14b28b9ed0b26a7"
-  name = "github.com/polydawn/refmt"
-  packages = [
-    ".",
-    "cbor",
-    "json",
-    "obj",
-    "obj/atlas",
-    "pretty",
-    "shared",
-    "tok",
-  ]
-  pruneopts = "NUT"
-  revision = "3d65705ee9f12dc0dfcc0dc6cf9666e97b93f339"
 
 [[projects]]
   digest = "1:097cc61836050f45cbb712ae3bb45d66fba464c16b8fac09907fa3c1f753eff6"
@@ -2129,68 +1244,12 @@
   revision = "bea94bb476ccecfbd31b12ed493a971bdb8c904b"
 
 [[projects]]
-  digest = "1:498d0b37a5c7f5664f2e21de8c85c5694ed197cb25ce245bf25cdd18930035e9"
-  name = "github.com/ugorji/go"
-  packages = ["codec"]
-  pruneopts = "NUT"
-  revision = "23ab95ef5dc3b70286760af84ce2327a2b64ed62"
-  version = "v1.1.7"
-
-[[projects]]
-  branch = "master"
-  digest = "1:3cdaa784f04c8d05bba6c71a02c1c21500014a4f01931fbba80149dbe6904e50"
-  name = "github.com/whyrusleeping/cbor-gen"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "c568d328ad9dc887b5103a9dcb0b3645224c8c1f"
-
-[[projects]]
-  branch = "master"
-  digest = "1:1920998532df42322b46328a4373b44a0f4e7fe84b4ee721d944b9331755b8f9"
-  name = "github.com/whyrusleeping/chunker"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "fe64bd25879f446bb7e8a4adf5d4a68552211bd3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:b66ae50495d5c708cbb82012466a7ecc5c2272b3f5f6c6d496d259d20795196d"
-  name = "github.com/whyrusleeping/go-keyspace"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "5b898ac5add1da7178a4a98e69cb7b9205c085ee"
-
-[[projects]]
-  branch = "master"
-  digest = "1:e297f8e455d367deaef050aeb7b0b02e19d503a459ae46ed40b9aa86693bad0d"
-  name = "github.com/whyrusleeping/mdns"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "b9b60ed33aa90e31b4a61eade9ed7d1d40e1cd7e"
-
-[[projects]]
-  branch = "master"
-  digest = "1:7b014e573e2f4e3cf7bca9fa6e58629b957e5ea86d2a811126b60c6949ac7280"
-  name = "github.com/whyrusleeping/multiaddr-filter"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "e903e4adabd70b78bc9293b6ee4f359afb3f9f59"
-
-[[projects]]
   branch = "master"
   digest = "1:8f593960fc019785ac43e58ecdd349077f3b52d450aaf81836f0be142766927d"
   name = "github.com/whyrusleeping/tar-utils"
   packages = ["."]
   pruneopts = "NUT"
   revision = "8c6c8ba81d5c71fd69c0f48dbde4b2fb422b6dfc"
-
-[[projects]]
-  branch = "master"
-  digest = "1:d179b39504ebd737dfc3e1a7fce6e7751b8b5a79868497c15b545d5b0f6e7399"
-  name = "github.com/whyrusleeping/timecache"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "cfcb2f1abfee846c430233aef0b630a946e0a5a6"
 
 [[projects]]
   digest = "1:0f4299df39f2e222cdd1b802126a7ae9cadcb4f11f65d657adb48a4e07c9bfb7"
@@ -2261,11 +1320,9 @@
   revision = "23731bf9ba556867089a9cc8db5e492ca6035fe8"
 
 [[projects]]
-  digest = "1:eee28dd9e4f3fe085b7d2f20dce2a2920fd2b64ff6ed28c22cd5511bc247c4f8"
+  digest = "1:a8474e19bff3c25ad8aa0d2d40bcb9e8bf0ee85810fb0e1c7ba6823351b68e9d"
   name = "go.opencensus.io"
   packages = [
-    ".",
-    "internal",
     "internal/tagencoding",
     "metric/metricdata",
     "metric/metricproducer",
@@ -2274,10 +1331,6 @@
     "stats/internal",
     "stats/view",
     "tag",
-    "trace",
-    "trace/internal",
-    "trace/propagation",
-    "trace/tracestate",
   ]
   pruneopts = "NUT"
   revision = "d835ff86be02193d324330acdb7d65546b05f814"
@@ -2318,24 +1371,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:df6d6614eb8c2992845f3331081189bfd9f4bf636cc893c5b55c473d19a91cf6"
+  digest = "1:b0e4fa4718cc8db2070fe49052d1a6c7f4b50db258214184061c0516e141004a"
   name = "golang.org/x/crypto"
   packages = [
-    "blake2b",
     "blake2s",
-    "chacha20poly1305",
-    "cryptobyte",
-    "cryptobyte/asn1",
-    "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
-    "hkdf",
-    "internal/chacha20",
-    "internal/subtle",
     "md4",
     "pbkdf2",
-    "poly1305",
-    "salsa20/salsa",
     "scrypt",
     "sha3",
   ]
@@ -2354,11 +1397,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e2a23acfa465e51d4f7c2edb7d9df9a26acfbd148862903e40e1dfac833622b6"
+  digest = "1:8dceb0c226ef5810bd2d51db196cef3efba52e87e6540331b2bcaa8f4be0d279"
   name = "golang.org/x/net"
   packages = [
-    "bpf",
-    "context",
     "html",
     "html/atom",
     "html/charset",
@@ -2366,12 +1407,7 @@
     "http2",
     "http2/hpack",
     "idna",
-    "internal/iana",
-    "internal/socket",
     "internal/timeseries",
-    "ipv4",
-    "ipv6",
-    "route",
     "trace",
   ]
   pruneopts = "NUT"
@@ -2451,17 +1487,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:325a1b73817aa79fc85f10376ed41ea607f7dd7f6c6bfa46df6a28ef2857941f"
-  name = "golang.org/x/xerrors"
-  packages = [
-    ".",
-    "internal",
-  ]
-  pruneopts = "NUT"
-  revision = "5ec99f83aff198f5fbd629d6c8d8eb38a04218ca"
-
-[[projects]]
-  branch = "master"
   digest = "1:583a0c80f5e3a9343d33aea4aead1e1afcc0043db66fdf961ddd1fe8cd3a4faf"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
@@ -2511,41 +1536,6 @@
   pruneopts = "NUT"
   revision = "f6d0f9ee430895e87ef1ceb5ac8f39725bafceef"
   version = "v1.24.0"
-
-[[projects]]
-  digest = "1:cccb3a18e62abaccd19c309fc01a69da2509719f5a453cb2e66969f670503245"
-  name = "google.golang.org/protobuf"
-  packages = [
-    "encoding/prototext",
-    "encoding/protowire",
-    "internal/descfmt",
-    "internal/descopts",
-    "internal/detrand",
-    "internal/encoding/defval",
-    "internal/encoding/messageset",
-    "internal/encoding/tag",
-    "internal/encoding/text",
-    "internal/errors",
-    "internal/fieldsort",
-    "internal/filedesc",
-    "internal/filetype",
-    "internal/flags",
-    "internal/genid",
-    "internal/impl",
-    "internal/mapsort",
-    "internal/pragma",
-    "internal/set",
-    "internal/strs",
-    "internal/version",
-    "proto",
-    "reflect/protoreflect",
-    "reflect/protoregistry",
-    "runtime/protoiface",
-    "runtime/protoimpl",
-  ]
-  pruneopts = "NUT"
-  revision = "3f7a61f89bb6813f89d981d1870ed68da0b3c3f1"
-  version = "v1.25.0"
 
 [[projects]]
   digest = "1:22b2dee6f30bc8601f087449a2a819df8388e54e9547349c658f14d8f8c590f2"
@@ -2712,7 +1702,6 @@
     "github.com/hyperledger/fabric-protos-go/peer",
     "github.com/hyperledger/fabric-protos-go/peer/lifecycle",
     "github.com/hyperledger/fabric-protos-go/transientstore",
-    "github.com/ipfs/ipfs-cluster",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/mysql",
     "github.com/jinzhu/gorm/dialects/sqlite",
