@@ -148,7 +148,6 @@ func (c *FsClient) Stat(name string) (os.FileInfo, error) {
 	return &fileInfo{cidInfo.Name, 0, cidInfo.Size, cidInfo.Cid}, nil
 }
 
-// CopyToRemote copy the file into IPFS, since IPFS is not like HDFS, here the dst param is ignored
 func (c *FsClient) CopyToRemote(src string, dst string) error {
 	var file *os.File
 	var err error
@@ -169,7 +168,7 @@ func (c *FsClient) CopyToRemote(src string, dst string) error {
 		return err
 	}
 
-	value := &cidInfo{Cid: cid, Name: src, Size: stat.Size()}
+	value := &cidInfo{Cid: cid, Name: dst, Size: stat.Size()}
 	if err := c.cidStore.Put([]byte(src), encode(value), nil); err != nil {
 		logger.Errorf("add file[%s], cid[%s] to cid index store, got error[%s]", src, cid, err)
 		return err
