@@ -16,8 +16,6 @@ import (
 	"github.com/hyperledger/fabric/common/flogging"
 	le "github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/ledger/archive"
-	"github.com/hyperledger/fabric/core/ledger/dfs"
-	"github.com/hyperledger/fabric/core/ledger/dfs/common"
 	"github.com/hyperledger/fabric/core/ledger/ledgermgmt"
 	"github.com/pkg/errors"
 )
@@ -57,7 +55,6 @@ type ArchiveService struct {
 	gossip    ArchiveGossip
 	id        peerID
 	ledgerMgr *ledgermgmt.LedgerMgr
-	dfsClient common.FsClient
 	tickers   map[string]*time.Ticker
 	lock      sync.RWMutex
 	stopCh    chan struct{}
@@ -68,18 +65,10 @@ type ArchiveService struct {
 // archive service instance. It tries to establish connection to
 // the specified dfs name node, in case it fails to dial to it, return nil
 func New(g gossip, ledgerMgr *ledgermgmt.LedgerMgr, channel string, peerId string, conf *archive.Config) (*ArchiveService, error) {
-	dfsConf := &common.Config{Type: conf.Type, HdfsConf: conf.HdfsConf, IpfsConf: conf.IpfsConf}
-	client, err := dfs.NewDfsClient(dfsConf)
-	if err != nil {
-		logger.Errorf("Archive service can't connect to HDFS, due to %+v", err)
-		return nil, err
-	}
-
 	a := &ArchiveService{
 		gossip:    NewGossipImpl(g, channel),
 		id:        peerID(peerId),
 		ledgerMgr: ledgerMgr,
-		dfsClient: client,
 		tickers:   make(map[string]*time.Ticker),
 		stopCh:    make(chan struct{}),
 		conf:      conf.Trigger,
@@ -150,10 +139,6 @@ func (a *ArchiveService) Stop() {
 
 	for _, t := range a.tickers {
 		t.Stop()
-	}
-
-	if err := a.dfsClient.Close(); err != nil {
-		logger.Warnf("Stop dfs client[%s] got error: %s", spew.Sdump(a.dfsClient), err)
 	}
 }
 
