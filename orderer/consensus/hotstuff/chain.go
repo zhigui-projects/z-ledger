@@ -213,10 +213,10 @@ func (c *chain) main() {
 			}
 
 			// TODO: Delete when benchmark
-			for _, env := range req.Batche {
-				chr, _ := unmarshalEnvelope(env)
-				c.logger.Infof("Consensus complete for transaction, txId: %s", chr.TxId)
-			}
+			//for _, env := range req.Batche {
+			//	chr, _ := unmarshalEnvelope(env)
+			//	c.logger.Infof("Consensus complete for transaction, txId: %s", chr.TxId)
+			//}
 
 			block := c.support.CreateNextBlock(req.Batche)
 			if req.MsgType == NormalMsg {
@@ -263,6 +263,8 @@ func (c *chain) main() {
 func (c *chain) submit(cmds []byte) {
 	chs := c.hsb.GetHotStuff(c.support.ChannelID())
 	leader := chs.GetLeader(chs.GetCurView())
-	go c.hsb.UnicastMsg(&pb.Message{Chain: c.support.ChannelID(), Type: &pb.Message_Forward{
-		Forward: &pb.Forward{Data: cmds}}}, leader)
+	if leader != c.hsb.GetID() {
+		go c.hsb.UnicastMsg(&pb.Message{Chain: c.support.ChannelID(), Type: &pb.Message_Forward{
+			Forward: &pb.Forward{Data: cmds}}}, leader)
+	}
 }
