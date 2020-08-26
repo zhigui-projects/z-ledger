@@ -1285,7 +1285,7 @@
 
 [[projects]]
   branch = "multichain-dev"
-  digest = "1:3f65b20fa75b0df0febfda1490be898b5c71554a8a280c5766fddc925552d445"
+  digest = "1:4dd7f0d85e372c87ed1408dfa335a7644203280b7b67113f4d18f269066726af"
   name = "github.com/zhigui-projects/go-hotstuff"
   packages = [
     "api",
@@ -1299,7 +1299,7 @@
     "transport",
   ]
   pruneopts = "NUT"
-  revision = "04f3d4157567aa7c33782f7cdec0ec74c68075cb"
+  revision = "affa9970dc62d3f5a04b6b9950db51b57fb067e6"
 
 [[projects]]
   digest = "1:7994f0511ea39eb049909df41301aabf5e6289b97c1084f7cc8c351d765469e1"

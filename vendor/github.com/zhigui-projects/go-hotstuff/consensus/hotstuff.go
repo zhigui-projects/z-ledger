@@ -136,9 +136,8 @@ func (hsc *HotStuffCore) OnReceiveProposal(prop *pb.Proposal) error {
 	block := prop.Block
 	hsc.StoreBlock(block)
 
-	hsc.cond.Signal()
-
-	if !hsc.expectBlock(block.Justify.BlockHash) {
+	hsc.cond.Broadcast()
+	if _, err := hsc.AsyncWaitBlock(block.Justify.BlockHash); err != nil {
 		return errors.Errorf("OnReceiveProposal: not found expected block [%x]", block.Justify.BlockHash)
 	}
 
@@ -467,16 +466,15 @@ func (hsc *HotStuffCore) LoadBlock(hash []byte) (*pb.Block, error) {
 	return block.(*pb.Block), nil
 }
 
-func (hsc *HotStuffCore) expectBlock(hash []byte) bool {
-	block, _ := hsc.LoadBlock(hash)
+func (hsc *HotStuffCore) AsyncWaitBlock(hash []byte) (block *pb.Block, err error) {
+	block, err = hsc.LoadBlock(hash)
 	if block != nil {
-		return true
+		return block, nil
 	}
 
 	hsc.cond.L.Lock()
 	hsc.cond.Wait()
 	hsc.cond.L.Unlock()
 
-	b, _ := hsc.LoadBlock(hash)
-	return b != nil
+	return hsc.LoadBlock(hash)
 }

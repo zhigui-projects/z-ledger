@@ -26,4 +26,5 @@ type HotStuff interface {
 	LoadBlock(hash []byte) (*pb.Block, error)
 	GetConnectStatus(id int64) bool
 	GetChainId() string
+	AsyncWaitBlock(hash []byte) (block *pb.Block, err error)
 }
