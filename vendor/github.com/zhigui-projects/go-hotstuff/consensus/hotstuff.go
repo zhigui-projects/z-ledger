@@ -59,6 +59,8 @@ type HotStuffCore struct {
 	notifyChan chan EventNotifier
 
 	logger api.Logger
+
+	cond *sync.Cond
 }
 
 func NewHotStuffCore(id ReplicaID, signer api.Signer, replicas *ReplicaConf, logger api.Logger) *HotStuffCore {
@@ -77,6 +79,7 @@ func NewHotStuffCore(id ReplicaID, signer api.Signer, replicas *ReplicaConf, log
 		replicas:     replicas,
 		notifyChan:   make(chan EventNotifier),
 		logger:       logger,
+		cond:         sync.NewCond(new(sync.Mutex)),
 	}
 	genesis.SelfQc = &pb.QuorumCert{ViewNumber: -1, BlockHash: hash, Signs: make(map[int64]*pb.PartCert)}
 	hsc.genericQC = genesis.SelfQc
@@ -132,6 +135,12 @@ func (hsc *HotStuffCore) OnReceiveProposal(prop *pb.Proposal) error {
 
 	block := prop.Block
 	hsc.StoreBlock(block)
+
+	hsc.cond.Signal()
+
+	if !hsc.expectBlock(block.Justify.BlockHash) {
+		return errors.Errorf("OnReceiveProposal: not found expected block [%x]", block.Justify.BlockHash)
+	}
 
 	if err := hsc.update(block); err != nil {
 		return err
@@ -456,4 +465,18 @@ func (hsc *HotStuffCore) LoadBlock(hash []byte) (*pb.Block, error) {
 		return nil, err
 	}
 	return block.(*pb.Block), nil
+}
+
+func (hsc *HotStuffCore) expectBlock(hash []byte) bool {
+	block, _ := hsc.LoadBlock(hash)
+	if block != nil {
+		return true
+	}
+
+	hsc.cond.L.Lock()
+	hsc.cond.Wait()
+	hsc.cond.L.Unlock()
+
+	b, _ := hsc.LoadBlock(hash)
+	return b != nil
 }

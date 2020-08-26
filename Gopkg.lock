@@ -1285,7 +1285,7 @@
 
 [[projects]]
   branch = "multichain-dev"
-  digest = "1:fb1b893ed902a6afff8fc986bf78ff0d2a0d779245d10a419d5f6b9b8a3fbc07"
+  digest = "1:3f65b20fa75b0df0febfda1490be898b5c71554a8a280c5766fddc925552d445"
   name = "github.com/zhigui-projects/go-hotstuff"
   packages = [
     "api",
@@ -1299,7 +1299,7 @@
     "transport",
   ]
   pruneopts = "NUT"
-  revision = "9f43303979430bb65613edb627ed4777886b07e8"
+  revision = "04f3d4157567aa7c33782f7cdec0ec74c68075cb"
 
 [[projects]]
   digest = "1:7994f0511ea39eb049909df41301aabf5e6289b97c1084f7cc8c351d765469e1"
@@ -1702,6 +1702,7 @@
     "github.com/hyperledger/fabric-protos-go/peer",
     "github.com/hyperledger/fabric-protos-go/peer/lifecycle",
     "github.com/hyperledger/fabric-protos-go/transientstore",
+    "github.com/ipfs/go-ipfs-files",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/mysql",
     "github.com/jinzhu/gorm/dialects/sqlite",
