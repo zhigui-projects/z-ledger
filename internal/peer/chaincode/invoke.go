@@ -37,6 +37,7 @@ func invokeCmd(cf *ChaincodeCmdFactory, cryptoProvider bccsp.BCCSP) *cobra.Comma
 		"connectionProfile",
 		"waitForEvent",
 		"waitForEventTimeout",
+		"vrfEnabled",
 	}
 	attachFlags(chaincodeInvokeCmd, flagList)
 

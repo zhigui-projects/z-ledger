@@ -24,6 +24,7 @@ import (
 	ab "github.com/hyperledger/fabric-protos-go/orderer"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/bccsp"
+	"github.com/hyperledger/fabric/bccsp/utils"
 	"github.com/hyperledger/fabric/common/cauthdsl"
 	"github.com/hyperledger/fabric/common/util"
 	"github.com/hyperledger/fabric/core/scc/qscc"
@@ -149,10 +150,28 @@ func chaincodeInvokeOrQuery(cmd *cobra.Command, invoke bool, cf *ChaincodeCmdFac
 
 	if invoke {
 		logger.Debugf("ESCC invoke result: %v", proposalResp)
-		pRespPayload, err := protoutil.UnmarshalProposalResponsePayload(proposalResp.Payload)
-		if err != nil {
-			return errors.WithMessage(err, "error while unmarshaling proposal response payload")
+		pRespPayload := &pb.ProposalResponsePayload{}
+		if vrfEnabled {
+			vp := &utils.VrfPayload{}
+			err = json.Unmarshal(proposalResp.Payload, vp)
+			if err != nil {
+				return errors.WithMessage(err, "error while unmarshaling vrf payload")
+			}
+			err = proto.Unmarshal(vp.Payload, pRespPayload)
+			if err != nil {
+				return errors.WithMessage(err, "error while unmarshaling proposal response payload")
+			}
+		} else {
+			err = proto.Unmarshal(proposalResp.Payload, pRespPayload)
+			if err != nil {
+				return errors.WithMessage(err, "error while unmarshaling proposal response payload")
+			}
 		}
+
+		//pRespPayload, err := protoutil.UnmarshalProposalResponsePayload(proposalResp.Payload)
+		//if err != nil {
+		//	return errors.WithMessage(err, "error while unmarshaling proposal response payload")
+		//}
 		ca, err := protoutil.UnmarshalChaincodeAction(pRespPayload.Extension)
 		if err != nil {
 			return errors.WithMessage(err, "error while unmarshaling chaincode action")
@@ -572,15 +591,16 @@ func ChaincodeInvokeOrQuery(
 		funcName = "query"
 	}
 
+	isVrf := vrfEnabled
 transactionReplay:
-	resps, proposalResp, prop, txid, err := proposalProcess(spec, signer, endorserClients, cID, txID, funcName, invoke)
+	resps, proposalResp, prop, txid, err := proposalProcess(spec, signer, endorserClients, cID, txID, funcName, isVrf)
 	if err != nil {
 		return nil, err
 	}
 	if proposalResp == nil {
-		if invoke {
+		if isVrf {
 			logger.Info("no valid proposal responses received for vrfEndorsements, start transaction replay!!!")
-			invoke = false
+			isVrf = false
 			goto transactionReplay
 		} else {
 			return nil, errors.New("no valid proposal responses received")

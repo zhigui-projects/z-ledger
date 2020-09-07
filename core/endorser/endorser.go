@@ -479,19 +479,24 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		"chaincode", up.ChaincodeName,
 	}
 
-	var vpBytes []byte
-	vpd := &utils.VrfPayload{Payload: prpBytes}
-	vpBytes, err = json.Marshal(vpd)
-	if err != nil {
-		return nil, err
-	}
-
 	switch {
 	case res.Status >= shim.ERROR:
-		return &pb.ProposalResponse{
-			Response: res,
-			Payload:  vpBytes,
-		}, nil
+		if cdLedger.VrfEnabled && isInvoke {
+			vpd := &utils.VrfPayload{Payload: prpBytes}
+			vpBytes, err := json.Marshal(vpd)
+			if err != nil {
+				return nil, err
+			}
+			return &pb.ProposalResponse{
+				Response: res,
+				Payload:  vpBytes,
+			}, nil
+		} else {
+			return &pb.ProposalResponse{
+				Response: res,
+				Payload:  prpBytes,
+			}, nil
+		}
 	case up.ChannelID() == "":
 		// Chaincode invocations without a channel ID is a broken concept
 		// that should be removed in the future.  For now, return unendorsed
@@ -520,16 +525,20 @@ func (e *Endorser) ProcessProposalSuccessfullyOrError(up *UnpackedProposal) (*pb
 		return nil, errors.WithMessage(err, "endorsing with plugin failed")
 	}
 
-	vp := &utils.VrfPayload{Data: msg, Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
-	vpBytes, err = json.Marshal(vp)
-	if err != nil {
-		return nil, err
+	payload := mPrpBytes
+	if cdLedger.VrfEnabled && isInvoke {
+		vp := &utils.VrfPayload{Data: msg, Endorser: peerIdentity, VrfResult: result, VrfProof: proof, Payload: mPrpBytes}
+		vpBytes, err := json.Marshal(vp)
+		if err != nil {
+			return nil, err
+		}
+		payload = vpBytes
 	}
 
 	return &pb.ProposalResponse{
 		Version:     1,
 		Endorsement: endorsement,
-		Payload:     vpBytes,
+		Payload:     payload,
 		Response:    res,
 	}, nil
 }

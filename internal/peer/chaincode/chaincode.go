@@ -77,6 +77,7 @@ var (
 	connectionProfile     string
 	waitForEvent          bool
 	waitForEventTimeout   time.Duration
+	vrfEnabled            bool
 )
 
 var chaincodeCmd = &cobra.Command{
@@ -139,6 +140,7 @@ func resetFlags() {
 	flags.BoolVarP(&createSignedCCDepSpec, "cc-package", "s", false, "create CC deployment spec for owner endorsements instead of raw CC deployment spec")
 	flags.BoolVarP(&signCCDepSpec, "sign", "S", false, "if creating CC deployment spec package for owner endorsements, also sign it with local MSP")
 	flags.StringVarP(&instantiationPolicy, "instantiate-policy", "i", "", "instantiation policy for the chaincode")
+	flags.BoolVarP(&vrfEnabled, "vrfEnabled", "", false, "Whether enabled the vrf endorsement policy for the chaincode invoke.")
 }
 
 func attachFlags(cmd *cobra.Command, names []string) {

@@ -181,12 +181,11 @@ func CreateSignedTx(
 			return nil, errors.Errorf("proposal response was not successful, error code %d, msg %s", r.Response.Status, r.Response.Message)
 		}
 
+		var data []byte
 		vp := &utils.VrfPayload{}
 		if err := json.Unmarshal(r.Payload, vp); err != nil {
-			return nil, err
-		}
-
-		if vp.VrfResult != nil && vp.VrfProof != nil && vp.Data != nil {
+			data = r.Payload
+		} else {
 			vrfEndorsements = append(vrfEndorsements, &utils.VrfEndorsement{
 				Endorser: vp.Endorser,
 				Data:     vp.Data,
@@ -198,6 +197,7 @@ func CreateSignedTx(
 			} else if !bytes.Equal(b1, vp.Data) {
 				return nil, errors.New("Vrf compute msg do not match")
 			}
+			data = vp.Payload
 		}
 
 		if r.Response.Status == 300 {
@@ -207,11 +207,11 @@ func CreateSignedTx(
 		endorsements = append(endorsements, r.Endorsement)
 
 		if a1 == nil {
-			a1 = vp.Payload
+			a1 = data
 			continue
 		}
 
-		if !bytes.Equal(a1, vp.Payload) {
+		if !bytes.Equal(a1, data) {
 			return nil, errors.New("ProposalResponsePayloads do not match")
 		}
 	}
