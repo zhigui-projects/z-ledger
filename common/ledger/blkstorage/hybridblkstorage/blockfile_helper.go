@@ -196,6 +196,9 @@ func calcFileProofs(rootDir string, amInfo *archive.ArchiveMetaInfo) {
 		if err != nil {
 			logger.Errorf("extract file num from[%s] got error: %s", fi.Name(), err)
 		}
+		if amInfo.FileProofs == nil {
+			amInfo.FileProofs = make(map[int32]string)
+		}
 		amInfo.FileProofs[int32(fileNum)] = hex.EncodeToString(h.Sum(nil))
 	}
 }
