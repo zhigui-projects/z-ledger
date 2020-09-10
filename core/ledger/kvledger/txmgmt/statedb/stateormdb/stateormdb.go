@@ -769,6 +769,11 @@ func (v *VersionedDB) getNamespaceDBHandle(namespace string) (*ormdb.ORMDatabase
 				ds := entitydefinition.NewBuilder().AddEntityFieldDefinition(currentEfds, db.ModelTypes).Build()
 				db.ModelTypes[currentEntity] = ds
 				db.RWMutex.Unlock()
+				entity := ds.Interface()
+				tableName := ormdb.ToTableName(currentEntity)
+				if !db.DB.HasTable(tableName) {
+					db.DB.Table(tableName).CreateTable(entity)
+				}
 			}
 		}
 
