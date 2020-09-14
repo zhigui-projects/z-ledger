@@ -169,21 +169,26 @@ func (vscc *Validator) extractValidationArtifacts(
 	}
 
 	// Impl by zig
-	crp := &utils.ChaincodeResponsePayload{}
+	var prp []byte
+	var vrfe []*utils.VrfEndorsement
+	crp := &utils.ChaincodeReprotoutil/txutils.gosponsePayload{}
 	if err := json.Unmarshal(cap.Action.ProposalResponsePayload, crp); err != nil {
-		return nil, err
+		prp = cap.Action.ProposalResponsePayload
+	} else {
+		prp = crp.Payload
+		vrfe = crp.VrfEndorsements
 	}
 	logger.Infof("VSCC extract vrf endorsements num: %d", len(crp.VrfEndorsements))
 
 	return &validationArtifacts{
 		rwset:        respPayload.Results,
-		prp:          crp.Payload,
+		prp:          prp,
 		endorsements: cap.Action.Endorsements,
 		chdr:         chdr,
 		env:          env,
 		payl:         payl,
 		cap:          cap,
-		vrf:          crp.VrfEndorsements,
+		vrf:          vrfe,
 	}, nil
 }
 

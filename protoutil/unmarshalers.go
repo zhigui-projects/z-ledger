@@ -128,12 +128,15 @@ func UnmarshalChaincodeEvents(eBytes []byte) (*peer.ChaincodeEvent, error) {
 
 // UnmarshalProposalResponsePayload unmarshals bytes to a ProposalResponsePayload
 func UnmarshalProposalResponsePayload(prpBytes []byte) (*peer.ProposalResponsePayload, error) {
+	var vp []byte
 	vrfcrp := &utils.ChaincodeResponsePayload{}
 	if err := json.Unmarshal(prpBytes, vrfcrp); err != nil {
-		return nil, errors.Wrap(err, "error unmarshaling ChaincodeResponsePayload")
+		vp = prpBytes
+	} else {
+		vp = vrfcrp.Payload
 	}
 	prp := &peer.ProposalResponsePayload{}
-	err := proto.Unmarshal(vrfcrp.Payload, prp)
+	err := proto.Unmarshal(vp, prp)
 	return prp, errors.Wrap(err, "error unmarshaling ProposalResponsePayload")
 }
 

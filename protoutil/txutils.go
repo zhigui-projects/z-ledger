@@ -222,12 +222,17 @@ func CreateSignedTx(
 
 	fmt.Println(fmt.Sprintf("ProposalResponsePayloads endorsements len: %d, vrfEndorsements: %d", len(endorsements), len(vrfEndorsements)))
 
-	prp, err := json.Marshal(&utils.ChaincodeResponsePayload{
-		Payload:         a1,
-		VrfEndorsements: vrfEndorsements,
-	})
-	if err != nil {
-		return nil, err
+	var prp []byte
+	if len(vrfEndorsements) == 0 {
+		prp = a1
+	} else {
+		prp, err = json.Marshal(&utils.Chainc odeResponsePayload{
+			Payload:         a1,
+			VrfEndorsements: vrfEndorsements,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// create ChaincodeEndorsedAction
