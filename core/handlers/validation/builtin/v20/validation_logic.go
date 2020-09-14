@@ -171,7 +171,7 @@ func (vscc *Validator) extractValidationArtifacts(
 	// Impl by zig
 	var prp []byte
 	var vrfe []*utils.VrfEndorsement
-	crp := &utils.ChaincodeReprotoutil/txutils.gosponsePayload{}
+	crp := &utils.ChaincodeResponsePayload{}
 	if err := json.Unmarshal(cap.Action.ProposalResponsePayload, crp); err != nil {
 		prp = cap.Action.ProposalResponsePayload
 	} else {
