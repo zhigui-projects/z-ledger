@@ -226,7 +226,7 @@ func CreateSignedTx(
 	if len(vrfEndorsements) == 0 {
 		prp = a1
 	} else {
-		prp, err = json.Marshal(&utils.Chainc odeResponsePayload{
+		prp, err = json.Marshal(&utils.ChaincodeResponsePayload{
 			Payload:         a1,
 			VrfEndorsements: vrfEndorsements,
 		})
