@@ -126,9 +126,12 @@ func (cei *ChaincodeEndorsementInfoSource) ChaincodeEndorsementInfo(channelID, c
 	vrfEnabled := false
 	param := &pb.ApplicationPolicy{}
 	if err := proto.Unmarshal(chaincodeInfo.Definition.ValidationInfo.ValidationParameter, param); err == nil {
-		policy := param.Type.(*pb.ApplicationPolicy_ChannelConfigPolicyReference).ChannelConfigPolicyReference
-		logger.Infof("Chaincode endorsement policy: %s for channel: %s, chaincodeName: %s", policy, channelID, chaincodeName)
-		vrfEnabled = policy == "vrf-policy"
+		policyRef, ok := param.Type.(*pb.ApplicationPolicy_ChannelConfigPolicyReference)
+		if ok {
+			policy := policyRef.ChannelConfigPolicyReference
+			vrfEnabled = policy == "vrf-policy"
+			logger.Infof("Chaincode endorsement policy: %s for channel: %s, chaincodeName: %s", policy, channelID, chaincodeName)
+		}
 	}
 
 	return &ChaincodeEndorsementInfo{
