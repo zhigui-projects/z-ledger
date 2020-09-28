@@ -2,6 +2,7 @@ package ipfs
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -187,17 +188,27 @@ func (c *FsClient) Open(name string) (common.FsReader, error) {
 	}
 
 	cid := stat.(*fileInfo).Cid()
-	r, err := c.shell.Cat(cid)
+
+	resp, err := c.shell.Request("cat", cid).
+		Option("length", stat.Size()).
+		Send(context.Background())
 	if err != nil {
 		logger.Errorf("cat file[%s] from ipfs, got error: %s", cid, err)
 		return nil, err
 	}
+	if resp.Error != nil {
+		logger.Errorf("cat file[%s] from ipfs, got resp.error: %s", cid, resp.Error)
+		return nil, resp.Error
+	}
 
 	output := make([]byte, stat.Size())
-	if _, err := r.Read(output); err != nil && err.Error() != "EOF" {
+	var actualLength int
+	if actualLength, err = resp.Output.Read(output); err != nil && err.Error() != "EOF" {
 		logger.Errorf("reader.Read with stat[%s], got error: %s", stat, err)
 		return nil, err
 	}
+
+	logger.Infof("read from ipfs, expected length: %d, actual length: %d", stat.Size(), actualLength)
 
 	return &FsReader{reader: bytes.NewReader(output), stat: stat}, nil
 }
